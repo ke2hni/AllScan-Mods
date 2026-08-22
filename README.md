@@ -119,44 +119,48 @@ The modification does **not** change:
 
 ## 📥 Download
 
-Download the following file to your computer:
+Choose any one of the following methods directly from the AllStarLink node. No desktop operating system or separate file-transfer program is required.
 
-```text
-apply-allscan-rx-lcnt-sort.sh
+Repository: **[github.com/ke2hni/AllScan-Mods](https://github.com/ke2hni/AllScan-Mods)**
+
+### Option 1 — Git
+
+Use this method if `git` is installed. It downloads the complete repository and makes future updates easy:
+
+```bash
+cd /home/asl && git clone https://github.com/ke2hni/AllScan-Mods.git && cd AllScan-Mods && chmod 755 apply-allscan-rx-lcnt-sort.sh && sudo ./apply-allscan-rx-lcnt-sort.sh
 ```
 
-Then transfer it to the `asl` user's home directory on the node.
+To update an existing cloned copy and run the latest version:
 
-### Option 1 — Windows SCP
-
-From PowerShell in the folder containing the downloaded script, replace `node44690.local` if necessary:
-
-```powershell
-scp .\apply-allscan-rx-lcnt-sort.sh asl@node44690.local:/home/asl/
+```bash
+cd /home/asl/AllScan-Mods && git pull --ff-only && chmod 755 apply-allscan-rx-lcnt-sort.sh && sudo ./apply-allscan-rx-lcnt-sort.sh
 ```
 
-You may use the node's IP address instead:
+### Option 2 — Wget
 
-```powershell
-scp .\apply-allscan-rx-lcnt-sort.sh asl@192.168.1.100:/home/asl/
+Use this method to download only the installer script:
+
+```bash
+cd /home/asl && wget -O apply-allscan-rx-lcnt-sort.sh https://raw.githubusercontent.com/ke2hni/AllScan-Mods/refs/heads/main/apply-allscan-rx-lcnt-sort.sh && chmod 755 apply-allscan-rx-lcnt-sort.sh && sudo ./apply-allscan-rx-lcnt-sort.sh
 ```
 
-### Option 2 — File-transfer program
+### Option 3 — Curl
 
-Use WinSCP, FileZilla, or another SFTP/SCP client:
+Use this method if `curl` is installed instead of `wget`:
 
-| Setting | Value |
-|:--|:--|
-| Protocol | SFTP or SCP |
-| User | `asl` |
-| Destination | `/home/asl/` |
-| File | `apply-allscan-rx-lcnt-sort.sh` |
+```bash
+cd /home/asl && curl -fL https://raw.githubusercontent.com/ke2hni/AllScan-Mods/refs/heads/main/apply-allscan-rx-lcnt-sort.sh -o apply-allscan-rx-lcnt-sort.sh && chmod 755 apply-allscan-rx-lcnt-sort.sh && sudo ./apply-allscan-rx-lcnt-sort.sh
+```
+
+> [!TIP]
+> The `git`, `wget`, and `curl` commands above each download, apply executable permissions, and run the installer in one copy-and-paste line. Use only one method.
 
 ---
 
 ## ⚙️ Installation
 
-SSH into the node and run this single copy-and-paste command:
+The commands in the Download section already install and execute the modification. If the script is already present in `/home/asl`, run:
 
 ```bash
 cd /home/asl && chmod 755 apply-allscan-rx-lcnt-sort.sh && sudo ./apply-allscan-rx-lcnt-sort.sh
