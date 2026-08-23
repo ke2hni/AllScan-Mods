@@ -2,14 +2,14 @@
 
 # AllScan Mods
 
-### Favorites editing and live Rx% / LCnt sorting for AllScan
+### Favorites editing, live Rx% / LCnt sorting, and safer monitoring for AllScan
 
 ![Platform](https://img.shields.io/badge/Platform-AllStarLink%203-0b7285?style=for-the-badge)
 ![Debian](https://img.shields.io/badge/Debian-12%20%7C%2013-a81d33?style=for-the-badge&logo=debian&logoColor=white)
 ![AllScan](https://img.shields.io/badge/AllScan-v1.01-2f9e44?style=for-the-badge)
 ![Installer](https://img.shields.io/badge/Installer-Idempotent-6741d9?style=for-the-badge)
 
-**One safe installer adds a main-page Favorites editor and clickable sorting for AllScan's live `Rx%` and `LCnt` columns.**
+**One safe installer adds a main-page Favorites editor, clickable sorting for AllScan's live `Rx%` and `LCnt` columns, and an independent Disconnect before Monitor option.**
 
 </div>
 
@@ -22,7 +22,8 @@
 
 - Keeps **Add Favorite**, **Edit Favorite**, and **Delete Favorite** together.
 - Places **Connect**, **Disconnect**, and **Monitor** beside the Node# field.
-- Leaves **Local Mon**, **DTMF**, **Permanent**, and **Disconnect before Connect** available.
+- Leaves **Local Mon** and **DTMF** available in their established positions.
+- Keeps **Permanent**, **Disconnect before Connect**, and **Disconnect before Monitor** together on one line.
 - Click a favorite's node number, then click **Edit Favorite**.
 - Edit the node number and friendly name/label together in an AllScan-styled dialog.
 - Use **Save & Close** to apply the edit or **Cancel** to leave the file unchanged.
@@ -32,6 +33,15 @@
 - Validates the edited INI and restores its backup automatically if validation fails.
 
 AllScan's Description and Location columns remain sourced from the AllStarLink database. The editor changes only the favorite's node number and friendly label.
+
+### Disconnect before Monitor
+
+- Adds a third checkbox labeled **Disconnect before Monitor**.
+- When selected, clicking **Monitor** disconnects all current links before monitoring the selected node.
+- Waits briefly after disconnecting before starting Monitor so the commands occur in the intended order.
+- Operates independently from **Disconnect before Connect**; either option can be enabled without enabling the other.
+- Applies only to the **Monitor** button and does not change **Local Mon** behavior.
+- If no nodes are connected, Monitor proceeds normally without issuing an unnecessary disconnect command.
 
 ### Sort Rx% and LCnt
 
@@ -99,6 +109,8 @@ The installer:
 - Supports David Gleason's AllScan v1.01-compatible source layout.
 - Works on a clean AllScan v1.01 installation.
 - Upgrades an installation containing only the earlier Rx%/LCnt sorting modification.
+- Upgrades the previous combined Favorites editor/sorting package.
+- Recognizes installations containing the separately tested Disconnect before Monitor patch.
 - Recognizes the fully installed package and exits without making changes.
 - Stages every change before touching live files.
 - Stops if required upstream structures are missing or ambiguous.
@@ -115,6 +127,7 @@ index.php.before-allscan-mods-YYYYMMDD-HHMMSS
 include/viewUtils.php.before-allscan-mods-YYYYMMDD-HHMMSS
 js/main.js.before-allscan-mods-YYYYMMDD-HHMMSS
 css/main.css.before-allscan-mods-YYYYMMDD-HHMMSS
+astapi/connect.php.before-allscan-mods-YYYYMMDD-HHMMSS
 ```
 
 Each successful Favorite edit separately creates:
@@ -132,6 +145,7 @@ The actual name matches whichever `favorites*.ini` file is selected in AllScan.
 /var/www/html/allscan/include/viewUtils.php
 /var/www/html/allscan/js/main.js
 /var/www/html/allscan/css/main.css
+/var/www/html/allscan/astapi/connect.php
 ```
 
 The package does not modify AllScan's statistics request frequency, request-rate protection, Asterisk configuration, database, or the existing PHP sorter for the first five columns.
@@ -157,29 +171,39 @@ The package does not modify AllScan's statistics request frequency, request-rate
 4. Repeat with `LCnt`.
 5. Click and double-click nodes to confirm the original controls still work.
 
+### Disconnect before Monitor
+
+1. Connect to a node normally.
+2. Select a different favorite.
+3. Check **Disconnect before Monitor**.
+4. Click **Monitor**.
+5. Confirm the existing connection disconnects before monitoring begins.
+6. Uncheck **Disconnect before Monitor** and confirm Monitor retains its normal behavior.
+7. Confirm **Local Mon** is unaffected by this checkbox.
+
 ### File check
 
 ```bash
-sudo grep -F 'case "Edit Favorite":' /var/www/html/allscan/index.php && sudo grep -Ec 'function[[:space:]]+sortFavStats[[:space:]]*\(' /var/www/html/allscan/js/main.js && sudo grep -Ec 'function[[:space:]]+openFavoriteEditor[[:space:]]*\(' /var/www/html/allscan/js/main.js
+sudo grep -F 'case "Edit Favorite":' /var/www/html/allscan/index.php && sudo grep -Ec 'function[[:space:]]+sortFavStats[[:space:]]*\(' /var/www/html/allscan/js/main.js && sudo grep -Ec 'function[[:space:]]+openFavoriteEditor[[:space:]]*\(' /var/www/html/allscan/js/main.js && sudo grep -Fc 'id="automondisc"' /var/www/html/allscan/include/viewUtils.php && sudo grep -Fc 'if($automondisc)' /var/www/html/allscan/astapi/connect.php
 ```
 
-Both final counts should be `1`.
+All four final counts should be `1`.
 
 ## Rollback
 
-Restore the four files bearing the same timestamp printed by the installer:
+Restore the five files bearing the same timestamp printed by the installer:
 
 ```bash
-sudo cp -a /var/www/html/allscan/index.php.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/index.php && sudo cp -a /var/www/html/allscan/include/viewUtils.php.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/include/viewUtils.php && sudo cp -a /var/www/html/allscan/js/main.js.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/js/main.js && sudo cp -a /var/www/html/allscan/css/main.css.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/css/main.css
+sudo cp -a /var/www/html/allscan/index.php.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/index.php && sudo cp -a /var/www/html/allscan/include/viewUtils.php.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/include/viewUtils.php && sudo cp -a /var/www/html/allscan/js/main.js.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/js/main.js && sudo cp -a /var/www/html/allscan/css/main.css.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/css/main.css && sudo cp -a /var/www/html/allscan/astapi/connect.php.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/astapi/connect.php
 ```
 
-Replace the timestamp, restore all four matching files, and press **Ctrl+F5**.
+Replace the timestamp, restore all five matching files, and press **Ctrl+F5**.
 
 To reverse an individual Favorite edit, copy its matching `.before-edit-YYYYMMDD-HHMMSS` backup over the active `favorites*.ini` file.
 
 ## Official AllScan updates
 
-David's official updater may replace locally modified files. After an update, press **Ctrl+F5** and check both features. Run `allscan-mods.sh` again if needed.
+David's official updater may replace locally modified files. After an update, press **Ctrl+F5** and check the editor, sorting, and Monitor-disconnect option. Run `allscan-mods.sh` again if needed.
 
 If the reviewed v1.01-compatible structure is unchanged, the installer safely reapplies the package. If the upstream version or structure changes, it stops without modifying live files so compatibility can be reviewed first.
 
@@ -219,7 +243,7 @@ The selected entry is not a standard adjacent `label[]` and `cmd[] = "rpt cmd %n
 | Default web root | `/var/www/html/allscan` |
 | Nodes | `node44690` and a separate test node |
 
-The editor, layout, Save & Close workflow, validation, backups, Add/Delete controls, connection controls, and Rx%/LCnt sorting were browser-tested before consolidation.
+The editor, layout, Save & Close workflow, validation, backups, Add/Delete controls, connection controls, Rx%/LCnt sorting, and Disconnect before Monitor behavior were browser-tested before consolidation.
 
 ## Design principles
 

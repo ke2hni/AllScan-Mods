@@ -36,9 +36,10 @@ INDEX_FILE=$ALLSCAN_DIR/index.php
 VIEW_FILE=$ALLSCAN_DIR/include/viewUtils.php
 JS_FILE=$ALLSCAN_DIR/js/main.js
 CSS_FILE=$ALLSCAN_DIR/css/main.css
+CONNECT_FILE=$ALLSCAN_DIR/astapi/connect.php
 COMMON_FILE=$ALLSCAN_DIR/include/common.php
 
-for required in "$INDEX_FILE" "$VIEW_FILE" "$JS_FILE" "$CSS_FILE" "$COMMON_FILE"; do
+for required in "$INDEX_FILE" "$VIEW_FILE" "$JS_FILE" "$CSS_FILE" "$CONNECT_FILE" "$COMMON_FILE"; do
     [[ -f $required ]] || { echo "ERROR: Required AllScan file not found: $required" >&2; exit 1; }
 done
 
@@ -57,21 +58,24 @@ stage_index=$work_dir/index.php
 stage_view=$work_dir/viewUtils.php
 stage_js=$work_dir/main.js
 stage_css=$work_dir/main.css
+stage_connect=$work_dir/connect.php
 cp -- "$INDEX_FILE" "$stage_index"
 cp -- "$VIEW_FILE" "$stage_view"
 cp -- "$JS_FILE" "$stage_js"
 cp -- "$CSS_FILE" "$stage_css"
+cp -- "$CONNECT_FILE" "$stage_connect"
 
-python3 - "$stage_index" "$stage_view" "$stage_js" "$stage_css" <<'PY'
+python3 - "$stage_index" "$stage_view" "$stage_js" "$stage_css" "$stage_connect" <<'PY'
 from pathlib import Path
 import re
 import sys
 
-index_path, view_path, js_path, css_path = map(Path, sys.argv[1:5])
+index_path, view_path, js_path, css_path, connect_path = map(Path, sys.argv[1:6])
 index = index_path.read_text(encoding="utf-8")
 view = view_path.read_text(encoding="utf-8")
 js = js_path.read_text(encoding="utf-8")
 css = css_path.read_text(encoding="utf-8")
+connect = connect_path.read_text(encoding="utf-8")
 
 def replace_once(text, old, new, description):
     count = text.count(old)
@@ -245,6 +249,65 @@ if final_view_marker not in view:
 </div>'''
     view = replace_once(view, '</fieldset></form>', modal + '\n</fieldset></form>', "the node-control form closing tag")
 
+# Independent Disconnect before Monitor option. Keep all three checkboxes together.
+monitor_checkbox = '''<input type=checkbox id="automondisc"><label
+\tfor="automondisc">Disconnect before Monitor</label>'''
+permanent_checkbox = '''<input type=checkbox id="permanent"><label for="permanent">Permanent</label>&nbsp;'''
+autodisc_checkbox = '''<input type=checkbox id="autodisc"' . ($gCfg[autodisc_def] ? ' checked' : '') . '><label
+\tfor="autodisc">Disconnect before Connect</label>'''
+base_checkbox_row = permanent_checkbox + '\n' + autodisc_checkbox
+old_two_line_row = base_checkbox_row + '\n<br>\n' + monitor_checkbox
+unwrapped_checkbox_row = base_checkbox_row + '&nbsp;\n' + monitor_checkbox
+final_checkbox_row = '<span style="white-space:nowrap">' + unwrapped_checkbox_row + '</span>'
+if final_checkbox_row in view:
+    pass
+elif old_two_line_row in view:
+    view = replace_once(view, old_two_line_row, final_checkbox_row, "two-line Monitor checkbox layout")
+elif unwrapped_checkbox_row in view:
+    view = replace_once(view, unwrapped_checkbox_row, final_checkbox_row, "unwrapped Monitor checkbox layout")
+elif monitor_checkbox not in view:
+    view = replace_once(view, base_checkbox_row, final_checkbox_row, "existing checkbox row")
+
+old_connect_js = '''\t// Disconnect before Connect checkbox. Only applies if conncnt > 0
+\tvar autodisc = document.getElementById('autodisc').checked;
+\tif(conncnt.value < 1)
+\t\tautodisc = false;
+\tparms = 'remotenode='+remoteNode + '&perm='+perm + '&button='+button + '&localnode='+localNode + '&autodisc='+autodisc;'''
+new_connect_js = '''\t// Independent disconnect-before actions. They apply only when links are connected.
+\tvar autodisc = document.getElementById('autodisc').checked;
+\tvar automondisc = (button === 'monitor') && document.getElementById('automondisc').checked;
+\tif(conncnt.value < 1) {
+\t\tautodisc = false;
+\t\tautomondisc = false;
+\t}
+\tparms = 'remotenode='+remoteNode + '&perm='+perm + '&button='+button + '&localnode='+localNode
+\t\t+ '&autodisc='+autodisc + '&automondisc='+automondisc;'''
+if new_connect_js not in js:
+    js = replace_once(js, old_connect_js, new_connect_js, "connectNode disconnect options")
+
+old_connect_fields = "$fields = ['remotenode', 'button', 'localnode', 'perm', 'autodisc'];"
+new_connect_fields = "$fields = ['remotenode', 'button', 'localnode', 'perm', 'autodisc', 'automondisc'];"
+if new_connect_fields not in connect:
+    connect = replace_once(connect, old_connect_fields, new_connect_fields, "connect.php request-field list")
+
+old_connect_bool = "$autodisc = ($autodisc === 'true');"
+new_connect_bool = "$autodisc = ($autodisc === 'true');\n$automondisc = ($automondisc === 'true');"
+if new_connect_bool not in connect:
+    connect = replace_once(connect, old_connect_bool, new_connect_bool, "autodisc boolean conversion")
+
+old_monitor_action = '''\tcase 'monitor':
+\t\tif($perm) {'''
+new_monitor_action = '''\tcase 'monitor':
+\t\tif($automondisc) {
+\t\t\techo "Disconnect all nodes from $localnode before Monitor...";
+\t\t\t$resp = $ami->command($fp, "rpt cmd $localnode ilink 6 0");
+\t\t\techo $resp . BR;
+\t\t\tusleep(500000);
+\t\t}
+\t\tif($perm) {'''
+if new_monitor_action not in connect:
+    connect = replace_once(connect, old_monitor_action, new_monitor_action, "Monitor action")
+
 sorter = r'''
 
 // Local modification: client-side sorting for Favorites Rx% and LCnt columns.
@@ -389,6 +452,13 @@ checks = {
     'editor CSS': css_marker in css,
     'Rx% live column': 'var busy = cells[5];' in js,
     'LCnt live column': 'var lcnt = cells[6];' in js,
+    'Monitor checkbox': view.count('id="automondisc"') == 1,
+    'one-line checkbox row': final_checkbox_row in view,
+    'Monitor JavaScript flag': js.count("var automondisc = (button === 'monitor')") == 1,
+    'Monitor request parameter': js.count("'&automondisc='+automondisc") == 1,
+    'Monitor API field': connect.count("'automondisc'") == 1,
+    'Monitor API boolean': connect.count("$automondisc = ($automondisc === 'true');") == 1,
+    'Monitor disconnect action': connect.count('if($automondisc)') == 1,
 }
 failed = [name for name, ok in checks.items() if not ok]
 if failed:
@@ -398,11 +468,13 @@ index_path.write_text(index, encoding="utf-8")
 view_path.write_text(view, encoding="utf-8")
 js_path.write_text(js, encoding="utf-8")
 css_path.write_text(css, encoding="utf-8")
+connect_path.write_text(connect, encoding="utf-8")
 print('patch-ready')
 PY
 
 if cmp -s "$INDEX_FILE" "$stage_index" && cmp -s "$VIEW_FILE" "$stage_view" && \
-   cmp -s "$JS_FILE" "$stage_js" && cmp -s "$CSS_FILE" "$stage_css"; then
+   cmp -s "$JS_FILE" "$stage_js" && cmp -s "$CSS_FILE" "$stage_css" && \
+   cmp -s "$CONNECT_FILE" "$stage_connect"; then
     echo "AllScan Mods are already installed. No changes made."
     exit 0
 fi
@@ -410,6 +482,7 @@ fi
 if command -v php >/dev/null 2>&1; then
     php -l "$stage_index" >/dev/null
     php -l "$stage_view" >/dev/null
+    php -l "$stage_connect" >/dev/null
 else
     echo "WARNING: php was not found; PHP syntax validation was skipped."
 fi
@@ -424,10 +497,12 @@ index_backup=$INDEX_FILE.before-allscan-mods-$timestamp
 view_backup=$VIEW_FILE.before-allscan-mods-$timestamp
 js_backup=$JS_FILE.before-allscan-mods-$timestamp
 css_backup=$CSS_FILE.before-allscan-mods-$timestamp
+connect_backup=$CONNECT_FILE.before-allscan-mods-$timestamp
 cp -a -- "$INDEX_FILE" "$index_backup"
 cp -a -- "$VIEW_FILE" "$view_backup"
 cp -a -- "$JS_FILE" "$js_backup"
 cp -a -- "$CSS_FILE" "$css_backup"
+cp -a -- "$CONNECT_FILE" "$connect_backup"
 
 installed=false
 rollback() {
@@ -436,6 +511,7 @@ rollback() {
         cp -a -- "$view_backup" "$VIEW_FILE" 2>/dev/null || true
         cp -a -- "$js_backup" "$JS_FILE" 2>/dev/null || true
         cp -a -- "$css_backup" "$CSS_FILE" 2>/dev/null || true
+        cp -a -- "$connect_backup" "$CONNECT_FILE" 2>/dev/null || true
         echo "ERROR: Installation failed; the original files were restored." >&2
     fi
 }
@@ -445,15 +521,19 @@ cp -- "$stage_index" "$INDEX_FILE"
 cp -- "$stage_view" "$VIEW_FILE"
 cp -- "$stage_js" "$JS_FILE"
 cp -- "$stage_css" "$CSS_FILE"
+cp -- "$stage_connect" "$CONNECT_FILE"
 
 grep -Fq 'case "Edit Favorite":' "$INDEX_FILE"
 grep -Fq 'Save &amp; Close</button>' "$VIEW_FILE"
+grep -Fq 'Disconnect before Monitor</label>' "$VIEW_FILE"
+grep -Fq 'if($automondisc)' "$CONNECT_FILE"
 [[ $(grep -Ec 'function[[:space:]]+sortFavStats[[:space:]]*\(' "$JS_FILE") -eq 1 ]]
 [[ $(grep -Ec 'function[[:space:]]+openFavoriteEditor[[:space:]]*\(' "$JS_FILE") -eq 1 ]]
 
 if command -v php >/dev/null 2>&1; then
     php -l "$INDEX_FILE" >/dev/null
     php -l "$VIEW_FILE" >/dev/null
+    php -l "$CONNECT_FILE" >/dev/null
 fi
 if command -v node >/dev/null 2>&1; then
     node --check "$JS_FILE"
@@ -468,4 +548,5 @@ echo "  $index_backup"
 echo "  $view_backup"
 echo "  $js_backup"
 echo "  $css_backup"
+echo "  $connect_backup"
 echo "Hard-refresh the AllScan page with Ctrl+F5."
