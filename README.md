@@ -1,340 +1,247 @@
 <div align="center">
 
-# 📊 AllScan Rx% / LCnt Sort Modification
+# AllScan Mods
 
-### Safe, one-command sorting enhancement for the AllScan Favorites table
+### Favorites editing and live Rx% / LCnt sorting for AllScan
 
 ![Platform](https://img.shields.io/badge/Platform-AllStarLink%203-0b7285?style=for-the-badge)
 ![Debian](https://img.shields.io/badge/Debian-12%20%7C%2013-a81d33?style=for-the-badge&logo=debian&logoColor=white)
 ![AllScan](https://img.shields.io/badge/AllScan-v1.01-2f9e44?style=for-the-badge)
 ![Installer](https://img.shields.io/badge/Installer-Idempotent-6741d9?style=for-the-badge)
-![License](https://img.shields.io/badge/License-MIT-f59f00?style=for-the-badge)
 
-**Adds clickable sorting to the live `Rx%` and `LCnt` columns without replacing AllScan's original statistics or node-control logic.**
+**One safe installer adds a main-page Favorites editor and clickable sorting for AllScan's live `Rx%` and `LCnt` columns.**
 
 </div>
 
----
-
-## ✨ Overview
-
-AllScan normally provides server-side sorting for the first five Favorites columns:
-
-| Column | Stock AllScan sorting |
-|:--|:--:|
-| `#` | ✅ |
-| `Node` | ✅ |
-| `Name` | ✅ |
-| `Desc` | ✅ |
-| `Location` | ✅ |
-| `Rx%` | ❌ |
-| `LCnt` | ❌ |
-
-`Rx%` and `LCnt` cannot use the original PHP sorter because their values are not present when PHP initially builds the table. They are populated later in the browser from live AllStarLink statistics.
-
-The included installer adds a small client-side sorter that works with those live values while preserving the original AllScan behavior.
-
 > [!NOTE]
-> This is an unofficial local modification for AllScan. AllScan itself is authored by **David Gleason, NR9V**, and is available from the [official AllScan repository](https://github.com/davidgsd/AllScan).
+> This is an unofficial modification. AllScan is created by **David Gleason, NR9V**. The official upstream project is [davidgsd/AllScan](https://github.com/davidgsd/AllScan) and remains the source of truth.
 
----
+## Features
 
-## 🚀 Features
+### Edit Favorites from the main page
+
+- Keeps **Add Favorite**, **Edit Favorite**, and **Delete Favorite** together.
+- Places **Connect**, **Disconnect**, and **Monitor** beside the Node# field.
+- Leaves **Local Mon**, **DTMF**, **Permanent**, and **Disconnect before Connect** available.
+- Click a favorite's node number, then click **Edit Favorite**.
+- Edit the node number and friendly name/label together in an AllScan-styled dialog.
+- Use **Save & Close** to apply the edit or **Cancel** to leave the file unchanged.
+- Click outside the dialog or press Escape to close it.
+- Rejects invalid node numbers, duplicate destinations, malformed labels, and unauthorized favorites-file paths.
+- Creates a timestamped backup of the selected `favorites*.ini` before every edit.
+- Validates the edited INI and restores its backup automatically if validation fails.
+
+AllScan's Description and Location columns remain sourced from the AllStarLink database. The editor changes only the favorite's node number and friendly label.
+
+### Sort Rx% and LCnt
 
 - Click `Rx%` or `LCnt` to sort the Favorites table.
-- First click sorts from highest to lowest.
-- Second click reverses the order.
-- Switching columns starts with highest-to-lowest sorting.
-- Direction arrows show the active order: `▼` descending or `▲` ascending.
-- Rows whose live statistics have not arrived remain at the bottom.
-- Equal values retain their current relative order.
-- Existing row elements are moved instead of recreated.
-- Node click and double-click handlers remain attached.
-- Live statistics and connected-node highlighting continue working.
+- First click sorts highest to lowest; the next click reverses the order.
+- Direction arrows indicate ascending or descending order.
+- Rows without live statistics remain at the bottom.
+- Equal values retain their relative order.
+- Existing node click/double-click actions remain attached.
 - No additional AllStarLink statistics requests are made.
-- No service restart or reboot is required.
+- Live values continue updating without automatically moving rows after every update.
 
----
+## Installation
 
-## 🛡️ Safety First
+Repository: [github.com/ke2hni/AllScan-Mods](https://github.com/ke2hni/AllScan-Mods)
 
-The installer is intentionally conservative and production-oriented.
+### Git
 
-### Automatic backups
+New download and installation:
 
-Before changing either live file, it creates timestamped copies similar to:
-
-```text
-/var/www/html/allscan/index.php.before-rx-lcnt-sort-YYYYMMDD-HHMMSS
-/var/www/html/allscan/js/main.js.before-rx-lcnt-sort-YYYYMMDD-HHMMSS
+```bash
+cd /home/asl && git clone https://github.com/ke2hni/AllScan-Mods.git && cd AllScan-Mods && chmod 755 allscan-mods.sh && sudo ./allscan-mods.sh
 ```
 
-### Compatibility checks
+Update an existing clone and run the latest installer:
 
-The script verifies that:
-
-- Both required AllScan files exist.
-- The expected stock Favorites header is present.
-- AllScan still uses column `5` for `Rx%`.
-- AllScan still uses column `6` for `LCnt`.
-- Exactly one `sortFavStats()` function exists after patching.
-
-If a future AllScan update changes the expected structure, the installer stops without modifying the live files.
-
-### Automatic failure recovery
-
-If an error occurs after backups are created, the installer automatically restores both original files.
-
-### Safe repeated execution
-
-The installer is idempotent. Running it again after a successful installation reports:
-
-```text
-AllScan Rx% / LCnt sorting is already installed. No changes made.
+```bash
+cd /home/asl/AllScan-Mods && git pull --ff-only && chmod 755 allscan-mods.sh && sudo ./allscan-mods.sh
 ```
 
----
+### Wget
 
-## 📁 Files Modified
+```bash
+cd /home/asl && wget -O allscan-mods.sh https://raw.githubusercontent.com/ke2hni/AllScan-Mods/refs/heads/main/allscan-mods.sh && chmod 755 allscan-mods.sh && sudo ./allscan-mods.sh
+```
 
-Only these two AllScan files are changed:
+### Curl
+
+```bash
+cd /home/asl && curl -fL https://raw.githubusercontent.com/ke2hni/AllScan-Mods/refs/heads/main/allscan-mods.sh -o allscan-mods.sh && chmod 755 allscan-mods.sh && sudo ./allscan-mods.sh
+```
+
+Use only one method. Every terminal example is one copy-and-paste command.
+
+After installation, open AllScan and press **Ctrl+F5** to reload the page, JavaScript, and CSS.
+
+## Custom AllScan directory
+
+The default directory is `/var/www/html/allscan`.
+
+```bash
+cd /home/asl && chmod 755 allscan-mods.sh && sudo ./allscan-mods.sh --allscan-dir /your/allscan/path
+```
+
+HamVOIP example:
+
+```bash
+cd /home/asl && chmod 755 allscan-mods.sh && sudo ./allscan-mods.sh --allscan-dir /srv/http/allscan
+```
+
+## Safety
+
+The installer:
+
+- Supports David Gleason's AllScan v1.01-compatible source layout.
+- Works on a clean AllScan v1.01 installation.
+- Upgrades an installation containing only the earlier Rx%/LCnt sorting modification.
+- Recognizes the fully installed package and exits without making changes.
+- Stages every change before touching live files.
+- Stops if required upstream structures are missing or ambiguous.
+- Runs PHP syntax validation when PHP is installed.
+- Runs JavaScript syntax validation when Node.js is installed.
+- Preserves existing file ownership and permissions.
+- Automatically restores all code files if installation fails after backups are created.
+- Does not restart Asterisk, the web server, or the node.
+
+It creates matching timestamped backups:
+
+```text
+index.php.before-allscan-mods-YYYYMMDD-HHMMSS
+include/viewUtils.php.before-allscan-mods-YYYYMMDD-HHMMSS
+js/main.js.before-allscan-mods-YYYYMMDD-HHMMSS
+css/main.css.before-allscan-mods-YYYYMMDD-HHMMSS
+```
+
+Each successful Favorite edit separately creates:
+
+```text
+favorites.ini.before-edit-YYYYMMDD-HHMMSS
+```
+
+The actual name matches whichever `favorites*.ini` file is selected in AllScan.
+
+## Files modified
 
 ```text
 /var/www/html/allscan/index.php
+/var/www/html/allscan/include/viewUtils.php
 /var/www/html/allscan/js/main.js
+/var/www/html/allscan/css/main.css
 ```
 
-The modification does **not** change:
+The package does not modify AllScan's statistics request frequency, request-rate protection, Asterisk configuration, database, or the existing PHP sorter for the first five columns.
 
-- `stats/stats.php`
-- AllStarLink statistics request frequency
-- AllScan's dynamic request-rate protection
-- Asterisk communications
-- Connect or disconnect behavior
-- `favorites.ini`
-- The AllScan database
-- Existing PHP sorting for the first five columns
+`favorites*.ini` changes only when an authorized user explicitly saves an edit.
 
----
+## Verification
 
-## 📥 Download
+### Favorites editor
 
-Choose any one of the following methods directly from the AllStarLink node. No desktop operating system or separate file-transfer program is required.
+1. Click an existing favorite's node number.
+2. Click **Edit Favorite**.
+3. Confirm that Node Number and Friendly Name/Label appear together.
+4. Change the friendly label and click **Save & Close**.
+5. Confirm that the updated name appears in the table.
+6. Reopen the editor and confirm the saved value is loaded.
 
-Repository: **[github.com/ke2hni/AllScan-Mods](https://github.com/ke2hni/AllScan-Mods)**
+### Rx% / LCnt sorting
 
-### Option 1 — Git
+1. Wait for live values to appear.
+2. Click `Rx%` and confirm the highest value moves to the top with a `▼` arrow.
+3. Click it again and confirm the order reverses with a `▲` arrow.
+4. Repeat with `LCnt`.
+5. Click and double-click nodes to confirm the original controls still work.
 
-Use this method if `git` is installed. It downloads the complete repository and makes future updates easy:
+### File check
 
 ```bash
-cd /home/asl && git clone https://github.com/ke2hni/AllScan-Mods.git && cd AllScan-Mods && chmod 755 apply-allscan-rx-lcnt-sort.sh && sudo ./apply-allscan-rx-lcnt-sort.sh
+sudo grep -F 'case "Edit Favorite":' /var/www/html/allscan/index.php && sudo grep -Ec 'function[[:space:]]+sortFavStats[[:space:]]*\(' /var/www/html/allscan/js/main.js && sudo grep -Ec 'function[[:space:]]+openFavoriteEditor[[:space:]]*\(' /var/www/html/allscan/js/main.js
 ```
 
-To update an existing cloned copy and run the latest version:
+Both final counts should be `1`.
+
+## Rollback
+
+Restore the four files bearing the same timestamp printed by the installer:
 
 ```bash
-cd /home/asl/AllScan-Mods && git pull --ff-only && chmod 755 apply-allscan-rx-lcnt-sort.sh && sudo ./apply-allscan-rx-lcnt-sort.sh
+sudo cp -a /var/www/html/allscan/index.php.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/index.php && sudo cp -a /var/www/html/allscan/include/viewUtils.php.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/include/viewUtils.php && sudo cp -a /var/www/html/allscan/js/main.js.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/js/main.js && sudo cp -a /var/www/html/allscan/css/main.css.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/css/main.css
 ```
 
-### Option 2 — Wget
+Replace the timestamp, restore all four matching files, and press **Ctrl+F5**.
 
-Use this method to download only the installer script:
+To reverse an individual Favorite edit, copy its matching `.before-edit-YYYYMMDD-HHMMSS` backup over the active `favorites*.ini` file.
 
-```bash
-cd /home/asl && wget -O apply-allscan-rx-lcnt-sort.sh https://raw.githubusercontent.com/ke2hni/AllScan-Mods/refs/heads/main/apply-allscan-rx-lcnt-sort.sh && chmod 755 apply-allscan-rx-lcnt-sort.sh && sudo ./apply-allscan-rx-lcnt-sort.sh
-```
+## Official AllScan updates
 
-### Option 3 — Curl
+David's official updater may replace locally modified files. After an update, press **Ctrl+F5** and check both features. Run `allscan-mods.sh` again if needed.
 
-Use this method if `curl` is installed instead of `wget`:
+If the reviewed v1.01-compatible structure is unchanged, the installer safely reapplies the package. If the upstream version or structure changes, it stops without modifying live files so compatibility can be reviewed first.
 
-```bash
-cd /home/asl && curl -fL https://raw.githubusercontent.com/ke2hni/AllScan-Mods/refs/heads/main/apply-allscan-rx-lcnt-sort.sh -o apply-allscan-rx-lcnt-sort.sh && chmod 755 apply-allscan-rx-lcnt-sort.sh && sudo ./apply-allscan-rx-lcnt-sort.sh
-```
-
-> [!TIP]
-> The `git`, `wget`, and `curl` commands above each download, apply executable permissions, and run the installer in one copy-and-paste line. Use only one method.
-
----
-
-## ⚙️ Installation
-
-The commands in the Download section already install and execute the modification. If the script is already present in `/home/asl`, run:
-
-```bash
-cd /home/asl && chmod 755 apply-allscan-rx-lcnt-sort.sh && sudo ./apply-allscan-rx-lcnt-sort.sh
-```
-
-This command:
-
-1. Changes to `/home/asl`.
-2. Applies executable permissions with `chmod 755`.
-3. Runs the installer with the root permissions required to modify AllScan.
-
-When installation succeeds, the script displays the two backup filenames and:
-
-```text
-AllScan Rx% / LCnt sorting installed successfully.
-Hard-refresh the AllScan page with Ctrl+F5.
-```
-
-Afterward, open AllScan and press **Ctrl+F5** so the browser loads the updated JavaScript.
-
----
-
-## 🧭 Custom AllScan Directory
-
-The default AllScan directory is:
-
-```text
-/var/www/html/allscan
-```
-
-If your installation uses another directory, supply it explicitly:
-
-```bash
-cd /home/asl && chmod 755 apply-allscan-rx-lcnt-sort.sh && sudo ./apply-allscan-rx-lcnt-sort.sh --allscan-dir /your/allscan/path
-```
-
-For example, the common HamVOIP web-root location would be:
-
-```bash
-cd /home/asl && chmod 755 apply-allscan-rx-lcnt-sort.sh && sudo ./apply-allscan-rx-lcnt-sort.sh --allscan-dir /srv/http/allscan
-```
-
----
-
-## ✅ Verification
-
-### Browser verification
-
-1. Hard-refresh AllScan with **Ctrl+F5**.
-2. Wait for live values to appear under `Rx%` and `LCnt`.
-3. Click `Rx%` once and confirm the highest value moves to the top.
-4. Confirm a `▼` arrow appears next to `Rx%`.
-5. Click `Rx%` again and confirm the lowest value moves to the top with `▲`.
-6. Repeat the same check with `LCnt`.
-7. Click or double-click a node and confirm the normal AllScan controls still work.
-
-### File verification
-
-Use this single command to confirm that both header links and exactly one sorter function are installed:
-
-```bash
-sudo grep -F 'sortFavStats' /var/www/html/allscan/index.php && sudo grep -Ec 'function[[:space:]]+sortFavStats[[:space:]]*\(' /var/www/html/allscan/js/main.js
-```
-
-The final number should be:
-
-```text
-1
-```
-
----
-
-## ↩️ Manual Rollback
-
-The successful installation output displays the exact backup filenames. Restore those two matching timestamped backups with:
-
-```bash
-sudo cp -a /var/www/html/allscan/index.php.before-rx-lcnt-sort-YYYYMMDD-HHMMSS /var/www/html/allscan/index.php && sudo cp -a /var/www/html/allscan/js/main.js.before-rx-lcnt-sort-YYYYMMDD-HHMMSS /var/www/html/allscan/js/main.js
-```
-
-Replace `YYYYMMDD-HHMMSS` with the timestamp shown by the installer, then hard-refresh the browser with **Ctrl+F5**.
-
-> [!IMPORTANT]
-> Always restore `index.php` and `main.js` backups bearing the same timestamp.
-
----
-
-## 🔄 AllScan Updates
-
-The official AllScan updater may replace `index.php` or `js/main.js`, removing this local modification.
-
-After updating AllScan:
-
-1. Hard-refresh the browser and check whether `Rx%` and `LCnt` remain clickable.
-2. If the modification was removed, run the installer again.
-3. If the updated AllScan structure remains compatible, the script safely reapplies the change.
-4. If upstream changed the relevant code, the installer stops without modifying anything so the patch can be reviewed first.
-
----
-
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### `Run this script with sudo`
 
-Run the installer using the complete command from the Installation section.
+Run the complete command from the Installation section.
 
 ### `Required AllScan file not found`
 
-Confirm AllScan is installed under `/var/www/html/allscan`, or use `--allscan-dir` with the correct location.
+Confirm AllScan is under `/var/www/html/allscan`, or use `--allscan-dir`.
 
-### `Expected the stock Favorites header exactly once`
+### `supports ... AllScan v1.01 layout only`
 
-The file may already contain another modification, or a newer AllScan release may have changed the header. The installer intentionally leaves the node unchanged. Review the current files before attempting a manual patch.
+The installed AllScan version differs from the reviewed version. Review David's newer source before updating this package.
 
-### The headers do not appear clickable
+### Compatibility or expected-structure error
 
-Press **Ctrl+F5** or clear the browser cache. AllScan's previous JavaScript may still be cached.
+The installer found an unexpected local or upstream modification and intentionally left live files unchanged.
 
-### The table does not automatically move after every live update
+### Changes do not appear
 
-This is intentional. Live values continue updating, but the table only sorts when a header is clicked. This prevents rows from jumping while the table is being used.
+Press **Ctrl+F5** or clear the browser cache.
 
----
+### Matching label/cmd pair was not found
 
-## 🧪 Tested Configuration
+The selected entry is not a standard adjacent `label[]` and `cmd[] = "rpt cmd %node% ilink 3 ..."` pair, so it is intentionally left unchanged.
+
+## Tested configuration
 
 | Component | Tested configuration |
 |:--|:--|
-| Node | `node44690` |
 | Platform | AllStarLink 3 |
 | Operating system | Debian 13 |
 | AllScan | v1.01-compatible source layout |
-| Web root | `/var/www/html/allscan` |
+| Default web root | `/var/www/html/allscan` |
+| Nodes | `node44690` and a separate test node |
 
-The installer also supports an alternate directory through `--allscan-dir` and includes a documented HamVOIP path example.
+The editor, layout, Save & Close workflow, validation, backups, Add/Delete controls, connection controls, and Rx%/LCnt sorting were browser-tested before consolidation.
 
----
+## Design principles
 
-## 🎯 Design Philosophy
-
-- Preserve the official AllScan application.
+- Preserve David's official AllScan application and attribution.
 - Make the smallest practical local changes.
-- Never silently guess when upstream code is unexpected.
-- Back up before modifying production files.
-- Keep installation repeatable and easy to audit.
-- Avoid extra network requests or background processes.
-- Make rollback simple and transparent.
+- Never guess when upstream code is unexpected.
+- Validate and back up before modifying live files.
+- Keep installation repeatable and rollback transparent.
+- Add no services, background processes, or statistics requests.
 
----
-
-## 👤 Author
+## Author
 
 **KE2HNI**
 
-Created as an enhancement for personal AllStarLink nodes running AllScan.
+AllScan is a separate open-source project created by **David Gleason, NR9V**. This package is not an official AllScan release and is not affiliated with or endorsed by the AllScan author.
 
-AllScan is a separate open-source project created by **David Gleason, NR9V**. This modification is not an official AllScan release and is not affiliated with or endorsed by the AllScan author.
+## License
 
----
-
-## 📄 License
-
-MIT License
-
-Use at your own risk. Review the script before execution and keep current backups of important node configuration and application files.
-
-Testing modifications on a non-production node first is recommended whenever possible.
-
----
+MIT License. Use at your own risk and keep current backups.
 
 <div align="center">
 
-### Built for safer, cleaner AllStarLink node customization
-
-**KE2HNI · AllScan Rx% / LCnt Sort Modification**
+**KE2HNI · AllScan Mods**
 
 </div>
