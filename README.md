@@ -262,7 +262,9 @@ AllScan is a separate open-source project created by **David Gleason, NR9V**. Th
 
 ## License
 
-MIT License. Use at your own risk and keep current backups.
+This project is licensed under GPL-3.0-only. See [LICENSE](LICENSE).
+
+AllScan is a separate GPL-3.0-licensed project created by David Gleason, NR9V. This repository contains unofficial modifications and is not affiliated with or endorsed by the AllScan author.
 
 <div align="center">
 
