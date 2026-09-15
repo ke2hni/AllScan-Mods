@@ -575,9 +575,13 @@ document.addEventListener('keydown', function(event) {
 });
 '''
 if editor_marker not in js:
-    old_editor_marker = '// Local modification: select and safely edit an AllScan Favorite from the main page.'
-    if old_editor_marker in js:
-        js = js[:js.index(old_editor_marker)].rstrip()
+    old_editor_markers = [
+        '// Local modification: AllScan-styled Favorites editor with Node and Friendly Label fields.',
+        '// Local modification: select and safely edit an AllScan Favorite from the main page.',
+    ]
+    old_positions = [js.index(marker) for marker in old_editor_markers if marker in js]
+    if old_positions:
+        js = js[:min(old_positions)].rstrip()
     js = js.rstrip() + editor_js + '\n'
 
 css_marker = '/* Local modification: AllScan Favorites editor dialog. */'
