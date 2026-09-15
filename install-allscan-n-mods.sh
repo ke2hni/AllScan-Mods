@@ -399,6 +399,12 @@ if final_view_marker not in view:
 </div>'''
     view = replace_once(view, '</fieldset></form>', modal + '\n</fieldset></form>', "the node-control form closing tag")
 
+# Upgrade an already-installed editor dialog that predates the Order field.
+if 'id="editorder"' not in view:
+    view = replace_once(view, '<input type=hidden id="editlabel" name="editlabel" value="">', '<input type=hidden id="editlabel" name="editlabel" value="">\n<input type=hidden id="editorder" name="editorder" value="">', "the existing edit hidden fields")
+if 'id="favoriteEditOrder"' not in view:
+    view = replace_once(view, '<label for="favoriteEditLabel">Friendly Name/Label</label>', '<label for="favoriteEditOrder">Order</label>\n<input type="number" min="1" step="1" id="favoriteEditOrder">\n<label for="favoriteEditLabel">Friendly Name/Label</label>', "the existing Favorites editor fields")
+
 # Independent Disconnect before Monitor option. Keep all three checkboxes together.
 monitor_checkbox = '''<input type=checkbox id="automondisc"><label
 \tfor="automondisc">Disconnect before Monitor</label>'''
