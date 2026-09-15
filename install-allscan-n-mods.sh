@@ -251,6 +251,7 @@ edit_case_marker = '\tcase "Edit Favorite":'
 edit_case = r'''	case "Edit Favorite":
 		$originalNode = isset($parms['originalnode']) ? trim($parms['originalnode']) : '';
 		$newLabel = isset($parms['editlabel']) ? trim($parms['editlabel']) : '';
+		$newOrder = isset($parms['editorder']) ? trim($parms['editorder']) : '';
 		$msg[] = "Edit Favorite node $originalNode requested";
 		if(!modifyOk()) {
 			$msg[] = error("Modify permission is required.");
@@ -277,6 +278,10 @@ edit_case = r'''	case "Edit Favorite":
 			strpos($newLabel, '"') !== false || strpos($newLabel, "\r") !== false ||
 			strpos($newLabel, "\n") !== false) {
 			$msg[] = error("Friendly label must be 1 to 120 plain-text characters and cannot contain double quotes or line breaks.");
+			break;
+		}
+		if(!preg_match('/^[1-9][0-9]*$/', $newOrder)) {
+			$msg[] = error("Order must be a positive number.");
 			break;
 		}
 		if(($favs = readFileLines($favsFile, $msg, false)) === false)
@@ -308,6 +313,13 @@ edit_case = r'''	case "Edit Favorite":
 			$msg[] = error("Matching label/cmd pair for node $originalNode was not found.");
 			break;
 		}
+		$favoritePairs = [];
+		foreach($favs as $i => $line) {
+			if(preg_match('/^\\s*label\\[\\]\\s*=\\s*".*"\\s*$/', $line) && isset($favs[$i + 1]) && preg_match($cmdPattern, $favs[$i + 1])) $favoritePairs[] = [$i, $i + 1];
+		}
+		$currentOrder = null;
+		foreach($favoritePairs as $pos => $pair) if($pair[0] === $labelLine) $currentOrder = $pos + 1;
+		if($currentOrder === null || (int)$newOrder > count($favoritePairs)) { $msg[] = error("Order must be between 1 and " . count($favoritePairs) . "."); break; }
 		$backup = $favsFile . '.before-edit-' . date('Ymd-His');
 		if(!copy($favsFile, $backup)) {
 			$msg[] = error("Unable to create Favorites backup $backup.");
@@ -315,6 +327,7 @@ edit_case = r'''	case "Edit Favorite":
 		}
 		$favs[$labelLine] = 'label[] = "' . $newLabel . ' ' . $node . '"';
 		$favs[$matchLine] = 'cmd[] = "rpt cmd %node% ilink 3 ' . $node . '"';
+		if((int)$newOrder !== $currentOrder) { $pair = [$favs[$labelLine], $favs[$matchLine]]; $remaining = []; foreach($favoritePairs as $p) if($p[0] !== $labelLine) $remaining[] = [$favs[$p[0]], $favs[$p[1]]]; array_splice($remaining, (int)$newOrder - 1, 0, [$pair]); foreach($favoritePairs as $k => $p) { $favs[$p[0]] = $remaining[$k][0]; $favs[$p[1]] = $remaining[$k][1]; } }
 		if(!writeFileLines($favsFile, $favs, $msg)) {
 			copy($backup, $favsFile);
 			break;
@@ -324,13 +337,17 @@ edit_case = r'''	case "Edit Favorite":
 			$msg[] = error("Edited Favorites file failed validation; the original was restored.");
 			break;
 		}
-		$msg[] = "Favorite node $originalNode updated to node $node with label: $newLabel";
+		$msg[] = "Favorite node $originalNode updated to node $node with label: $newLabel and order: $newOrder";
 		$msg[] = "Backup saved as $backup";
 		break;
 
 '''
 if edit_case_marker not in index:
     index = replace_once(index, '\tcase "Delete Favorite":', edit_case + '\tcase "Delete Favorite":', "Delete Favorite action")
+else:
+    index, replaced = re.subn(r'\tcase "Edit Favorite":.*?(?=\tcase "Delete Favorite":)', edit_case, index, count=1, flags=re.DOTALL)
+    if replaced != 1:
+        raise SystemExit("ERROR: Existing Edit Favorite action could not be upgraded safely. No live files were changed.")
 
 # Final node-control layout and editor dialog.
 final_view_marker = 'Save &amp; Close</button>'
@@ -349,6 +366,7 @@ if final_view_marker not in view:
     controls = '''<input type=hidden id="favsfile" name="favsfile" value="' . $favsFile .'">
 <input type=hidden id="originalnode" name="originalnode" value="">
 <input type=hidden id="editlabel" name="editlabel" value="">
+<input type=hidden id="editorder" name="editorder" value="">
 <label for="node">Node#</label><input type="text" inputmode="tel" pattern="[0-9a-dA-D\\*#]*"
 	id="node" name="node" maxlength="10" value="' . $remNode . '">
 <input type=button value="Connect" onClick="connectNode(\\'connect\\');">
@@ -368,6 +386,8 @@ if final_view_marker not in view:
 <h3 id="favoriteEditTitle">Edit Favorite</h3>
 <label for="favoriteEditNode">Node Number</label>
 <input type="text" inputmode="numeric" pattern="[0-9]*" id="favoriteEditNode" maxlength="8">
+<label for="favoriteEditOrder">Order</label>
+<input type="number" min="1" step="1" id="favoriteEditOrder">
 <label for="favoriteEditLabel">Friendly Name/Label</label>
 <input type="text" id="favoriteEditLabel" maxlength="120">
 <div class="favEditActions">
@@ -481,10 +501,10 @@ function sortFavStats(col)
 if len(re.findall(r'\bfunction\s+sortFavStats\s*\(', js)) == 0:
     js = js.rstrip() + sorter + '\n'
 
-editor_marker = '// Local modification: AllScan-styled Favorites editor with Node and Friendly Label fields.'
+editor_marker = '// Local modification: AllScan-styled Favorites editor with Node, Order, and Friendly Label fields.'
 editor_js = r'''
 
-// Local modification: AllScan-styled Favorites editor with Node and Friendly Label fields.
+// Local modification: AllScan-styled Favorites editor with Node, Order, and Friendly Label fields.
 function selectFavorite(cell) {
 	if(!cell) return;
 	var node = cell.textContent.trim();
@@ -513,8 +533,11 @@ function openFavoriteEditor() {
 	var modal = document.getElementById('favoriteEditModal');
 	var nodeInput = document.getElementById('favoriteEditNode');
 	var labelInput = document.getElementById('favoriteEditLabel');
+	var orderInput = document.getElementById('favoriteEditOrder');
 	nodeInput.value = rnode.dataset.favoriteNode || '';
 	labelInput.value = rnode.dataset.favoriteLabel || '';
+	var favCells = document.querySelectorAll('#favs td.nodeNum');
+	for(var oi = 0; oi < favCells.length; oi++) if(favCells[oi].textContent.trim() === (rnode.dataset.favoriteNode || '')) { orderInput.value = oi + 1; break; }
 	modal.hidden = false;
 	nodeInput.focus();
 	nodeInput.select();
@@ -530,6 +553,7 @@ function submitFavoriteEdit() {
 	var originalNode = rnode.dataset.favoriteNode || '';
 	var newNode = document.getElementById('favoriteEditNode').value.trim();
 	var newLabel = document.getElementById('favoriteEditLabel').value.trim();
+	var newOrder = document.getElementById('favoriteEditOrder').value.trim();
 	if(!/^[0-9]{4,8}$/.test(newNode)) {
 		alert('Node number must contain 4 to 8 digits.');
 		return false;
@@ -538,8 +562,10 @@ function submitFavoriteEdit() {
 		alert('Friendly label must be 1 to 120 characters and cannot contain double quotes or line breaks.');
 		return false;
 	}
+	if(!/^[1-9][0-9]*$/.test(newOrder)) { alert('Order must be a positive number.'); return false; }
 	document.getElementById('originalnode').value = originalNode;
 	document.getElementById('editlabel').value = newLabel;
+	document.getElementById('editorder').value = newOrder;
 	rnode.value = newNode;
 	return true;
 }

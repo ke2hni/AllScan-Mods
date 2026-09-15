@@ -26,11 +26,13 @@
 - Keeps **Permanent**, **Disconnect before Connect**, and **Disconnect before Monitor** together on one line.
 - Click a favorite's node number, then click **Edit Favorite**.
 - Edit the node number and friendly name/label together in an AllScan-styled dialog.
+- Edit the favorite's order number from the same dialog; moving a favorite inserts it at that position and shifts the other favorites automatically.
 - Use **Save & Close** to apply the edit or **Cancel** to leave the file unchanged.
 - Click outside the dialog or press Escape to close it.
 - Rejects invalid node numbers, duplicate destinations, malformed labels, and unauthorized favorites-file paths.
 - Creates a timestamped backup of the selected `favorites*.ini` before every edit.
 - Validates the edited INI and restores its backup automatically if validation fails.
+- Rejects zero, non-numeric, and out-of-range order values; no favorite is discarded when positions conflict.
 
 AllScan's Description and Location columns remain sourced from the AllStarLink database. The editor changes only the favorite's node number and friendly label.
 
@@ -174,9 +176,9 @@ The package does not modify AllScan's statistics request frequency, request-rate
 
 1. Click an existing favorite's node number.
 2. Click **Edit Favorite**.
-3. Confirm that Node Number and Friendly Name/Label appear together.
-4. Change the friendly label and click **Save & Close**.
-5. Confirm that the updated name appears in the table.
+3. Confirm that Node Number, Order, and Friendly Name/Label appear together.
+4. Change the order and/or friendly label and click **Save & Close**.
+5. Confirm that the selected favorite moves to the requested position and the other rows shift without loss.
 6. Reopen the editor and confirm the saved value is loaded.
 
 ### Rx% / LCnt sorting
