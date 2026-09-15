@@ -58,33 +58,46 @@ AllScan's Description and Location columns remain sourced from the AllStarLink d
 
 Repository: [github.com/ke2hni/AllScan-Mods](https://github.com/ke2hni/AllScan-Mods)
 
+This package contains two installers:
+
+- `allscan-mods.sh` is the original installer for nodes where AllScan is already installed. It only applies the AllScan Mods changes and does not install AllScan or its packages.
+- `install-allscan-n-mods.sh` is the new combined installer. It installs AllScan first when the required AllScan files are missing, verifies PHP SQLite support for Apache, and then applies AllScan Mods. If AllScan is already installed, it leaves the existing AllScan installation in place and proceeds with the modifications.
+
+Use `install-allscan-n-mods.sh` for a new node. Use `allscan-mods.sh` when AllScan is already installed or when you want the original modification-only behavior.
+
 ### Git
 
-New download and installation:
+New node: install AllScan and AllScan Mods:
 
 ```bash
-cd /home/asl && git clone https://github.com/ke2hni/AllScan-Mods.git && cd AllScan-Mods && chmod 755 allscan-mods.sh && sudo ./allscan-mods.sh
+cd /home/asl && git clone https://github.com/ke2hni/AllScan-Mods.git && cd AllScan-Mods && chmod 755 install-allscan-n-mods.sh && sudo ./install-allscan-n-mods.sh
 ```
 
-Update an existing clone and run the latest installer:
+Existing AllScan installation: apply or update AllScan Mods only:
 
 ```bash
 cd /home/asl/AllScan-Mods && git pull --ff-only && chmod 755 allscan-mods.sh && sudo ./allscan-mods.sh
 ```
 
+Existing clone, new combined installer:
+
+```bash
+cd /home/asl/AllScan-Mods && git pull --ff-only && chmod 755 install-allscan-n-mods.sh && sudo ./install-allscan-n-mods.sh
+```
+
 ### Wget
 
 ```bash
-cd /home/asl && wget -O allscan-mods.sh https://raw.githubusercontent.com/ke2hni/AllScan-Mods/refs/heads/main/allscan-mods.sh && chmod 755 allscan-mods.sh && sudo ./allscan-mods.sh
+cd /home/asl && wget -O install-allscan-n-mods.sh https://raw.githubusercontent.com/ke2hni/AllScan-Mods/refs/heads/main/install-allscan-n-mods.sh && chmod 755 install-allscan-n-mods.sh && sudo ./install-allscan-n-mods.sh
 ```
 
 ### Curl
 
 ```bash
-cd /home/asl && curl -fL https://raw.githubusercontent.com/ke2hni/AllScan-Mods/refs/heads/main/allscan-mods.sh -o allscan-mods.sh && chmod 755 allscan-mods.sh && sudo ./allscan-mods.sh
+cd /home/asl && curl -fL https://raw.githubusercontent.com/ke2hni/AllScan-Mods/refs/heads/main/install-allscan-n-mods.sh -o install-allscan-n-mods.sh && chmod 755 install-allscan-n-mods.sh && sudo ./install-allscan-n-mods.sh
 ```
 
-Use only one method. Every terminal example is one copy-and-paste command.
+The Wget and Curl examples use the combined installer. For an existing AllScan installation, download `allscan-mods.sh` instead. Use only one method. Every terminal example is one copy-and-paste command.
 
 After installation, open AllScan and press **Ctrl+F5** to reload the page, JavaScript, and CSS.
 
@@ -116,6 +129,9 @@ The installer:
 - Stops if required upstream structures are missing or ambiguous.
 - Runs PHP syntax validation when PHP is installed.
 - Runs JavaScript syntax validation when Node.js is installed.
+- The combined installer installs the official AllScan release only when the required AllScan files are missing.
+- The combined installer installs `php-sqlite3` when needed, enables `pdo_sqlite` and `sqlite3` for Apache PHP, restarts Apache when required, and verifies both extensions before modifying AllScan.
+- The combined installer preserves the official installer filename so AllScan's self-update check works correctly.
 - Preserves existing file ownership and permissions.
 - Automatically restores all code files if installation fails after backups are created.
 - Does not restart Asterisk, the web server, or the node.
