@@ -67,36 +67,38 @@ This package contains two installers:
 
 Use `install-allscan-n-mods.sh` for a new node. Use `allscan-mods.sh` when AllScan is already installed or when you want the original modification-only behavior.
 
+Both installer scripts are stored in Git with executable permissions. Fresh clones and downloads can be run directly with `sudo`; no separate `chmod` step is required.
+
 ### Git
 
 New node: install AllScan and AllScan Mods:
 
 ```bash
-cd /home/asl && git clone https://github.com/ke2hni/AllScan-Mods.git && cd AllScan-Mods && chmod 755 install-allscan-n-mods.sh && sudo ./install-allscan-n-mods.sh
+cd /home/asl && git clone https://github.com/ke2hni/AllScan-Mods.git && cd AllScan-Mods && sudo ./install-allscan-n-mods.sh
 ```
 
 Existing AllScan installation: apply or update AllScan Mods only:
 
 ```bash
-cd /home/asl/AllScan-Mods && git pull --ff-only && chmod 755 allscan-mods.sh && sudo ./allscan-mods.sh
+cd /home/asl/AllScan-Mods && git pull --ff-only && sudo ./allscan-mods.sh
 ```
 
 Existing clone, new combined installer:
 
 ```bash
-cd /home/asl/AllScan-Mods && git pull --ff-only && chmod 755 install-allscan-n-mods.sh && sudo ./install-allscan-n-mods.sh
+cd /home/asl/AllScan-Mods && git pull --ff-only && sudo ./install-allscan-n-mods.sh
 ```
 
 ### Wget
 
 ```bash
-cd /home/asl && wget -O install-allscan-n-mods.sh https://raw.githubusercontent.com/ke2hni/AllScan-Mods/refs/heads/main/install-allscan-n-mods.sh && chmod 755 install-allscan-n-mods.sh && sudo ./install-allscan-n-mods.sh
+cd /home/asl && wget -O install-allscan-n-mods.sh https://raw.githubusercontent.com/ke2hni/AllScan-Mods/refs/heads/main/install-allscan-n-mods.sh && sudo ./install-allscan-n-mods.sh
 ```
 
 ### Curl
 
 ```bash
-cd /home/asl && curl -fL https://raw.githubusercontent.com/ke2hni/AllScan-Mods/refs/heads/main/install-allscan-n-mods.sh -o install-allscan-n-mods.sh && chmod 755 install-allscan-n-mods.sh && sudo ./install-allscan-n-mods.sh
+cd /home/asl && curl -fL https://raw.githubusercontent.com/ke2hni/AllScan-Mods/refs/heads/main/install-allscan-n-mods.sh -o install-allscan-n-mods.sh && sudo ./install-allscan-n-mods.sh
 ```
 
 The Wget and Curl examples use the combined installer. For an existing AllScan installation, download `allscan-mods.sh` instead. Use only one method. Every terminal example is one copy-and-paste command.
@@ -108,13 +110,13 @@ After installation, open AllScan and press **Ctrl+F5** to reload the page, JavaS
 The default directory is `/var/www/html/allscan`.
 
 ```bash
-cd /home/asl && chmod 755 allscan-mods.sh && sudo ./allscan-mods.sh --allscan-dir /your/allscan/path
+cd /home/asl && sudo ./allscan-mods.sh --allscan-dir /your/allscan/path
 ```
 
 HamVOIP example:
 
 ```bash
-cd /home/asl && chmod 755 allscan-mods.sh && sudo ./allscan-mods.sh --allscan-dir /srv/http/allscan
+cd /home/asl && sudo ./allscan-mods.sh --allscan-dir /srv/http/allscan
 ```
 
 ## Safety
