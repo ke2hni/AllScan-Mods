@@ -21,13 +21,12 @@
 ### Edit Favorites from the main page
 
 - Keeps **Add Favorite**, **Edit Favorite**, and **Delete Favorite** together.
-- Added the Ability to reorder your favorites right from the web browers.
 - Places **Connect**, **Disconnect**, and **Monitor** beside the Node# field.
 - Leaves **Local Mon** and **DTMF** available in their established positions.
 - Keeps **Permanent**, **Disconnect before Connect**, and **Disconnect before Monitor** together on one line.
 - Click a favorite's node number, then click **Edit Favorite**.
 - Edit the node number and friendly name/label together in an AllScan-styled dialog.
-- Edit the favorite's order number from the same dialog; moving a favorite inserts it at that position and shifts the other favorites automatically.
+- Edit the **favorite's order number** from the same dialog; moving a favorite inserts it at that position and shifts the other favorites automatically.
 - Use **Save & Close** to apply the edit or **Cancel** to leave the file unchanged.
 - Click outside the dialog or press Escape to close it.
 - Rejects invalid node numbers, duplicate destinations, malformed labels, and unauthorized favorites-file paths.
