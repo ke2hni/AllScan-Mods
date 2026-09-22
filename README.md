@@ -21,6 +21,7 @@
 ### Edit Favorites from the main page
 
 - Keeps **Add Favorite**, **Edit Favorite**, and **Delete Favorite** together.
+- Added the Ability to reorder your favorites right from the web browers.
 - Places **Connect**, **Disconnect**, and **Monitor** beside the Node# field.
 - Leaves **Local Mon** and **DTMF** available in their established positions.
 - Keeps **Permanent**, **Disconnect before Connect**, and **Disconnect before Monitor** together on one line.
