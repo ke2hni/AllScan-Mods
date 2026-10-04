@@ -139,6 +139,7 @@ The installer:
 - Preserves existing file ownership and permissions.
 - Automatically restores all code files if installation fails after backups are created.
 - On v1.02, also backs up and patches `include/favsUtils.php`, where upstream now builds Favorites rows.
+- On v1.02, also patches `css/simple.css` so the AllScan link remains visible in TouchGUI portrait mode; v1.01 is unchanged.
 - Does not restart Asterisk, the web server, or the node.
 
 It creates matching timestamped backups:
@@ -150,6 +151,7 @@ js/main.js.before-allscan-mods-YYYYMMDD-HHMMSS
 css/main.css.before-allscan-mods-YYYYMMDD-HHMMSS
 astapi/connect.php.before-allscan-mods-YYYYMMDD-HHMMSS
 include/favsUtils.php.before-allscan-mods-YYYYMMDD-HHMMSS (v1.02 only)
+css/simple.css.before-allscan-mods-YYYYMMDD-HHMMSS (v1.02 only)
 ```
 
 Each successful Favorite edit separately creates:
@@ -169,6 +171,7 @@ The actual name matches whichever `favorites*.ini` file is selected in AllScan.
 /var/www/html/allscan/css/main.css
 /var/www/html/allscan/astapi/connect.php
 /var/www/html/allscan/include/favsUtils.php (v1.02 only)
+/var/www/html/allscan/css/simple.css (v1.02 only)
 ```
 
 The package does not modify AllScan's statistics request frequency, request-rate protection, Asterisk configuration, database, or the existing PHP sorter for the first five columns.
@@ -222,7 +225,12 @@ sudo cp -a /var/www/html/allscan/index.php.before-allscan-mods-YYYYMMDD-HHMMSS /
 
 Replace the timestamp, restore all five matching files, and press **Ctrl+F5**.
 
-For v1.02, also run `sudo cp -a /var/www/html/allscan/include/favsUtils.php.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/include/favsUtils.php` with that same timestamp.
+For v1.02, also run these commands with the same timestamp:
+
+```bash
+sudo cp -a /var/www/html/allscan/include/favsUtils.php.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/include/favsUtils.php
+sudo cp -a /var/www/html/allscan/css/simple.css.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/css/simple.css
+```
 
 To reverse an individual Favorite edit, copy its matching `.before-edit-YYYYMMDD-HHMMSS` backup over the active `favorites*.ini` file.
 

@@ -39,6 +39,7 @@ CSS_FILE=$ALLSCAN_DIR/css/main.css
 CONNECT_FILE=$ALLSCAN_DIR/astapi/connect.php
 COMMON_FILE=$ALLSCAN_DIR/include/common.php
 FAVS_UTILS_FILE=$ALLSCAN_DIR/include/favsUtils.php
+SIMPLE_CSS_FILE=$ALLSCAN_DIR/css/simple.css
 
 for required in "$INDEX_FILE" "$VIEW_FILE" "$JS_FILE" "$CSS_FILE" "$CONNECT_FILE" "$COMMON_FILE"; do
     [[ -f $required ]] || { echo "ERROR: Required AllScan file not found: $required" >&2; exit 1; }
@@ -49,6 +50,7 @@ case "$allscan_version" in
     v1.01) favs_source=$INDEX_FILE ;;
     v1.02)
         [[ -f $FAVS_UTILS_FILE ]] || { echo "ERROR: Required AllScan file not found: $FAVS_UTILS_FILE" >&2; exit 1; }
+        [[ -f $SIMPLE_CSS_FILE ]] || { echo "ERROR: Required AllScan file not found: $SIMPLE_CSS_FILE" >&2; exit 1; }
         favs_source=$FAVS_UTILS_FILE
         ;;
     *) echo "ERROR: Supports AllScan v1.01 and v1.02; found ${allscan_version:-unknown}. No files changed." >&2; exit 1 ;;
@@ -65,26 +67,30 @@ stage_js=$work_dir/main.js
 stage_css=$work_dir/main.css
 stage_connect=$work_dir/connect.php
 stage_favs_utils=$work_dir/favsUtils.php
+stage_simple_css=$work_dir/simple.css
 cp -- "$INDEX_FILE" "$stage_index"
 cp -- "$VIEW_FILE" "$stage_view"
 cp -- "$JS_FILE" "$stage_js"
 cp -- "$CSS_FILE" "$stage_css"
 cp -- "$CONNECT_FILE" "$stage_connect"
 if [[ $allscan_version == v1.02 ]]; then cp -- "$FAVS_UTILS_FILE" "$stage_favs_utils"; fi
+if [[ $allscan_version == v1.02 ]]; then cp -- "$SIMPLE_CSS_FILE" "$stage_simple_css"; fi
 
-python3 - "$stage_index" "$stage_view" "$stage_js" "$stage_css" "$stage_connect" "$stage_favs_utils" "$allscan_version" <<'PY'
+python3 - "$stage_index" "$stage_view" "$stage_js" "$stage_css" "$stage_connect" "$stage_favs_utils" "$stage_simple_css" "$allscan_version" <<'PY'
 from pathlib import Path
 import re
 import sys
 
 index_path, view_path, js_path, css_path, connect_path = map(Path, sys.argv[1:6])
 favs_utils_path = Path(sys.argv[6])
-allscan_version = sys.argv[7]
+simple_css_path = Path(sys.argv[7])
+allscan_version = sys.argv[8]
 index = index_path.read_text(encoding="utf-8")
 view = view_path.read_text(encoding="utf-8")
 js = js_path.read_text(encoding="utf-8")
 css = css_path.read_text(encoding="utf-8")
 connect = connect_path.read_text(encoding="utf-8")
+simple_css = simple_css_path.read_text(encoding="utf-8") if allscan_version == "v1.02" else ""
 
 def replace_once(text, old, new, description):
     count = text.count(old)
@@ -113,32 +119,18 @@ if allscan_version == "v1.02":
 elif new_fav_row not in index:
     index = replace_once(index, old_fav_row, new_fav_row, "the Favorites row builder")
 
-new_row_output = '''foreach($favList as $f) {
-	$favEditLabel = htmlspecialchars(array_pop($f), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-	$nodeNumAttr = ['1' => 'class="nodeNum" data-fav-label="' . $favEditLabel
-		. '" onClick="selectFavorite(this)" onDblClick="connectNode(\\'connect\\')"'];'''
-if allscan_version == "v1.02":
-    old_v102_row_output = '''foreach($favList as $f) {
-	$favEditLabel = htmlspecialchars($f[7], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-	$nodeNumAttr = ['1' => 'class="nodeNum" data-fav-label="' . $favEditLabel
-		. '" onClick="selectFavorite(this)" onDblClick="connectNode(\\'connect\\')"'];'''
-    if old_v102_row_output in index:
-        index = replace_once(index, old_v102_row_output, new_row_output, "the previous v1.02 Favorites row renderer")
-if new_row_output not in index:
-    row_pattern = re.compile(
-        r'''foreach\(\$favList as \$f\) \{\s*'''
-        r'''\$nodeNumAttr = \['1' => 'class="nodeNum" onClick="setNodeBox\('\.\$f\[1\]\.\'\)" '\s*'''
-        r'''\.\s*'onDblClick="connectNode\(\\'connect\\'\)"'\];'''
-    )
-    if allscan_version == "v1.02":
-        row_pattern = re.compile(r'''foreach\(\$favList as \$f\) \{\s*\$nodeNumAttr = \['1' => 'class="nodeNum" onClick="setNodeBox\('\.\$f\[1\]\.\'\)" '\s*\.\s*'onDblClick="connectNode\(\\'connect\\'\)"'\];''')
-    matches = list(row_pattern.finditer(index))
-    if len(matches) != 1:
-        raise SystemExit(
-            f"ERROR: Expected the stock Favorites row output exactly once, but found {len(matches)}. "
-            "No live files were changed."
-        )
-    index = row_pattern.sub(lambda match: new_row_output, index, count=1)
+
+# Keep the AllScan link visible in the v1.02 TouchGUI portrait header.
+old_touch_header = ".topbar {\ngrid-template-columns:1fr auto;\nheight:44px;\n}\n.brand {\ndisplay:none;\n}\n.node-title {\nfont-size:15px;\n}"
+new_touch_header = ".topbar {\ngrid-template-columns:auto 1fr auto;\ngap:8px;\npadding:6px 10px;\nheight:44px;\n}\n.brand {\ndisplay:block;\nwhite-space:nowrap;\n}\n.node-title {\ndisplay:none;\nfont-size:15px;\n}\n.node-number {\nfont-size:14px;\n}"
+stock_touch_header = ".topbar {\ngrid-template-columns:auto 1fr auto;\ngap:8px;\npadding:6px 10px;\nheight:44px;\n}\n.brand {\ndisplay:block;\nwhite-space:nowrap;\n}\n.node-title {\ndisplay:none;\nfont-size:15px;\n}"
+if allscan_version == "v1.02" and new_touch_header not in simple_css:
+    if old_touch_header in simple_css:
+        simple_css = replace_once(simple_css, old_touch_header, new_touch_header, "the v1.02 TouchGUI portrait header")
+    elif stock_touch_header in simple_css:
+        simple_css = replace_once(simple_css, stock_touch_header, new_touch_header, "the v1.02 TouchGUI portrait header")
+    else:
+        raise SystemExit("ERROR: Expected the stock or previously tested v1.02 TouchGUI portrait header. No live files were changed.")
 
 # Server-side Edit Favorite action.
 edit_case_marker = '\tcase "Edit Favorite":'
@@ -524,6 +516,7 @@ checks = {
     'Rx% live column': 'var busy = cells[5];' in js,
     'LCnt live column': 'var lcnt = cells[6];' in js,
     'v1.02 favorite label source': allscan_version != 'v1.02' or new_fav_row in favs_utils,
+    'v1.02 TouchGUI portrait header': allscan_version != 'v1.02' or new_touch_header in simple_css,
     'Monitor checkbox': view.count('id="automondisc"') == 1,
     'one-line checkbox row': final_checkbox_row in view,
     'Monitor JavaScript flag': js.count("var automondisc = (button === 'monitor')") == 1,
@@ -542,13 +535,14 @@ js_path.write_text(js, encoding="utf-8")
 css_path.write_text(css, encoding="utf-8")
 connect_path.write_text(connect, encoding="utf-8")
 if allscan_version == "v1.02": favs_utils_path.write_text(favs_utils, encoding="utf-8")
+if allscan_version == "v1.02": simple_css_path.write_text(simple_css, encoding="utf-8")
 print('patch-ready')
 PY
 
 if cmp -s "$INDEX_FILE" "$stage_index" && cmp -s "$VIEW_FILE" "$stage_view" && \
    cmp -s "$JS_FILE" "$stage_js" && cmp -s "$CSS_FILE" "$stage_css" && \
    cmp -s "$CONNECT_FILE" "$stage_connect" && \
-   { [[ $allscan_version != v1.02 ]] || cmp -s "$FAVS_UTILS_FILE" "$stage_favs_utils"; }; then
+   { [[ $allscan_version != v1.02 ]] || { cmp -s "$FAVS_UTILS_FILE" "$stage_favs_utils" && cmp -s "$SIMPLE_CSS_FILE" "$stage_simple_css"; }; }; then
     echo "AllScan Mods are already installed. No changes made."
     exit 0
 fi
@@ -574,12 +568,14 @@ js_backup=$JS_FILE.before-allscan-mods-$timestamp
 css_backup=$CSS_FILE.before-allscan-mods-$timestamp
 connect_backup=$CONNECT_FILE.before-allscan-mods-$timestamp
 if [[ $allscan_version == v1.02 ]]; then favs_utils_backup=$FAVS_UTILS_FILE.before-allscan-mods-$timestamp; fi
+if [[ $allscan_version == v1.02 ]]; then simple_css_backup=$SIMPLE_CSS_FILE.before-allscan-mods-$timestamp; fi
 cp -a -- "$INDEX_FILE" "$index_backup"
 cp -a -- "$VIEW_FILE" "$view_backup"
 cp -a -- "$JS_FILE" "$js_backup"
 cp -a -- "$CSS_FILE" "$css_backup"
 cp -a -- "$CONNECT_FILE" "$connect_backup"
 if [[ $allscan_version == v1.02 ]]; then cp -a -- "$FAVS_UTILS_FILE" "$favs_utils_backup"; fi
+if [[ $allscan_version == v1.02 ]]; then cp -a -- "$SIMPLE_CSS_FILE" "$simple_css_backup"; fi
 
 installed=false
 rollback() {
@@ -590,6 +586,7 @@ rollback() {
         cp -a -- "$css_backup" "$CSS_FILE" 2>/dev/null || true
         cp -a -- "$connect_backup" "$CONNECT_FILE" 2>/dev/null || true
         if [[ $allscan_version == v1.02 ]]; then cp -a -- "$favs_utils_backup" "$FAVS_UTILS_FILE" 2>/dev/null || true; fi
+        if [[ $allscan_version == v1.02 ]]; then cp -a -- "$simple_css_backup" "$SIMPLE_CSS_FILE" 2>/dev/null || true; fi
         echo "ERROR: Installation failed; the original files were restored." >&2
     fi
 }
@@ -601,6 +598,7 @@ cp -- "$stage_js" "$JS_FILE"
 cp -- "$stage_css" "$CSS_FILE"
 cp -- "$stage_connect" "$CONNECT_FILE"
 if [[ $allscan_version == v1.02 ]]; then cp -- "$stage_favs_utils" "$FAVS_UTILS_FILE"; fi
+if [[ $allscan_version == v1.02 ]]; then cp -- "$stage_simple_css" "$SIMPLE_CSS_FILE"; fi
 
 grep -Fq 'case "Edit Favorite":' "$INDEX_FILE"
 grep -Fq 'Save &amp; Close</button>' "$VIEW_FILE"
@@ -630,4 +628,5 @@ echo "  $js_backup"
 echo "  $css_backup"
 echo "  $connect_backup"
 if [[ $allscan_version == v1.02 ]]; then echo "  $favs_utils_backup"; fi
+if [[ $allscan_version == v1.02 ]]; then echo "  $simple_css_backup"; fi
 echo "Hard-refresh the AllScan page with Ctrl+F5."
