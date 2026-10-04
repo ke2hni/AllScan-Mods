@@ -244,6 +244,13 @@ new_row_output = '''foreach($favList as $f) {
 	$favEditLabel = htmlspecialchars(array_pop($f), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 	$nodeNumAttr = ['1' => 'class="nodeNum" data-fav-label="' . $favEditLabel
 		. '" onClick="selectFavorite(this)" onDblClick="connectNode(\\'connect\\')"'];'''
+if allscan_version == "v1.02":
+    old_v102_row_output = '''foreach($favList as $f) {
+	$favEditLabel = htmlspecialchars($f[7], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+	$nodeNumAttr = ['1' => 'class="nodeNum" data-fav-label="' . $favEditLabel
+		. '" onClick="selectFavorite(this)" onDblClick="connectNode(\\'connect\\')"'];'''
+    if old_v102_row_output in index:
+        index = replace_once(index, old_v102_row_output, new_row_output, "the previous v1.02 Favorites row renderer")
 if new_row_output not in index:
     row_pattern = re.compile(
         r'''foreach\(\$favList as \$f\) \{\s*'''
