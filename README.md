@@ -63,9 +63,9 @@ Repository: [github.com/ke2hni/AllScan-Mods](https://github.com/ke2hni/AllScan-M
 This package contains two installers:
 
 - `allscan-mods.sh` is the original installer for nodes where AllScan is already installed. It only applies the AllScan Mods changes and does not install AllScan or its packages.
-- `install-allscan-n-mods.sh` is the new combined installer. It installs AllScan first when the required AllScan files are missing, verifies PHP SQLite support for Apache, and then applies AllScan Mods. If AllScan is already installed, it leaves the existing AllScan installation in place and proceeds with the modifications.
+- `install-allscan-n-mods.sh` is the combined installer. At the default AllScan location, it runs David's current official installer/updater first, then verifies PHP SQLite support for Apache and applies AllScan Mods. It installs AllScan on a new node and offers to upgrade an older release such as v1.01 to the current release. If an update is declined and v1.01 remains, it stops without applying Mods. For a custom AllScan path, the official updater is skipped and AllScan must already be installed there.
 
-Use `install-allscan-n-mods.sh` for a new node. Use `allscan-mods.sh` when AllScan is already installed or when you want the original modification-only behavior.
+Use `install-allscan-n-mods.sh` for a new node or to check/update the default AllScan installation before applying Mods. David's updater asks for confirmation before installing/updating. Decline its optional OS/package upgrade and optional DTMF support-file replacement unless you specifically want those actions. Use `allscan-mods.sh` when AllScan is already at a supported version and you only want to apply the Mods.
 
 Both installer scripts are stored in Git with executable permissions. Fresh clones and downloads can be run directly with `sudo`; no separate `chmod` step is required.
 
@@ -101,7 +101,7 @@ cd /home/asl && wget -O install-allscan-n-mods.sh https://raw.githubusercontent.
 cd /home/asl && curl -fL https://raw.githubusercontent.com/ke2hni/AllScan-Mods/refs/heads/main/install-allscan-n-mods.sh -o install-allscan-n-mods.sh && sudo ./install-allscan-n-mods.sh
 ```
 
-The Wget and Curl examples use the combined installer. For an existing AllScan installation, download `allscan-mods.sh` instead. Use only one method. Every terminal example is one copy-and-paste command.
+The Wget and Curl examples use the combined installer. For an existing AllScan installation where you only want the Mods and do not want to run David's updater, download `allscan-mods.sh` instead. Use only one method. Every terminal example is one copy-and-paste command.
 
 After installation, open AllScan and press **Ctrl+F5** to reload the page, JavaScript, and CSS.
 
@@ -133,8 +133,9 @@ The installer:
 - Stops if required upstream structures are missing or ambiguous.
 - Runs PHP syntax validation when PHP is installed.
 - Runs JavaScript syntax validation when Node.js is installed.
-- The combined installer installs the official AllScan release only when the required AllScan files are missing.
+- At the default path, the combined installer runs David's current official installer/updater before applying Mods; it prompts before installing or updating AllScan and stops if an old v1.01 installation remains.
 - The combined installer installs `php-sqlite3` when needed, enables `pdo_sqlite` and `sqlite3` for Apache PHP, restarts Apache when required, and verifies both extensions before modifying AllScan.
+- Before upgrading an installed v1.01, the combined installer creates a full timestamped recovery copy named `allscan.before-update-v1.01-YYYYMMDD-HHMMSS`. If an existing `allscan.bak.v1.01` is present, it also preserves that backup with a timestamped suffix before David's updater can replace it.
 - The combined installer preserves the official installer filename so AllScan's self-update check works correctly.
 - Preserves existing file ownership and permissions.
 - Automatically restores all code files if installation fails after backups are created.
@@ -236,7 +237,13 @@ To reverse an individual Favorite edit, copy its matching `.before-edit-YYYYMMDD
 
 ## Official AllScan updates
 
-David's official updater may replace locally modified files. After an update, press **Ctrl+F5** and check the editor, sorting, and Monitor-disconnect option. Run `allscan-mods.sh` again if needed.
+David's official updater may replace locally modified files. Before an installed v1.01 upgrade, the combined installer prints the path of a complete timestamped recovery copy. If you need to roll back, replace the timestamps below with the printed backup timestamp; this moves the updated AllScan directory aside and restores the pre-update copy without deleting either directory:
+
+```bash
+sudo mv /var/www/html/allscan /var/www/html/allscan.failed-YYYYMMDD-HHMMSS && sudo cp -a /var/www/html/allscan.before-update-v1.01-YYYYMMDD-HHMMSS /var/www/html/allscan
+```
+
+After an update, press **Ctrl+F5** and check the editor, sorting, and Monitor-disconnect option. Run `allscan-mods.sh` again if you separately ran David's updater and only want to reapply Mods.
 
 The installer safely reapplies the package on reviewed v1.01 and v1.02 layouts. If the upstream version or required structure changes, it stops without modifying live files so compatibility can be reviewed first.
 

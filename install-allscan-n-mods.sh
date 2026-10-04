@@ -32,7 +32,7 @@ if ((EUID != 0)); then
     exit 1
 fi
 
-install_allscan_if_missing() {
+ensure_allscan_current() {
     local required
     required=(
         "$ALLSCAN_DIR/index.php"
@@ -51,11 +51,10 @@ install_allscan_if_missing() {
         fi
     done
 
-    [[ $missing == true ]] || return 0
-
     if [[ $ALLSCAN_DIR != /var/www/html/allscan ]]; then
+        [[ $missing == false ]] && return 0
         echo "ERROR: AllScan is not installed at $ALLSCAN_DIR." >&2
-        echo "The official AllScan installer installs at /var/www/html/allscan." >&2
+        echo "The official AllScan updater only manages /var/www/html/allscan." >&2
         echo "Use the default location or install AllScan there first." >&2
         exit 1
     fi
@@ -71,20 +70,62 @@ install_allscan_if_missing() {
     }
 
     command -v curl >/dev/null 2>&1 || apt-get install -y curl
-    local installer_dir installer
+    local installer_dir installer current_version backup_path preserved_backup timestamp pre_update_backup
+    if [[ $missing == false ]]; then
+        current_version=$(sed -nE 's/^\$AllScanVersion = "(v[0-9.]+)";.*/\1/p' "$ALLSCAN_DIR/include/common.php")
+        if [[ $current_version == v1.01 ]]; then
+            timestamp=$(date +%Y%m%d-%H%M%S)
+            pre_update_backup=$ALLSCAN_DIR.before-update-$current_version-$timestamp
+            [[ ! -e $pre_update_backup ]] || {
+                echo "ERROR: Update backup path already exists: $pre_update_backup" >&2
+                exit 1
+            }
+            echo "Creating timestamped recovery copy of the current AllScan installation:"
+            echo "  $pre_update_backup"
+            cp -a -- "$ALLSCAN_DIR" "$pre_update_backup"
+
+            backup_path=$ALLSCAN_DIR.bak.$current_version
+            if [[ -e $backup_path ]]; then
+                preserved_backup=$backup_path.preserved-$timestamp
+                [[ ! -e $preserved_backup ]] || {
+                    echo "ERROR: Backup preservation path already exists: $preserved_backup" >&2
+                    exit 1
+                }
+                echo "Preserving existing AllScan v1.01 backup before the official updater can replace it:"
+                echo "  $backup_path -> $preserved_backup"
+                cp -a -- "$backup_path" "$preserved_backup"
+            fi
+        fi
+    fi
+
     installer_dir=$(mktemp -d /tmp/allscan-installer.XXXXXX)
     installer=$installer_dir/AllScanInstallUpdate.php
-    curl -fsSL --retry 3 \
+    if ! curl -fsSL --retry 3 \
         https://raw.githubusercontent.com/davidgsd/AllScan/main/AllScanInstallUpdate.php \
-        -o "$installer"
-    chmod 755 "$installer"
-
-    echo "AllScan is not installed. Running the official AllScan installer first."
-    echo "The installer will approve the AllScan install, skip an optional OS upgrade,"
-    echo "and skip optional DTMF support-file replacement."
-    if ! printf 'y\nn\nn\n' | php "$installer"; then
+        -o "$installer"; then
         rm -rf -- "$installer_dir"
-        echo "ERROR: Official AllScan installer failed." >&2
+        echo "ERROR: Could not download David's current AllScan updater." >&2
+        exit 1
+    fi
+    if ! chmod 755 "$installer"; then
+        rm -rf -- "$installer_dir"
+        echo "ERROR: Could not prepare David's AllScan updater." >&2
+        exit 1
+    fi
+
+    if [[ $missing == true ]]; then
+        echo "Running David's official AllScan installer before applying AllScan Mods."
+        echo "Confirm the AllScan install when prompted. Decline the optional OS/package upgrade"
+        echo "and optional DTMF support-file replacement unless you specifically want those actions."
+    else
+        echo "Running David's official AllScan updater to check for and install the current release."
+        echo "For an older AllScan version, confirm the AllScan update when prompted."
+        echo "Decline the optional OS/package upgrade and optional DTMF support-file replacement"
+        echo "unless you specifically want those actions."
+    fi
+    if ! php "$installer"; then
+        rm -rf -- "$installer_dir"
+        echo "ERROR: Official AllScan installer/updater failed or was canceled." >&2
         exit 1
     fi
     rm -rf -- "$installer_dir"
@@ -95,9 +136,16 @@ install_allscan_if_missing() {
             exit 1
         }
     done
+
+    current_version=$(sed -nE 's/^\$AllScanVersion = "(v[0-9.]+)";.*/\1/p' "$ALLSCAN_DIR/include/common.php")
+    if [[ $ALLSCAN_DIR == /var/www/html/allscan && $current_version == v1.01 ]]; then
+        echo "ERROR: AllScan is still v1.01; its update was declined or did not complete." >&2
+        echo "No AllScan Mods were applied. Rerun and confirm the official AllScan update to v1.02." >&2
+        exit 1
+    fi
 }
 
-install_allscan_if_missing
+ensure_allscan_current
 
 ensure_apache_sqlite() {
     command -v apt-get >/dev/null 2>&1 || {
@@ -244,6 +292,34 @@ if allscan_version == "v1.02":
         raise SystemExit("ERROR: Expected the v1.02 Favorites row builder. No live files were changed.")
 elif new_fav_row not in index:
     index = replace_once(index, old_fav_row, new_fav_row, "the Favorites row builder")
+
+new_row_output = '''foreach($favList as $f) {
+	$favEditLabel = htmlspecialchars(array_pop($f), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+	$nodeNumAttr = ['1' => 'class="nodeNum" data-fav-label="' . $favEditLabel
+		. '" onClick="selectFavorite(this)" onDblClick="connectNode(\\'connect\\')"'];'''
+if allscan_version == "v1.02":
+    old_v102_row_output = '''foreach($favList as $f) {
+	$favEditLabel = htmlspecialchars($f[7], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+	$nodeNumAttr = ['1' => 'class="nodeNum" data-fav-label="' . $favEditLabel
+		. '" onClick="selectFavorite(this)" onDblClick="connectNode(\\'connect\\')"'];'''
+    if old_v102_row_output in index:
+        index = replace_once(index, old_v102_row_output, new_row_output, "the previous v1.02 Favorites row renderer")
+if new_row_output not in index:
+    row_pattern = re.compile(
+        r'''foreach\(\$favList as \$f\) \{\s*'''
+        r'''\$nodeNumAttr = \['1' => 'class="nodeNum" onClick="setNodeBox\('\.\$f\[1\]\.\'\)" '\s*'''
+        r'''\.\s*'onDblClick="connectNode\(\\'connect\\'\)"'\];'''
+    )
+    if allscan_version == "v1.02":
+        row_pattern = re.compile(r'''foreach\(\$favList as \$f\) \{\s*\$nodeNumAttr = \['1' => 'class="nodeNum" onClick="setNodeBox\('\.\$f\[1\]\.\'\)" '\s*\.\s*'onDblClick="connectNode\(\\'connect\\'\)"'\];''')
+    matches = list(row_pattern.finditer(index))
+    if len(matches) != 1:
+        raise SystemExit(
+            f"ERROR: Expected the stock Favorites row output exactly once, but found {len(matches)}. "
+            "No live files were changed."
+        )
+    index = row_pattern.sub(lambda match: new_row_output, index, count=1)
+
 
 
 # Keep the AllScan link visible in the v1.02 TouchGUI portrait header.

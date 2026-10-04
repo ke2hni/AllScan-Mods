@@ -119,6 +119,34 @@ if allscan_version == "v1.02":
 elif new_fav_row not in index:
     index = replace_once(index, old_fav_row, new_fav_row, "the Favorites row builder")
 
+new_row_output = '''foreach($favList as $f) {
+	$favEditLabel = htmlspecialchars(array_pop($f), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+	$nodeNumAttr = ['1' => 'class="nodeNum" data-fav-label="' . $favEditLabel
+		. '" onClick="selectFavorite(this)" onDblClick="connectNode(\\'connect\\')"'];'''
+if allscan_version == "v1.02":
+    old_v102_row_output = '''foreach($favList as $f) {
+	$favEditLabel = htmlspecialchars($f[7], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+	$nodeNumAttr = ['1' => 'class="nodeNum" data-fav-label="' . $favEditLabel
+		. '" onClick="selectFavorite(this)" onDblClick="connectNode(\\'connect\\')"'];'''
+    if old_v102_row_output in index:
+        index = replace_once(index, old_v102_row_output, new_row_output, "the previous v1.02 Favorites row renderer")
+if new_row_output not in index:
+    row_pattern = re.compile(
+        r'''foreach\(\$favList as \$f\) \{\s*'''
+        r'''\$nodeNumAttr = \['1' => 'class="nodeNum" onClick="setNodeBox\('\.\$f\[1\]\.\'\)" '\s*'''
+        r'''\.\s*'onDblClick="connectNode\(\\'connect\\'\)"'\];'''
+    )
+    if allscan_version == "v1.02":
+        row_pattern = re.compile(r'''foreach\(\$favList as \$f\) \{\s*\$nodeNumAttr = \['1' => 'class="nodeNum" onClick="setNodeBox\('\.\$f\[1\]\.\'\)" '\s*\.\s*'onDblClick="connectNode\(\\'connect\\'\)"'\];''')
+    matches = list(row_pattern.finditer(index))
+    if len(matches) != 1:
+        raise SystemExit(
+            f"ERROR: Expected the stock Favorites row output exactly once, but found {len(matches)}. "
+            "No live files were changed."
+        )
+    index = row_pattern.sub(lambda match: new_row_output, index, count=1)
+
+
 
 # Keep the AllScan link visible in the v1.02 TouchGUI portrait header.
 old_touch_header = ".topbar {\ngrid-template-columns:1fr auto;\nheight:44px;\n}\n.brand {\ndisplay:none;\n}\n.node-title {\nfont-size:15px;\n}"
