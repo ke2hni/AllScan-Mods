@@ -244,8 +244,6 @@ new_row_output = '''foreach($favList as $f) {
 	$favEditLabel = htmlspecialchars(array_pop($f), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 	$nodeNumAttr = ['1' => 'class="nodeNum" data-fav-label="' . $favEditLabel
 		. '" onClick="selectFavorite(this)" onDblClick="connectNode(\\'connect\\')"'];'''
-if allscan_version == "v1.02":
-    new_row_output = new_row_output.replace("foreach($favList as $f) {\n\t$favEditLabel = htmlspecialchars(array_pop($f), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');\n", "foreach($favList as $f) {\n\t$favEditLabel = htmlspecialchars($f[7], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');\n")
 if new_row_output not in index:
     row_pattern = re.compile(
         r'''foreach\(\$favList as \$f\) \{\s*'''
@@ -629,6 +627,7 @@ checks = {
     'LCnt header': 'onclick="sortFavStats(6); return false;"' in index,
     'Edit action': index.count(edit_case_marker) == 1,
     'row selection': 'onClick="selectFavorite(this)"' in index,
+    'friendly label does not render as extra cell': 'htmlspecialchars(array_pop($f)' in index,
     'Save & Close dialog': final_view_marker in view,
     'sorter function': len(re.findall(r'\bfunction\s+sortFavStats\s*\(', js)) == 1,
     'editor function': len(re.findall(r'\bfunction\s+openFavoriteEditor\s*\(', js)) == 1,

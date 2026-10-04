@@ -80,7 +80,7 @@ cd /home/asl && git clone https://github.com/ke2hni/AllScan-Mods.git && cd AllSc
 Existing AllScan installation: apply or update AllScan Mods only:
 
 ```bash
-cd /home/asl/AllScan-Mods && git fetch origin && git reset --hard origin/main && git pull --ff-only && sudo ./allscan-mods.sh
+cd /home/asl/AllScan-Mods && git pull --ff-only && sudo ./allscan-mods.sh
 ```
 
 Existing clone, new combined installer:
