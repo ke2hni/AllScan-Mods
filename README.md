@@ -6,7 +6,7 @@
 
 ![Platform](https://img.shields.io/badge/Platform-AllStarLink%203-0b7285?style=for-the-badge)
 ![Debian](https://img.shields.io/badge/Debian-12%20%7C%2013-a81d33?style=for-the-badge&logo=debian&logoColor=white)
-![AllScan](https://img.shields.io/badge/AllScan-v1.01-2f9e44?style=for-the-badge)
+![AllScan](https://img.shields.io/badge/AllScan-v1.01%20%7C%20v1.02-2f9e44?style=for-the-badge)
 ![Installer](https://img.shields.io/badge/Installer-Idempotent-6741d9?style=for-the-badge)
 
 **One safe installer adds a main-page Favorites editor, clickable sorting for AllScan's live `Rx%` and `LCnt` columns, and an independent Disconnect before Monitor option.**
@@ -123,12 +123,12 @@ cd /home/asl && sudo ./allscan-mods.sh --allscan-dir /srv/http/allscan
 
 The installer:
 
-- Supports David Gleason's AllScan v1.01-compatible source layout.
-- Works on a clean AllScan v1.01 installation.
+- Supports David Gleason's AllScan v1.01 and v1.02 source layouts.
+- Works on clean AllScan v1.01 and v1.02 installations.
 - Upgrades an installation containing only the earlier Rx%/LCnt sorting modification.
 - Upgrades the previous combined Favorites editor/sorting package.
 - Recognizes installations containing the separately tested Disconnect before Monitor patch.
-- Recognizes the fully installed package and exits without making changes.
+- Reapplies the package safely on subsequent runs and creates fresh timestamped backups.
 - Stages every change before touching live files.
 - Stops if required upstream structures are missing or ambiguous.
 - Runs PHP syntax validation when PHP is installed.
@@ -138,6 +138,7 @@ The installer:
 - The combined installer preserves the official installer filename so AllScan's self-update check works correctly.
 - Preserves existing file ownership and permissions.
 - Automatically restores all code files if installation fails after backups are created.
+- On v1.02, also backs up and patches `include/favsUtils.php`, where upstream now builds Favorites rows.
 - Does not restart Asterisk, the web server, or the node.
 
 It creates matching timestamped backups:
@@ -148,6 +149,7 @@ include/viewUtils.php.before-allscan-mods-YYYYMMDD-HHMMSS
 js/main.js.before-allscan-mods-YYYYMMDD-HHMMSS
 css/main.css.before-allscan-mods-YYYYMMDD-HHMMSS
 astapi/connect.php.before-allscan-mods-YYYYMMDD-HHMMSS
+include/favsUtils.php.before-allscan-mods-YYYYMMDD-HHMMSS (v1.02 only)
 ```
 
 Each successful Favorite edit separately creates:
@@ -166,6 +168,7 @@ The actual name matches whichever `favorites*.ini` file is selected in AllScan.
 /var/www/html/allscan/js/main.js
 /var/www/html/allscan/css/main.css
 /var/www/html/allscan/astapi/connect.php
+/var/www/html/allscan/include/favsUtils.php (v1.02 only)
 ```
 
 The package does not modify AllScan's statistics request frequency, request-rate protection, Asterisk configuration, database, or the existing PHP sorter for the first five columns.
@@ -211,7 +214,7 @@ All four final counts should be `1`.
 
 ## Rollback
 
-Restore the five files bearing the same timestamp printed by the installer:
+Restore the five files bearing the same timestamp printed by the installer. On v1.02, also restore `include/favsUtils.php`:
 
 ```bash
 sudo cp -a /var/www/html/allscan/index.php.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/index.php && sudo cp -a /var/www/html/allscan/include/viewUtils.php.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/include/viewUtils.php && sudo cp -a /var/www/html/allscan/js/main.js.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/js/main.js && sudo cp -a /var/www/html/allscan/css/main.css.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/css/main.css && sudo cp -a /var/www/html/allscan/astapi/connect.php.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/astapi/connect.php
@@ -219,13 +222,15 @@ sudo cp -a /var/www/html/allscan/index.php.before-allscan-mods-YYYYMMDD-HHMMSS /
 
 Replace the timestamp, restore all five matching files, and press **Ctrl+F5**.
 
+For v1.02, also run `sudo cp -a /var/www/html/allscan/include/favsUtils.php.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/include/favsUtils.php` with that same timestamp.
+
 To reverse an individual Favorite edit, copy its matching `.before-edit-YYYYMMDD-HHMMSS` backup over the active `favorites*.ini` file.
 
 ## Official AllScan updates
 
 David's official updater may replace locally modified files. After an update, press **Ctrl+F5** and check the editor, sorting, and Monitor-disconnect option. Run `allscan-mods.sh` again if needed.
 
-If the reviewed v1.01-compatible structure is unchanged, the installer safely reapplies the package. If the upstream version or structure changes, it stops without modifying live files so compatibility can be reviewed first.
+The installer safely reapplies the package on reviewed v1.01 and v1.02 layouts. If the upstream version or required structure changes, it stops without modifying live files so compatibility can be reviewed first.
 
 ## Troubleshooting
 
@@ -237,7 +242,7 @@ Run the complete command from the Installation section.
 
 Confirm AllScan is under `/var/www/html/allscan`, or use `--allscan-dir`.
 
-### `supports ... AllScan v1.01 layout only`
+### Unsupported AllScan version or layout
 
 The installed AllScan version differs from the reviewed version. Review David's newer source before updating this package.
 
@@ -259,7 +264,7 @@ The selected entry is not a standard adjacent `label[]` and `cmd[] = "rpt cmd %n
 |:--|:--|
 | Platform | AllStarLink 3 |
 | Operating system | Debian 13 |
-| AllScan | v1.01-compatible source layout |
+| AllScan | v1.01 and v1.02 source layouts |
 | Default web root | `/var/www/html/allscan` |
 | Nodes | `node44690` and a separate test node |
 

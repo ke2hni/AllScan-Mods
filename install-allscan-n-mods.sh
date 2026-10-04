@@ -168,16 +168,18 @@ JS_FILE=$ALLSCAN_DIR/js/main.js
 CSS_FILE=$ALLSCAN_DIR/css/main.css
 CONNECT_FILE=$ALLSCAN_DIR/astapi/connect.php
 COMMON_FILE=$ALLSCAN_DIR/include/common.php
+FAVS_UTILS_FILE=$ALLSCAN_DIR/include/favsUtils.php
 
 for required in "$INDEX_FILE" "$VIEW_FILE" "$JS_FILE" "$CSS_FILE" "$CONNECT_FILE" "$COMMON_FILE"; do
     [[ -f $required ]] || { echo "ERROR: Required AllScan file not found: $required" >&2; exit 1; }
 done
 
-grep -Eq '^\$AllScanVersion = "v1\.01";' "$COMMON_FILE" || {
-    echo "ERROR: This installer supports David Gleason's AllScan v1.01 layout only." >&2
-    echo "No files were changed." >&2
-    exit 1
-}
+allscan_version=$(sed -nE 's/^\$AllScanVersion = "(v[0-9.]+)";.*/\1/p' "$COMMON_FILE")
+case "$allscan_version" in
+    v1.01) ;;
+    v1.02) [[ -f $FAVS_UTILS_FILE ]] || { echo "ERROR: Required AllScan file not found: $FAVS_UTILS_FILE" >&2; exit 1; } ;;
+    *) echo "ERROR: Supports AllScan v1.01 and v1.02; found ${allscan_version:-unknown}. No files changed." >&2; exit 1 ;;
+esac
 
 command -v python3 >/dev/null 2>&1 || { echo "ERROR: python3 is required." >&2; exit 1; }
 
@@ -189,18 +191,22 @@ stage_view=$work_dir/viewUtils.php
 stage_js=$work_dir/main.js
 stage_css=$work_dir/main.css
 stage_connect=$work_dir/connect.php
+stage_favs_utils=$work_dir/favsUtils.php
 cp -- "$INDEX_FILE" "$stage_index"
 cp -- "$VIEW_FILE" "$stage_view"
 cp -- "$JS_FILE" "$stage_js"
 cp -- "$CSS_FILE" "$stage_css"
 cp -- "$CONNECT_FILE" "$stage_connect"
+if [[ $allscan_version == v1.02 ]]; then cp -- "$FAVS_UTILS_FILE" "$stage_favs_utils"; fi
 
-python3 - "$stage_index" "$stage_view" "$stage_js" "$stage_css" "$stage_connect" <<'PY'
+python3 - "$stage_index" "$stage_view" "$stage_js" "$stage_css" "$stage_connect" "$stage_favs_utils" "$allscan_version" <<'PY'
 from pathlib import Path
 import re
 import sys
 
 index_path, view_path, js_path, css_path, connect_path = map(Path, sys.argv[1:6])
+favs_utils_path = Path(sys.argv[6])
+allscan_version = sys.argv[7]
 index = index_path.read_text(encoding="utf-8")
 view = view_path.read_text(encoding="utf-8")
 js = js_path.read_text(encoding="utf-8")
@@ -225,13 +231,21 @@ if new_header not in index:
 # Keep the friendly name available for the edit dialog without adding a visible table column.
 old_fav_row = "$favList[] = [$n, $f->node, $name, $desc, $loc, NBSP, NBSP];"
 new_fav_row = "$favList[] = [$n, $f->node, $name, $desc, $loc, NBSP, NBSP, $name];"
-if new_fav_row not in index:
+favs_utils = favs_utils_path.read_text(encoding="utf-8") if allscan_version == "v1.02" else ""
+if allscan_version == "v1.02":
+    if old_fav_row in favs_utils:
+        favs_utils = replace_once(favs_utils, old_fav_row, new_fav_row, "the v1.02 Favorites row builder")
+    elif new_fav_row not in favs_utils:
+        raise SystemExit("ERROR: Expected the v1.02 Favorites row builder. No live files were changed.")
+elif new_fav_row not in index:
     index = replace_once(index, old_fav_row, new_fav_row, "the Favorites row builder")
 
 new_row_output = '''foreach($favList as $f) {
 	$favEditLabel = htmlspecialchars(array_pop($f), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 	$nodeNumAttr = ['1' => 'class="nodeNum" data-fav-label="' . $favEditLabel
 		. '" onClick="selectFavorite(this)" onDblClick="connectNode(\\'connect\\')"'];'''
+if allscan_version == "v1.02":
+    new_row_output = new_row_output.replace("foreach($favList as $f) {\n\t$favEditLabel = htmlspecialchars(array_pop($f), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');\n", "foreach($favList as $f) {\n\t$favEditLabel = htmlspecialchars($f[7], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');\n")
 if new_row_output not in index:
     row_pattern = re.compile(
         r'''foreach\(\$favList as \$f\) \{\s*'''
@@ -239,6 +253,9 @@ if new_row_output not in index:
         r'''\.\s*'onDblClick="connectNode\(\\'connect\\'\)"'\];'''
     )
     matches = list(row_pattern.finditer(index))
+    if allscan_version == "v1.02":
+        row_pattern = re.compile(r'''foreach\(\$favList as \$f\) \{\s*\$nodeNumAttr = \['1' => 'class="nodeNum" onClick="setNodeBox\('\.\$f\[1\]\.\'\)" '\s*\.\s*'onDblClick="connectNode\(\\'connect\\'\)"'\];''')
+        matches = list(row_pattern.finditer(index))
     if len(matches) != 1:
         raise SystemExit(
             f"ERROR: Expected the stock Favorites row output exactly once, but found {len(matches)}. "
@@ -618,6 +635,7 @@ checks = {
     'editor CSS': css_marker in css,
     'Rx% live column': 'var busy = cells[5];' in js,
     'LCnt live column': 'var lcnt = cells[6];' in js,
+    'v1.02 favorite label source': allscan_version != 'v1.02' or new_fav_row in favs_utils,
     'Monitor checkbox': view.count('id="automondisc"') == 1,
     'one-line checkbox row': final_checkbox_row in view,
     'Monitor JavaScript flag': js.count("var automondisc = (button === 'monitor')") == 1,
@@ -635,12 +653,14 @@ view_path.write_text(view, encoding="utf-8")
 js_path.write_text(js, encoding="utf-8")
 css_path.write_text(css, encoding="utf-8")
 connect_path.write_text(connect, encoding="utf-8")
+if allscan_version == "v1.02": favs_utils_path.write_text(favs_utils, encoding="utf-8")
 print('patch-ready')
 PY
 
 if cmp -s "$INDEX_FILE" "$stage_index" && cmp -s "$VIEW_FILE" "$stage_view" && \
    cmp -s "$JS_FILE" "$stage_js" && cmp -s "$CSS_FILE" "$stage_css" && \
-   cmp -s "$CONNECT_FILE" "$stage_connect"; then
+   cmp -s "$CONNECT_FILE" "$stage_connect" && \
+   { [[ $allscan_version != v1.02 ]] || cmp -s "$FAVS_UTILS_FILE" "$stage_favs_utils"; }; then
     echo "AllScan Mods are already installed. No changes made."
     exit 0
 fi
@@ -649,6 +669,7 @@ if command -v php >/dev/null 2>&1; then
     php -l "$stage_index" >/dev/null
     php -l "$stage_view" >/dev/null
     php -l "$stage_connect" >/dev/null
+    if [[ $allscan_version == v1.02 ]]; then php -l "$stage_favs_utils" >/dev/null; fi
 else
     echo "WARNING: php was not found; PHP syntax validation was skipped."
 fi
@@ -664,11 +685,13 @@ view_backup=$VIEW_FILE.before-allscan-mods-$timestamp
 js_backup=$JS_FILE.before-allscan-mods-$timestamp
 css_backup=$CSS_FILE.before-allscan-mods-$timestamp
 connect_backup=$CONNECT_FILE.before-allscan-mods-$timestamp
+if [[ $allscan_version == v1.02 ]]; then favs_utils_backup=$FAVS_UTILS_FILE.before-allscan-mods-$timestamp; fi
 cp -a -- "$INDEX_FILE" "$index_backup"
 cp -a -- "$VIEW_FILE" "$view_backup"
 cp -a -- "$JS_FILE" "$js_backup"
 cp -a -- "$CSS_FILE" "$css_backup"
 cp -a -- "$CONNECT_FILE" "$connect_backup"
+if [[ $allscan_version == v1.02 ]]; then cp -a -- "$FAVS_UTILS_FILE" "$favs_utils_backup"; fi
 
 installed=false
 rollback() {
@@ -678,6 +701,7 @@ rollback() {
         cp -a -- "$js_backup" "$JS_FILE" 2>/dev/null || true
         cp -a -- "$css_backup" "$CSS_FILE" 2>/dev/null || true
         cp -a -- "$connect_backup" "$CONNECT_FILE" 2>/dev/null || true
+        if [[ $allscan_version == v1.02 ]]; then cp -a -- "$favs_utils_backup" "$FAVS_UTILS_FILE" 2>/dev/null || true; fi
         echo "ERROR: Installation failed; the original files were restored." >&2
     fi
 }
@@ -688,6 +712,7 @@ cp -- "$stage_view" "$VIEW_FILE"
 cp -- "$stage_js" "$JS_FILE"
 cp -- "$stage_css" "$CSS_FILE"
 cp -- "$stage_connect" "$CONNECT_FILE"
+if [[ $allscan_version == v1.02 ]]; then cp -- "$stage_favs_utils" "$FAVS_UTILS_FILE"; fi
 
 grep -Fq 'case "Edit Favorite":' "$INDEX_FILE"
 grep -Fq 'Save &amp; Close</button>' "$VIEW_FILE"
@@ -700,6 +725,7 @@ if command -v php >/dev/null 2>&1; then
     php -l "$INDEX_FILE" >/dev/null
     php -l "$VIEW_FILE" >/dev/null
     php -l "$CONNECT_FILE" >/dev/null
+    if [[ $allscan_version == v1.02 ]]; then php -l "$FAVS_UTILS_FILE" >/dev/null; fi
 fi
 if command -v node >/dev/null 2>&1; then
     node --check "$JS_FILE"
@@ -715,4 +741,5 @@ echo "  $view_backup"
 echo "  $js_backup"
 echo "  $css_backup"
 echo "  $connect_backup"
+if [[ $allscan_version == v1.02 ]]; then echo "  $favs_utils_backup"; fi
 echo "Hard-refresh the AllScan page with Ctrl+F5."
