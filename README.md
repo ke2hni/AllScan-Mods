@@ -9,7 +9,7 @@
 ![AllScan](https://img.shields.io/badge/AllScan-v1.01%20%7C%20v1.02-2f9e44?style=for-the-badge)
 ![Installer](https://img.shields.io/badge/Installer-Idempotent-6741d9?style=for-the-badge)
 
-**One safe installer adds a main-page Favorites editor, clickable sorting for AllScan's live `Rx%` and `LCnt` columns, and an independent Disconnect before Monitor option.**
+**AllScan Mods add a main-page Favorites editor, clickable sorting for the live `Rx%` and `LCnt` columns, and an independent Disconnect before Monitor option. Choose the Mods-only installer or the combined AllScan updater.**
 
 </div>
 
@@ -67,7 +67,7 @@ This package contains two installers:
 
 Use `install-allscan-n-mods.sh` for a new node or to check/update the default AllScan installation before applying Mods. David's updater asks for confirmation before installing/updating. Decline its optional OS/package upgrade and optional DTMF support-file replacement unless you specifically want those actions. Use `allscan-mods.sh` when AllScan is already at a supported version and you only want to apply the Mods.
 
-Both installer scripts are stored in Git with executable permissions. Fresh clones and downloads can be run directly with `sudo`; no separate `chmod` step is required.
+Both scripts are stored in Git with executable permissions, which Git preserves when you clone the repository. Files downloaded directly with Wget or Curl need `chmod +x`; the commands below include that step.
 
 ### Git
 
@@ -77,28 +77,30 @@ New node: install AllScan and AllScan Mods:
 cd /home/asl && git clone https://github.com/ke2hni/AllScan-Mods.git && cd AllScan-Mods && sudo ./install-allscan-n-mods.sh
 ```
 
-Existing AllScan installation: apply or update AllScan Mods only:
+Existing clone: replace its tracked files with the latest `main` branch files, then run the Mods-only installer:
 
 ```bash
-cd /home/asl/AllScan-Mods && git pull --ff-only && sudo ./allscan-mods.sh
+cd /home/asl/AllScan-Mods && git fetch origin && backup="pre-update-$(date +%Y%m%d-%H%M%S)-$$" && git branch "$backup" HEAD && git stash push -u -m "Pre-update $backup" && git switch -C main origin/main && sudo ./allscan-mods.sh
 ```
 
-Existing clone, new combined installer:
+This command saves the current commit on a local `pre-update-*` branch and saves any uncommitted tracked or untracked files in Git's stash before updating `main`. It does not commit or push those changes.
+
+Existing clone, run the combined installer after refreshing its tracked files:
 
 ```bash
-cd /home/asl/AllScan-Mods && git pull --ff-only && sudo ./install-allscan-n-mods.sh
+cd /home/asl/AllScan-Mods && git fetch origin && backup="pre-update-$(date +%Y%m%d-%H%M%S)-$$" && git branch "$backup" HEAD && git stash push -u -m "Pre-update $backup" && git switch -C main origin/main && sudo ./install-allscan-n-mods.sh
 ```
 
 ### Wget
 
 ```bash
-cd /home/asl && wget -O install-allscan-n-mods.sh https://raw.githubusercontent.com/ke2hni/AllScan-Mods/refs/heads/main/install-allscan-n-mods.sh && sudo ./install-allscan-n-mods.sh
+cd /home/asl && wget -O install-allscan-n-mods.sh https://raw.githubusercontent.com/ke2hni/AllScan-Mods/refs/heads/main/install-allscan-n-mods.sh && chmod +x install-allscan-n-mods.sh && sudo ./install-allscan-n-mods.sh
 ```
 
 ### Curl
 
 ```bash
-cd /home/asl && curl -fL https://raw.githubusercontent.com/ke2hni/AllScan-Mods/refs/heads/main/install-allscan-n-mods.sh -o install-allscan-n-mods.sh && sudo ./install-allscan-n-mods.sh
+cd /home/asl && curl -fL https://raw.githubusercontent.com/ke2hni/AllScan-Mods/refs/heads/main/install-allscan-n-mods.sh -o install-allscan-n-mods.sh && chmod +x install-allscan-n-mods.sh && sudo ./install-allscan-n-mods.sh
 ```
 
 The Wget and Curl examples use the combined installer. For an existing AllScan installation where you only want the Mods and do not want to run David's updater, download `allscan-mods.sh` instead. Use only one method. Every terminal example is one copy-and-paste command.
@@ -128,8 +130,8 @@ The installer:
 - Upgrades an installation containing only the earlier Rx%/LCnt sorting modification.
 - Upgrades the previous combined Favorites editor/sorting package.
 - Recognizes installations containing the separately tested Disconnect before Monitor patch.
-- Reapplies the package safely on subsequent runs and creates fresh timestamped backups.
-- Stages every change before touching live files.
+- Detects when the Mods are already applied and exits without changing files or creating new backups.
+- Stages and validates changes before touching live files, then creates timestamped backups before applying them.
 - Stops if required upstream structures are missing or ambiguous.
 - Runs PHP syntax validation when PHP is installed.
 - Runs JavaScript syntax validation when Node.js is installed.
@@ -138,10 +140,10 @@ The installer:
 - Before upgrading an installed v1.01, the combined installer creates a full timestamped recovery copy named `allscan.before-update-v1.01-YYYYMMDD-HHMMSS`. If an existing `allscan.bak.v1.01` is present, it also preserves that backup with a timestamped suffix before David's updater can replace it.
 - The combined installer preserves the official installer filename so AllScan's self-update check works correctly.
 - Preserves existing file ownership and permissions.
-- Automatically restores all code files if installation fails after backups are created.
+- Automatically restores the backed-up files if applying the Mods fails after backups are created.
 - On v1.02, also backs up and patches `include/favsUtils.php`, where upstream now builds Favorites rows.
 - On v1.02, also patches `css/simple.css` so the AllScan link remains visible in TouchGUI portrait mode; v1.01 is unchanged.
-- Does not restart Asterisk, the web server, or the node.
+- The Mods-only installer does not restart Asterisk, Apache, or the node. The combined installer may restart Apache if needed to activate PHP SQLite support; it does not restart Asterisk or reboot the node.
 
 It creates matching timestamped backups:
 
