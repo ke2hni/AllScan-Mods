@@ -383,13 +383,40 @@ min-width:120px;
 min-height:50px;
 font-size:15px;
 }
-.status-actions {
-gap:5px;
+.status-panel {
+grid-template-columns:minmax(0, 1fr);
 }
-.autodisc-btn {
+.status-actions {
+width:100%;
+justify-content:flex-start;
+gap:6px;
+}
+.status-actions .autodisc-btn {
+flex:1 1 auto;
+min-width:0;
 min-height:42px;
 padding:5px 7px;
 font-size:12px;
+}
+.status-actions .disconnect-btn {
+flex:0 0 auto;
+min-width:92px;
+min-height:42px;
+padding:5px 8px;
+font-size:14px;
+}
+.warning-panel {
+grid-template-columns:minmax(0, 1fr) auto;
+gap:6px;
+}
+.readonly-panel {
+grid-template-columns:minmax(0, 1fr) auto;
+}
+.disconnect-all-btn {
+min-width:104px;
+min-height:48px;
+padding:4px 7px;
+font-size:14px;
 }'''
 if has_v102_layout and mobile_new not in simple_css:
     simple_css = replace_once(simple_css, mobile_marker, mobile_new, "TouchGUI compact status controls")

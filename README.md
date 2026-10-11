@@ -145,6 +145,7 @@ The installer:
 - On v1.02 and v1.03, also backs up and patches `include/favsUtils.php`, where upstream builds Favorites rows.
 - On v1.02 and v1.03, also patches `css/simple.css` so the AllScan link remains visible in TouchGUI portrait mode; v1.01 is unchanged.
 - Preserves v1.03's TouchGUI selected-favorites-file link behavior and its duplicate-favorite handling in upstream code.
+- At phone widths, stacks the TouchGUI status text above the Disconnect preference and Disconnect controls so they do not overlap; it also sizes the Disconnect All control to fit the warning panel.
 - On v1.02 and v1.03, adds a TouchGUI Disconnect before Connect toggle synchronized with the regular-page checkbox. Its selection persists across reloads and tabs in the same browser, keyed to the local node; the configured AllScan default seeds first use. v1.01 has no TouchGUI and retains the regular-page behavior.
 - The Mods-only installer does not restart Asterisk, Apache, or the node. The combined installer may restart Apache if needed to activate PHP SQLite support; it does not restart Asterisk or reboot the node.
 
