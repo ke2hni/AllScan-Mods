@@ -556,16 +556,17 @@ min-height:42px;
 padding:5px 8px;
 font-size:14px;
 }
+.warning-panel,
+.readonly-panel {
+grid-template-columns:minmax(0, 1fr);
+}
 .warning-panel {
-grid-template-columns:minmax(0, 1fr) auto;
 gap:6px;
 }
-.readonly-panel {
-grid-template-columns:minmax(0, 1fr) auto;
-}
 .disconnect-all-btn {
-min-width:104px;
-min-height:48px;
+width:100%;
+min-width:0;
+min-height:44px;
 padding:4px 7px;
 font-size:14px;
 }'''
