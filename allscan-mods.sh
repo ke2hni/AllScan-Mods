@@ -39,6 +39,8 @@ CSS_FILE=$ALLSCAN_DIR/css/main.css
 CONNECT_FILE=$ALLSCAN_DIR/astapi/connect.php
 COMMON_FILE=$ALLSCAN_DIR/include/common.php
 FAVS_UTILS_FILE=$ALLSCAN_DIR/include/favsUtils.php
+SIMPLE_INDEX_FILE=$ALLSCAN_DIR/simple/index.php
+SIMPLE_JS_FILE=$ALLSCAN_DIR/js/simple.js
 SIMPLE_CSS_FILE=$ALLSCAN_DIR/css/simple.css
 
 for required in "$INDEX_FILE" "$VIEW_FILE" "$JS_FILE" "$CSS_FILE" "$CONNECT_FILE" "$COMMON_FILE"; do
@@ -49,6 +51,7 @@ allscan_version=$(sed -nE 's/^\$AllScanVersion = "(v[0-9.]+)";.*/\1/p' "$COMMON_
 case "$allscan_version" in
     v1.01) favs_source=$INDEX_FILE ;;
     v1.02|v1.03)
+        [[ -f $SIMPLE_INDEX_FILE && -f $SIMPLE_JS_FILE ]] || { echo "ERROR: Required TouchGUI files are missing. No files changed." >&2; exit 1; }
         [[ -f $FAVS_UTILS_FILE ]] || { echo "ERROR: Required AllScan file not found: $FAVS_UTILS_FILE" >&2; exit 1; }
         [[ -f $SIMPLE_CSS_FILE ]] || { echo "ERROR: Required AllScan file not found: $SIMPLE_CSS_FILE" >&2; exit 1; }
         favs_source=$FAVS_UTILS_FILE
@@ -91,15 +94,17 @@ stage_css=$work_dir/main.css
 stage_connect=$work_dir/connect.php
 stage_favs_utils=$work_dir/favsUtils.php
 stage_simple_css=$work_dir/simple.css
+stage_simple_index=$work_dir/simple-index.php
+stage_simple_js=$work_dir/simple.js
 cp -- "$INDEX_FILE" "$stage_index"
 cp -- "$VIEW_FILE" "$stage_view"
 cp -- "$JS_FILE" "$stage_js"
 cp -- "$CSS_FILE" "$stage_css"
 cp -- "$CONNECT_FILE" "$stage_connect"
 if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then cp -- "$FAVS_UTILS_FILE" "$stage_favs_utils"; fi
-if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then cp -- "$SIMPLE_CSS_FILE" "$stage_simple_css"; fi
+if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then cp -- "$SIMPLE_CSS_FILE" "$stage_simple_css"; cp -- "$SIMPLE_INDEX_FILE" "$stage_simple_index"; cp -- "$SIMPLE_JS_FILE" "$stage_simple_js"; fi
 
-python3 - "$stage_index" "$stage_view" "$stage_js" "$stage_css" "$stage_connect" "$stage_favs_utils" "$stage_simple_css" "$allscan_version" <<'PY'
+python3 - "$stage_index" "$stage_view" "$stage_js" "$stage_css" "$stage_connect" "$stage_favs_utils" "$stage_simple_css" "$stage_simple_index" "$stage_simple_js" "$allscan_version" <<'PY'
 from pathlib import Path
 import re
 import sys
@@ -107,7 +112,9 @@ import sys
 index_path, view_path, js_path, css_path, connect_path = map(Path, sys.argv[1:6])
 favs_utils_path = Path(sys.argv[6])
 simple_css_path = Path(sys.argv[7])
-allscan_version = sys.argv[8]
+simple_index_path = Path(sys.argv[8])
+simple_js_path = Path(sys.argv[9])
+allscan_version = sys.argv[10]
 index = index_path.read_text(encoding="utf-8")
 view = view_path.read_text(encoding="utf-8")
 js = js_path.read_text(encoding="utf-8")
@@ -115,6 +122,8 @@ css = css_path.read_text(encoding="utf-8")
 connect = connect_path.read_text(encoding="utf-8")
 has_v102_layout = allscan_version in ("v1.02", "v1.03")
 simple_css = simple_css_path.read_text(encoding="utf-8") if has_v102_layout else ""
+simple_index = simple_index_path.read_text(encoding="utf-8") if has_v102_layout else ""
+simple_js = simple_js_path.read_text(encoding="utf-8") if has_v102_layout else ""
 
 def replace_once(text, old, new, description):
     count = text.count(old)
@@ -183,6 +192,207 @@ if has_v102_layout and new_touch_header not in simple_css:
         simple_css = replace_once(simple_css, stock_touch_header, new_touch_header, "the v1.02 TouchGUI portrait header")
     else:
         raise SystemExit("ERROR: Expected the stock or previously tested v1.02 TouchGUI portrait header. No live files were changed.")
+
+# Share Disconnect before Connect across the regular page and TouchGUI.
+old_checkbox_line = """<input type=checkbox id=\"autodisc\"' . ($gCfg[autodisc_def] ? ' checked' : '') . '><label"""
+new_checkbox_line = """<input type=checkbox id=\"autodisc\"' . ($gCfg[autodisc_def] ? ' checked' : '') . ' data-autodisc-default=\"' . ($gCfg[autodisc_def] ? 'true' : 'false') . '\"><label"""
+old_checkbox_line_oldmods = """<input type=checkbox id=\"autodisc\"' . ($gCfg[autodisc_def] ? ' checked' : '') . ' data-autodisc-default=\"' . ($gCfg[autodisc_def] ? 'true' : 'false') . '"><label"""
+if new_checkbox_line not in view:
+    if old_checkbox_line_oldmods in view:
+        view = replace_once(view, old_checkbox_line_oldmods, new_checkbox_line, "previous Mods Disconnect before Connect checkbox default")
+    elif 'data-autodisc-default=' in view and 'for="autodisc">Disconnect before Connect</label>' in view:
+        malformed = "' data-autodisc-default=\"' . ($gCfg[autodisc_def] ? 'true' : 'false') . '><label"
+        if malformed not in view:
+            raise SystemExit("ERROR: Previous Mods checkbox default could not be upgraded safely. No live files were changed.")
+        view = replace_once(view, malformed, "' data-autodisc-default=\"' . ($gCfg[autodisc_def] ? 'true' : 'false') . '\"><label", "previous Mods Disconnect before Connect checkbox default")
+    else:
+        view = replace_once(view, old_checkbox_line, new_checkbox_line, "Disconnect before Connect checkbox default")
+
+storage_sync = r'''function initAutodiscPreference() {
+	var checkbox = document.getElementById('autodisc');
+	if(!checkbox)
+		return;
+	var key = 'allscan.autodisc.' + (document.getElementById('localnode') || {}).value;
+	function save(value) {
+		try { localStorage.setItem(key, value ? 'true' : 'false'); } catch(e) {}
+	}
+	function load() {
+		try {
+			var value = localStorage.getItem(key);
+			if(value === 'true' || value === 'false')
+				checkbox.checked = value === 'true';
+			else {
+				checkbox.checked = checkbox.dataset.autodiscDefault === 'true';
+				save(checkbox.checked);
+			}
+		} catch(e) {}
+	}
+	load();
+	checkbox.addEventListener('change', function() { save(checkbox.checked); });
+	window.addEventListener('storage', function(event) {
+		if(event.key === key && (event.newValue === 'true' || event.newValue === 'false'))
+			checkbox.checked = event.newValue === 'true';
+	});
+}
+
+if(document.readyState === 'loading')
+	document.addEventListener('DOMContentLoaded', initAutodiscPreference);
+else
+	initAutodiscPreference();
+'''
+if 'function initAutodiscPreference()' not in js:
+    js = js.rstrip() + '\n\n' + storage_sync
+if 'initAutodiscPreference();' not in js:
+    js = js.replace('\t// Handle offline/online events', '\tinitAutodiscPreference();\n\t// Handle offline/online events', 1)
+
+simple_index_marker = """\t\t\t<button id=\"disconnectBtn\" class=\"disconnect-btn\" type=\"button\" disabled>Disconnect</button>"""
+simple_index_control = """\t\t\t<div class=\"status-actions\">
+\t\t\t\t<button id=\"autodiscBtn\" class=\"autodisc-btn\" type=\"button\" aria-pressed=\"true\">Disconnect before Connect: ON</button>
+\t\t\t\t<button id=\"disconnectBtn\" class=\"disconnect-btn\" type=\"button\" disabled>Disconnect</button>
+\t\t\t</div>"""
+if has_v102_layout and simple_index_control not in simple_index:
+    simple_index = replace_once(simple_index, simple_index_marker, simple_index_control, "TouchGUI disconnect preference button")
+simple_index_cfg_marker = """\tcanModify: <?php echo $canModify ? 'true' : 'false'; ?>,"""
+simple_index_cfg_new = """\tcanModify: <?php echo $canModify ? 'true' : 'false'; ?>,
+\tautodiscDefault: <?php echo $gCfg[autodisc_def] ? 'true' : 'false'; ?>,"""
+if has_v102_layout and simple_index_cfg_new not in simple_index:
+    simple_index = replace_once(simple_index, simple_index_cfg_marker, simple_index_cfg_new, "TouchGUI server disconnect preference default")
+
+simple_js_obj_marker = """\tcanModify: false,
+\tbaseUrl: '',"""
+simple_js_obj_new = """\tcanModify: false,
+\tautodiscDefault: true,
+\tautodisc: true,
+\tautodiscBtn: null,
+\tautodiscStorageKey: '',
+\tbaseUrl: '',"""
+if has_v102_layout and simple_js_obj_new not in simple_js:
+    simple_js = replace_once(simple_js, simple_js_obj_marker, simple_js_obj_new, "TouchGUI preference state")
+simple_js_init_marker = """\tsimple.canModify = !!cfg.canModify;
+\tsimple.baseUrl = cfg.baseUrl || '';"""
+simple_js_init_new = """\tsimple.canModify = !!cfg.canModify;
+\tsimple.autodiscDefault = cfg.autodiscDefault !== false;
+\tsimple.baseUrl = cfg.baseUrl || '';"""
+if has_v102_layout and simple_js_init_new not in simple_js:
+    simple_js = replace_once(simple_js, simple_js_init_marker, simple_js_init_new, "TouchGUI preference initialization")
+simple_js_element_marker = """\tsimple.disconnectBtn = document.getElementById('disconnectBtn');"""
+simple_js_element_new = """\tsimple.disconnectBtn = document.getElementById('disconnectBtn');
+\tsimple.autodiscBtn = document.getElementById('autodiscBtn');
+\tsimple.autodiscStorageKey = 'allscan.autodisc.' + simple.localNode;
+\tinitAutodiscPreference();"""
+if has_v102_layout and 'simple.autodiscBtn = document.getElementById' not in simple_js:
+    simple_js = replace_once(simple_js, simple_js_element_marker, simple_js_element_new, "TouchGUI preference button setup")
+simple_js_bind_marker = """\tsimple.disconnectBtn.addEventListener('click', function() {"""
+simple_js_bind_new = """\tsimple.autodiscBtn.addEventListener('click', toggleAutodiscPreference);
+\twindow.addEventListener('storage', handleAutodiscStorage);
+\tsimple.disconnectBtn.addEventListener('click', function() {"""
+if has_v102_layout and 'simple.autodiscBtn.addEventListener' not in simple_js:
+    simple_js = replace_once(simple_js, simple_js_bind_marker, simple_js_bind_new, "TouchGUI preference button event")
+simple_js_connect_old = """\t\t+ '&autodisc=true');"""
+simple_js_connect_new = """\t\t+ '&autodisc=' + simple.autodisc);"""
+if has_v102_layout and simple_js_connect_new not in simple_js:
+    simple_js = replace_once(simple_js, simple_js_connect_old, simple_js_connect_new, "TouchGUI connect request disconnect setting")
+simple_js_pref_funcs = r'''
+function initAutodiscPreference() {
+	try {
+		var value = localStorage.getItem(simple.autodiscStorageKey);
+		if(value === 'true' || value === 'false')
+			simple.autodisc = value === 'true';
+		else {
+			simple.autodisc = simple.autodiscDefault;
+			localStorage.setItem(simple.autodiscStorageKey, simple.autodisc ? 'true' : 'false');
+		}
+	} catch(e) {
+		simple.autodisc = simple.autodiscDefault;
+	}
+	updateAutodiscButton();
+}
+
+function saveAutodiscPreference() {
+	try { localStorage.setItem(simple.autodiscStorageKey, simple.autodisc ? 'true' : 'false'); } catch(e) {}
+	updateAutodiscButton();
+}
+
+function toggleAutodiscPreference() {
+	simple.autodisc = !simple.autodisc;
+	saveAutodiscPreference();
+}
+
+function updateAutodiscButton() {
+	if(!simple.autodiscBtn)
+		return;
+	simple.autodiscBtn.textContent = 'Disconnect before Connect: ' + (simple.autodisc ? 'ON' : 'OFF');
+	simple.autodiscBtn.setAttribute('aria-pressed', simple.autodisc ? 'true' : 'false');
+}
+
+function handleAutodiscStorage(event) {
+	if(event.key === simple.autodiscStorageKey && (event.newValue === 'true' || event.newValue === 'false')) {
+		simple.autodisc = event.newValue === 'true';
+		updateAutodiscButton();
+	}
+}
+'''
+if has_v102_layout and 'function toggleAutodiscPreference()' not in simple_js:
+    simple_js = simple_js.rstrip() + '\n' + simple_js_pref_funcs
+
+simple_css_marker = '.status-panel,\n.warning-panel,\n.readonly-panel {'
+simple_css_addition = r'''
+.status-actions {
+display:flex;
+justify-content:flex-end;
+align-items:center;
+gap:8px;
+min-width:0;
+}
+.autodisc-btn {
+min-height:44px;
+max-width:100%;
+padding:6px 10px;
+border:2px solid #526a7d;
+border-radius:6px;
+color:#edf4fa;
+background:#263646;
+font-size:14px;
+font-weight:bold;
+}
+.autodisc-btn[aria-pressed="true"] {
+border-color:#b88732;
+background:#493715;
+}
+.autodisc-btn[aria-pressed="false"] {
+border-color:#36865a;
+background:#173b29;
+}
+'''
+if '.status-actions {' not in simple_css:
+    simple_css = simple_css.replace(simple_css_marker, simple_css_addition + '\n' + simple_css_marker, 1)
+simple_css = simple_css.replace('''grid-template-columns:1fr auto;
+align-items:center;''','''grid-template-columns:minmax(0, 1fr) auto;
+align-items:center;''',1)
+mobile_marker = '''.disconnect-btn,
+.disconnect-all-btn,
+.login-btn {
+min-width:120px;
+min-height:50px;
+font-size:15px;
+}'''
+mobile_new = '''.disconnect-btn,
+.disconnect-all-btn,
+.login-btn {
+min-width:120px;
+min-height:50px;
+font-size:15px;
+}
+.status-actions {
+gap:5px;
+}
+.autodisc-btn {
+min-height:42px;
+padding:5px 7px;
+font-size:12px;
+}'''
+if has_v102_layout and mobile_new not in simple_css:
+    simple_css = replace_once(simple_css, mobile_marker, mobile_new, "TouchGUI compact status controls")
 
 # Server-side Edit Favorite action.
 edit_case_marker = '\tcase "Edit Favorite":'
@@ -357,7 +567,7 @@ if 'id="favoriteEditOrder"' not in view:
 monitor_checkbox = '''<input type=checkbox id="automondisc"><label
 \tfor="automondisc">Disconnect before Monitor</label>'''
 permanent_checkbox = '''<input type=checkbox id="permanent"><label for="permanent">Permanent</label>&nbsp;'''
-autodisc_checkbox = '''<input type=checkbox id="autodisc"' . ($gCfg[autodisc_def] ? ' checked' : '') . '><label
+autodisc_checkbox = '''<input type=checkbox id="autodisc"' . ($gCfg[autodisc_def] ? ' checked' : '') . ' data-autodisc-default="' . ($gCfg[autodisc_def] ? 'true' : 'false') . '"><label
 \tfor="autodisc">Disconnect before Connect</label>'''
 base_checkbox_row = permanent_checkbox + '\n' + autodisc_checkbox
 old_two_line_row = base_checkbox_row + '\n<br>\n' + monitor_checkbox
@@ -369,7 +579,9 @@ elif old_two_line_row in view:
     view = replace_once(view, old_two_line_row, final_checkbox_row, "two-line Monitor checkbox layout")
 elif unwrapped_checkbox_row in view:
     view = replace_once(view, unwrapped_checkbox_row, final_checkbox_row, "unwrapped Monitor checkbox layout")
-elif monitor_checkbox not in view:
+elif monitor_checkbox in view and base_checkbox_row in view:
+    view = replace_once(view, base_checkbox_row, final_checkbox_row, "existing checkbox row")
+elif monitor_checkbox not in view and base_checkbox_row in view:
     view = replace_once(view, base_checkbox_row, final_checkbox_row, "existing checkbox row")
 
 old_connect_js = '''\t// Disconnect before Connect checkbox. Only applies if conncnt > 0
@@ -569,13 +781,16 @@ checks = {
     'LCnt live column': 'var lcnt = cells[6];' in js,
     'Favorites label source': not has_v102_layout or new_fav_row in favs_utils,
     'TouchGUI portrait header': not has_v102_layout or new_touch_header in simple_css,
-    'Monitor checkbox': view.count('id="automondisc"') == 1,
-    'one-line checkbox row': final_checkbox_row in view,
-    'Monitor JavaScript flag': js.count("var automondisc = (button === 'monitor')") == 1,
-    'Monitor request parameter': js.count("'&automondisc='+automondisc") == 1,
-    'Monitor API field': connect.count("'automondisc'") == 1,
-    'Monitor API boolean': connect.count("$automondisc = ($automondisc === 'true');") == 1,
-    'Monitor disconnect action': connect.count('if($automondisc)') == 1,
+    'TouchGUI disconnect toggle': (not has_v102_layout) or ('id="autodiscBtn"' in simple_index and 'function toggleAutodiscPreference()' in simple_js and "+ '&autodisc=' + simple.autodisc)" in simple_js),
+    'Main-page stored disconnect preference': 'function initAutodiscPreference()' in js,
+    'Main-page checkbox stored default': 'data-autodisc-default' in view,
+    'Monitor checkbox': not has_v102_layout or view.count('id="automondisc"') >= 1,
+    'Disconnect default marker': 'data-autodisc-default' in view,
+    'Monitor JavaScript flag': not has_v102_layout or js.count("var automondisc = (button === 'monitor')") == 1,
+    'Monitor request parameter': not has_v102_layout or js.count("'&automondisc='+automondisc") == 1,
+    'Monitor API field': not has_v102_layout or connect.count("'automondisc'") == 1,
+    'Monitor API boolean': not has_v102_layout or connect.count("$automondisc = ($automondisc === 'true');") == 1,
+    'Monitor disconnect action': not has_v102_layout or connect.count('if($automondisc)') == 1,
 }
 failed = [name for name, ok in checks.items() if not ok]
 if failed:
@@ -587,14 +802,17 @@ js_path.write_text(js, encoding="utf-8")
 css_path.write_text(css, encoding="utf-8")
 connect_path.write_text(connect, encoding="utf-8")
 if has_v102_layout: favs_utils_path.write_text(favs_utils, encoding="utf-8")
-if has_v102_layout: simple_css_path.write_text(simple_css, encoding="utf-8")
+if has_v102_layout:
+    simple_css_path.write_text(simple_css, encoding="utf-8")
+    simple_index_path.write_text(simple_index, encoding="utf-8")
+    simple_js_path.write_text(simple_js, encoding="utf-8")
 print('patch-ready')
 PY
 
 if cmp -s "$INDEX_FILE" "$stage_index" && cmp -s "$VIEW_FILE" "$stage_view" && \
    cmp -s "$JS_FILE" "$stage_js" && cmp -s "$CSS_FILE" "$stage_css" && \
    cmp -s "$CONNECT_FILE" "$stage_connect" && \
-   { [[ $allscan_version != v1.02 && $allscan_version != v1.03 ]] || { cmp -s "$FAVS_UTILS_FILE" "$stage_favs_utils" && cmp -s "$SIMPLE_CSS_FILE" "$stage_simple_css"; }; }; then
+   { [[ $allscan_version != v1.02 && $allscan_version != v1.03 ]] || { cmp -s "$FAVS_UTILS_FILE" "$stage_favs_utils" && cmp -s "$SIMPLE_CSS_FILE" "$stage_simple_css" && cmp -s "$SIMPLE_INDEX_FILE" "$stage_simple_index" && cmp -s "$SIMPLE_JS_FILE" "$stage_simple_js"; }; }; then
     echo "AllScan Mods are already installed. No changes made."
     report_apache_sqlite_status
     exit 0
@@ -604,12 +822,13 @@ if command -v php >/dev/null 2>&1; then
     php -l "$stage_index" >/dev/null
     php -l "$stage_view" >/dev/null
     php -l "$stage_connect" >/dev/null
-    if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then php -l "$stage_favs_utils" >/dev/null; fi
+    if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then php -l "$stage_favs_utils" >/dev/null; php -l "$stage_simple_index" >/dev/null; fi
 else
     echo "WARNING: php was not found; PHP syntax validation was skipped."
 fi
 if command -v node >/dev/null 2>&1; then
     node --check "$stage_js"
+    if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then node --check "$stage_simple_js"; fi
 else
     echo "NOTE: node was not found; JavaScript runtime syntax validation was skipped."
 fi
@@ -621,14 +840,14 @@ js_backup=$JS_FILE.before-allscan-mods-$timestamp
 css_backup=$CSS_FILE.before-allscan-mods-$timestamp
 connect_backup=$CONNECT_FILE.before-allscan-mods-$timestamp
 if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then favs_utils_backup=$FAVS_UTILS_FILE.before-allscan-mods-$timestamp; fi
-if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then simple_css_backup=$SIMPLE_CSS_FILE.before-allscan-mods-$timestamp; fi
+if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then simple_css_backup=$SIMPLE_CSS_FILE.before-allscan-mods-$timestamp; simple_index_backup=$SIMPLE_INDEX_FILE.before-allscan-mods-$timestamp; simple_js_backup=$SIMPLE_JS_FILE.before-allscan-mods-$timestamp; fi
 cp -a -- "$INDEX_FILE" "$index_backup"
 cp -a -- "$VIEW_FILE" "$view_backup"
 cp -a -- "$JS_FILE" "$js_backup"
 cp -a -- "$CSS_FILE" "$css_backup"
 cp -a -- "$CONNECT_FILE" "$connect_backup"
 if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then cp -a -- "$FAVS_UTILS_FILE" "$favs_utils_backup"; fi
-if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then cp -a -- "$SIMPLE_CSS_FILE" "$simple_css_backup"; fi
+if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then cp -a -- "$SIMPLE_CSS_FILE" "$simple_css_backup"; cp -a -- "$SIMPLE_INDEX_FILE" "$simple_index_backup"; cp -a -- "$SIMPLE_JS_FILE" "$simple_js_backup"; fi
 
 installed=false
 rollback() {
@@ -639,7 +858,7 @@ rollback() {
         cp -a -- "$css_backup" "$CSS_FILE" 2>/dev/null || true
         cp -a -- "$connect_backup" "$CONNECT_FILE" 2>/dev/null || true
         if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then cp -a -- "$favs_utils_backup" "$FAVS_UTILS_FILE" 2>/dev/null || true; fi
-        if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then cp -a -- "$simple_css_backup" "$SIMPLE_CSS_FILE" 2>/dev/null || true; fi
+        if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then cp -a -- "$simple_css_backup" "$SIMPLE_CSS_FILE" 2>/dev/null || true; cp -a -- "$simple_index_backup" "$SIMPLE_INDEX_FILE" 2>/dev/null || true; cp -a -- "$simple_js_backup" "$SIMPLE_JS_FILE" 2>/dev/null || true; fi
         echo "ERROR: Installation failed; the original files were restored." >&2
     fi
 }
@@ -651,7 +870,7 @@ cp -- "$stage_js" "$JS_FILE"
 cp -- "$stage_css" "$CSS_FILE"
 cp -- "$stage_connect" "$CONNECT_FILE"
 if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then cp -- "$stage_favs_utils" "$FAVS_UTILS_FILE"; fi
-if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then cp -- "$stage_simple_css" "$SIMPLE_CSS_FILE"; fi
+if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then cp -- "$stage_simple_css" "$SIMPLE_CSS_FILE"; cp -- "$stage_simple_index" "$SIMPLE_INDEX_FILE"; cp -- "$stage_simple_js" "$SIMPLE_JS_FILE"; fi
 
 grep -Fq 'case "Edit Favorite":' "$INDEX_FILE"
 grep -Fq 'Save &amp; Close</button>' "$VIEW_FILE"
@@ -664,10 +883,11 @@ if command -v php >/dev/null 2>&1; then
     php -l "$INDEX_FILE" >/dev/null
     php -l "$VIEW_FILE" >/dev/null
 php -l "$CONNECT_FILE" >/dev/null
-if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then php -l "$FAVS_UTILS_FILE" >/dev/null; fi
+if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then php -l "$FAVS_UTILS_FILE" >/dev/null; php -l "$SIMPLE_INDEX_FILE" >/dev/null; fi
 fi
 if command -v node >/dev/null 2>&1; then
     node --check "$JS_FILE"
+    if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then node --check "$SIMPLE_JS_FILE"; fi
 fi
 
 installed=true
@@ -682,5 +902,5 @@ echo "  $js_backup"
 echo "  $css_backup"
 echo "  $connect_backup"
 if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then echo "  $favs_utils_backup"; fi
-if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then echo "  $simple_css_backup"; fi
+if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then echo "  $simple_css_backup"; echo "  $simple_index_backup"; echo "  $simple_js_backup"; fi
 echo "Hard-refresh the AllScan page with Ctrl+F5."

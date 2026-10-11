@@ -145,6 +145,7 @@ The installer:
 - On v1.02 and v1.03, also backs up and patches `include/favsUtils.php`, where upstream builds Favorites rows.
 - On v1.02 and v1.03, also patches `css/simple.css` so the AllScan link remains visible in TouchGUI portrait mode; v1.01 is unchanged.
 - Preserves v1.03's TouchGUI selected-favorites-file link behavior and its duplicate-favorite handling in upstream code.
+- On v1.02 and v1.03, adds a TouchGUI Disconnect before Connect toggle and synchronizes it with the regular-page checkbox. The selection persists across page reloads and tabs in the same browser, keyed to the local node; the configured AllScan default seeds first use. v1.01 has no TouchGUI and keeps the regular-page behavior.
 - The Mods-only installer does not restart Asterisk, Apache, or the node. The combined installer may restart Apache if needed to activate PHP SQLite support; it does not restart Asterisk or reboot the node.
 
 It creates matching timestamped backups:
@@ -157,6 +158,8 @@ css/main.css.before-allscan-mods-YYYYMMDD-HHMMSS
 astapi/connect.php.before-allscan-mods-YYYYMMDD-HHMMSS
 include/favsUtils.php.before-allscan-mods-YYYYMMDD-HHMMSS (v1.02 and v1.03)
 css/simple.css.before-allscan-mods-YYYYMMDD-HHMMSS (v1.02 and v1.03)
+simple/index.php.before-allscan-mods-YYYYMMDD-HHMMSS (v1.02 and v1.03)
+js/simple.js.before-allscan-mods-YYYYMMDD-HHMMSS (v1.02 and v1.03)
 ```
 
 Each successful Favorite edit separately creates:
@@ -177,6 +180,8 @@ The actual name matches whichever `favorites*.ini` file is selected in AllScan.
 /var/www/html/allscan/astapi/connect.php
 /var/www/html/allscan/include/favsUtils.php (v1.02 and v1.03)
 /var/www/html/allscan/css/simple.css (v1.02 and v1.03)
+/var/www/html/allscan/simple/index.php (v1.02 and v1.03)
+/var/www/html/allscan/js/simple.js (v1.02 and v1.03)
 ```
 
 The package does not modify AllScan's statistics request frequency, request-rate protection, Asterisk configuration, database, or the existing PHP sorter for the first five columns.
@@ -222,19 +227,21 @@ All four final counts should be `1`.
 
 ## Rollback
 
-Restore the five files bearing the same timestamp printed by the installer. On v1.02 and v1.03, also restore `include/favsUtils.php`:
+Restore the five core files bearing the same timestamp printed by the installer. On v1.02 and v1.03, restore the four TouchGUI/Favorites files listed below as well:
 
 ```bash
 sudo cp -a /var/www/html/allscan/index.php.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/index.php && sudo cp -a /var/www/html/allscan/include/viewUtils.php.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/include/viewUtils.php && sudo cp -a /var/www/html/allscan/js/main.js.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/js/main.js && sudo cp -a /var/www/html/allscan/css/main.css.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/css/main.css && sudo cp -a /var/www/html/allscan/astapi/connect.php.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/astapi/connect.php
 ```
 
-Replace the timestamp, restore all five matching files, and press **Ctrl+F5**.
+Replace the timestamp and restore all matching files for the installed AllScan version. Press **Ctrl+F5** after restoring.
 
 For v1.02 and v1.03, also run these commands with the same timestamp:
 
 ```bash
 sudo cp -a /var/www/html/allscan/include/favsUtils.php.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/include/favsUtils.php
 sudo cp -a /var/www/html/allscan/css/simple.css.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/css/simple.css
+sudo cp -a /var/www/html/allscan/simple/index.php.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/simple/index.php
+sudo cp -a /var/www/html/allscan/js/simple.js.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/js/simple.js
 ```
 
 To reverse an individual Favorite edit, copy its matching `.before-edit-YYYYMMDD-HHMMSS` backup over the active `favorites*.ini` file.
