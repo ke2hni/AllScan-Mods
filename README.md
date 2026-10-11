@@ -6,7 +6,7 @@
 
 ![Platform](https://img.shields.io/badge/Platform-AllStarLink%203-0b7285?style=for-the-badge)
 ![Debian](https://img.shields.io/badge/Debian-12%20%7C%2013-a81d33?style=for-the-badge&logo=debian&logoColor=white)
-![AllScan](https://img.shields.io/badge/AllScan-v1.01%20%7C%20v1.02-2f9e44?style=for-the-badge)
+![AllScan](https://img.shields.io/badge/AllScan-v1.01%20%7C%20v1.02%20%7C%20v1.03-2f9e44?style=for-the-badge)
 ![Installer](https://img.shields.io/badge/Installer-Idempotent-6741d9?style=for-the-badge)
 
 **AllScan Mods add a main-page Favorites editor, clickable sorting for the live `Rx%` and `LCnt` columns, and an independent Disconnect before Monitor option. Choose the Mods-only installer or the combined AllScan updater.**
@@ -63,7 +63,7 @@ Repository: [github.com/ke2hni/AllScan-Mods](https://github.com/ke2hni/AllScan-M
 This package contains two installers:
 
 - `allscan-mods.sh` is the original installer for nodes where AllScan is already installed. It only applies the AllScan Mods changes and does not install AllScan or its packages.
-- `install-allscan-n-mods.sh` is the combined installer. At the default AllScan location, it runs David's current official installer/updater first, then verifies PHP SQLite support for Apache and applies AllScan Mods. It installs AllScan on a new node and offers to upgrade an older release such as v1.01 to the current release. If an update is declined and v1.01 remains, it stops without applying Mods. For a custom AllScan path, the official updater is skipped and AllScan must already be installed there.
+- `install-allscan-n-mods.sh` is the combined installer. At the default AllScan location, it runs David's current official installer/updater first, then verifies PHP SQLite support for Apache and applies AllScan Mods. It installs AllScan on a new node and offers to upgrade an older release to the current release. If an update is declined and v1.01 remains, it stops without applying Mods. For a custom AllScan path, the official updater is skipped and AllScan must already be installed there.
 
 Use `install-allscan-n-mods.sh` for a new node or to check/update the default AllScan installation before applying Mods. David's updater asks for confirmation before installing/updating. Decline its optional OS/package upgrade and optional DTMF support-file replacement unless you specifically want those actions. Use `allscan-mods.sh` when AllScan is already at a supported version and you only want to apply the Mods.
 
@@ -125,8 +125,8 @@ cd /home/asl && sudo ./allscan-mods.sh --allscan-dir /srv/http/allscan
 
 The installer:
 
-- Supports David Gleason's AllScan v1.01 and v1.02 source layouts.
-- Works on clean AllScan v1.01 and v1.02 installations.
+- Supports David Gleason's AllScan v1.01, v1.02, and v1.03 source layouts.
+- Works on clean AllScan v1.01, v1.02, and v1.03 installations.
 - Upgrades an installation containing only the earlier Rx%/LCnt sorting modification.
 - Upgrades the previous combined Favorites editor/sorting package.
 - Recognizes installations containing the separately tested Disconnect before Monitor patch.
@@ -141,8 +141,9 @@ The installer:
 - The combined installer preserves the official installer filename so AllScan's self-update check works correctly.
 - Preserves existing file ownership and permissions.
 - Automatically restores the backed-up files if applying the Mods fails after backups are created.
-- On v1.02, also backs up and patches `include/favsUtils.php`, where upstream now builds Favorites rows.
-- On v1.02, also patches `css/simple.css` so the AllScan link remains visible in TouchGUI portrait mode; v1.01 is unchanged.
+- On v1.02 and v1.03, also backs up and patches `include/favsUtils.php`, where upstream builds Favorites rows.
+- On v1.02 and v1.03, also patches `css/simple.css` so the AllScan link remains visible in TouchGUI portrait mode; v1.01 is unchanged.
+- Preserves v1.03's TouchGUI selected-favorites-file link behavior and its duplicate-favorite handling in upstream code.
 - The Mods-only installer does not restart Asterisk, Apache, or the node. The combined installer may restart Apache if needed to activate PHP SQLite support; it does not restart Asterisk or reboot the node.
 
 It creates matching timestamped backups:
@@ -153,8 +154,8 @@ include/viewUtils.php.before-allscan-mods-YYYYMMDD-HHMMSS
 js/main.js.before-allscan-mods-YYYYMMDD-HHMMSS
 css/main.css.before-allscan-mods-YYYYMMDD-HHMMSS
 astapi/connect.php.before-allscan-mods-YYYYMMDD-HHMMSS
-include/favsUtils.php.before-allscan-mods-YYYYMMDD-HHMMSS (v1.02 only)
-css/simple.css.before-allscan-mods-YYYYMMDD-HHMMSS (v1.02 only)
+include/favsUtils.php.before-allscan-mods-YYYYMMDD-HHMMSS (v1.02 and v1.03)
+css/simple.css.before-allscan-mods-YYYYMMDD-HHMMSS (v1.02 and v1.03)
 ```
 
 Each successful Favorite edit separately creates:
@@ -173,8 +174,8 @@ The actual name matches whichever `favorites*.ini` file is selected in AllScan.
 /var/www/html/allscan/js/main.js
 /var/www/html/allscan/css/main.css
 /var/www/html/allscan/astapi/connect.php
-/var/www/html/allscan/include/favsUtils.php (v1.02 only)
-/var/www/html/allscan/css/simple.css (v1.02 only)
+/var/www/html/allscan/include/favsUtils.php (v1.02 and v1.03)
+/var/www/html/allscan/css/simple.css (v1.02 and v1.03)
 ```
 
 The package does not modify AllScan's statistics request frequency, request-rate protection, Asterisk configuration, database, or the existing PHP sorter for the first five columns.
@@ -220,7 +221,7 @@ All four final counts should be `1`.
 
 ## Rollback
 
-Restore the five files bearing the same timestamp printed by the installer. On v1.02, also restore `include/favsUtils.php`:
+Restore the five files bearing the same timestamp printed by the installer. On v1.02 and v1.03, also restore `include/favsUtils.php`:
 
 ```bash
 sudo cp -a /var/www/html/allscan/index.php.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/index.php && sudo cp -a /var/www/html/allscan/include/viewUtils.php.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/include/viewUtils.php && sudo cp -a /var/www/html/allscan/js/main.js.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/js/main.js && sudo cp -a /var/www/html/allscan/css/main.css.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/css/main.css && sudo cp -a /var/www/html/allscan/astapi/connect.php.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/astapi/connect.php
@@ -228,7 +229,7 @@ sudo cp -a /var/www/html/allscan/index.php.before-allscan-mods-YYYYMMDD-HHMMSS /
 
 Replace the timestamp, restore all five matching files, and press **Ctrl+F5**.
 
-For v1.02, also run these commands with the same timestamp:
+For v1.02 and v1.03, also run these commands with the same timestamp:
 
 ```bash
 sudo cp -a /var/www/html/allscan/include/favsUtils.php.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/include/favsUtils.php
@@ -247,7 +248,7 @@ sudo mv /var/www/html/allscan /var/www/html/allscan.failed-YYYYMMDD-HHMMSS && su
 
 After an update, press **Ctrl+F5** and check the editor, sorting, and Monitor-disconnect option. Run `allscan-mods.sh` again if you separately ran David's updater and only want to reapply Mods.
 
-The installer safely reapplies the package on reviewed v1.01 and v1.02 layouts. If the upstream version or required structure changes, it stops without modifying live files so compatibility can be reviewed first.
+The installer safely reapplies the package on reviewed v1.01, v1.02, and v1.03 layouts. If the upstream version or required structure changes, it stops without modifying live files so compatibility can be reviewed first.
 
 ## Troubleshooting
 
@@ -281,7 +282,7 @@ The selected entry is not a standard adjacent `label[]` and `cmd[] = "rpt cmd %n
 |:--|:--|
 | Platform | AllStarLink 3 |
 | Operating system | Debian 13 |
-| AllScan | v1.01 and v1.02 source layouts |
+| AllScan | v1.01, v1.02, and v1.03 source layouts |
 | Default web root | `/var/www/html/allscan` |
 | Nodes | `node44690` and a separate test node |
 
