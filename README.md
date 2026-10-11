@@ -77,19 +77,7 @@ New node: install AllScan and AllScan Mods:
 cd /home/asl && git clone https://github.com/ke2hni/AllScan-Mods.git && cd AllScan-Mods && sudo ./install-allscan-n-mods.sh
 ```
 
-Existing clone: replace its tracked files with the latest `main` branch files, then run the Mods-only installer:
-
-```bash
-cd /home/asl/AllScan-Mods && git fetch origin && backup="pre-update-$(date +%Y%m%d-%H%M%S)-$$" && git branch "$backup" HEAD && git stash push -u -m "Pre-update $backup" && git switch -C main origin/main && sudo ./allscan-mods.sh
-```
-
-This command saves the current commit on a local `pre-update-*` branch and saves any uncommitted tracked or untracked files in Git's stash before updating `main`. It does not commit or push those changes.
-
-Existing clone, run the combined installer after refreshing its tracked files:
-
-```bash
-cd /home/asl/AllScan-Mods && git fetch origin && backup="pre-update-$(date +%Y%m%d-%H%M%S)-$$" && git branch "$backup" HEAD && git stash push -u -m "Pre-update $backup" && git switch -C main origin/main && sudo ./install-allscan-n-mods.sh
-```
+For a node that already has AllScan installed, first use the **Upgrade** section below to update this repository, then run `sudo ./allscan-mods.sh`.
 
 ### Wget
 
@@ -106,6 +94,21 @@ cd /home/asl && curl -fL https://raw.githubusercontent.com/ke2hni/AllScan-Mods/r
 The Wget and Curl examples use the combined installer. For an existing AllScan installation where you only want the Mods and do not want to run David's updater, download `allscan-mods.sh` instead. Use only one method. Every terminal example is one copy-and-paste command.
 
 After installation, open AllScan and press **Ctrl+F5** to reload the page, JavaScript, and CSS.
+
+## Upgrade
+
+This updates the AllScan Mods repository on a node where it is already cloned. It saves the current commit on a local backup branch, stashes any local changes, and updates `main` from GitHub. The command does not commit or push your changes.
+
+```bash
+cd /home/asl/AllScan-Mods && git fetch origin && backup="pre-update-$(date +%Y%m%d-%H%M%S)-$$" && git branch "$backup" HEAD && git stash push -u -m "Pre-update $backup" && git switch -C main origin/main
+```
+
+Then choose **one** installer:
+
+- Apply or reapply the Mods to the currently installed AllScan version: `sudo ./allscan-mods.sh`
+- Run David's official AllScan installer/updater first, then apply the Mods: `sudo ./install-allscan-n-mods.sh`
+
+The combined installer can update AllScan itself and may prompt you to confirm that update. The Mods-only installer does not update AllScan. After either installer completes, hard-refresh the AllScan page with **Ctrl+F5**.
 
 ## Custom AllScan directory
 
