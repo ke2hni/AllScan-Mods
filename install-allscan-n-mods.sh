@@ -201,11 +201,10 @@ ensure_apache_sqlite() {
     fi
 
     [[ $sqlite_ok == true ]] || {
-        echo "ERROR: PHP SQLite extensions are not enabled for Apache PHP." >&2
-        echo "Required extensions: pdo_sqlite and sqlite3" >&2
+        echo "ERROR: PHP SQLite status: pdo_sqlite and/or sqlite3 are not enabled for Apache PHP." >&2
+        echo "AllScan requires both extensions. Enable them, then rerun this installer." >&2
         exit 1
     }
-    echo "PASS: Apache PHP SQLite support verified (pdo_sqlite, sqlite3)."
 }
 
 ensure_apache_sqlite
@@ -737,6 +736,7 @@ if cmp -s "$INDEX_FILE" "$stage_index" && cmp -s "$VIEW_FILE" "$stage_view" && \
    cmp -s "$CONNECT_FILE" "$stage_connect" && \
    { [[ $allscan_version != v1.02 && $allscan_version != v1.03 ]] || { cmp -s "$FAVS_UTILS_FILE" "$stage_favs_utils" && cmp -s "$SIMPLE_CSS_FILE" "$stage_simple_css"; }; }; then
     echo "AllScan Mods are already installed. No changes made."
+    echo "PHP SQLite status: pdo_sqlite and sqlite3 are enabled for Apache. AllScan requires both."
     exit 0
 fi
 
@@ -814,6 +814,7 @@ installed=true
 trap - ERR
 
 echo "AllScan Mods installed successfully."
+echo "PHP SQLite status: pdo_sqlite and sqlite3 are enabled for Apache. AllScan requires both."
 echo "Backups:"
 echo "  $index_backup"
 echo "  $view_backup"

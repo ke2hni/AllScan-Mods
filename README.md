@@ -137,6 +137,7 @@ The installer:
 - Runs JavaScript syntax validation when Node.js is installed.
 - At the default path, the combined installer runs David's current official installer/updater before applying Mods; it prompts before installing or updating AllScan and stops if an old v1.01 installation remains.
 - The combined installer installs `php-sqlite3` when needed, enables `pdo_sqlite` and `sqlite3` for Apache PHP, restarts Apache when required, and verifies both extensions before modifying AllScan.
+- At completion, both installers report whether Apache PHP has `pdo_sqlite` and `sqlite3` enabled. AllScan requires both. The Mods-only installer reports status without changing PHP settings; use the combined installer if they need to be enabled.
 - Before upgrading an installed v1.01, the combined installer creates a full timestamped recovery copy named `allscan.before-update-v1.01-YYYYMMDD-HHMMSS`. If an existing `allscan.bak.v1.01` is present, it also preserves that backup with a timestamped suffix before David's updater can replace it.
 - The combined installer preserves the official installer filename so AllScan's self-update check works correctly.
 - Preserves existing file ownership and permissions.

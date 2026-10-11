@@ -58,6 +58,29 @@ esac
 
 command -v python3 >/dev/null 2>&1 || { echo "ERROR: python3 is required." >&2; exit 1; }
 
+report_apache_sqlite_status() {
+    local apache_ini sqlite_ok=false
+    shopt -s nullglob
+    local apache_inis=(/etc/php/*/apache2/php.ini)
+    shopt -u nullglob
+
+    if command -v php >/dev/null 2>&1 && ((${#apache_inis[@]} > 0)); then
+        for apache_ini in "${apache_inis[@]}"; do
+            if php -c "$apache_ini" -m 2>/dev/null | grep -qx 'pdo_sqlite' && \
+               php -c "$apache_ini" -m 2>/dev/null | grep -qx 'sqlite3'; then
+                sqlite_ok=true
+                break
+            fi
+        done
+    fi
+
+    if [[ $sqlite_ok == true ]]; then
+        echo "PHP SQLite status: pdo_sqlite and sqlite3 are enabled. AllScan requires both."
+    else
+        echo "PHP SQLite status: pdo_sqlite and/or sqlite3 are not enabled for Apache, or could not be verified. AllScan requires both; run the combined installer to enable and verify them."
+    fi
+}
+
 work_dir=$(mktemp -d /tmp/allscan-mods.XXXXXX)
 trap 'rm -rf -- "$work_dir"' EXIT
 
@@ -573,6 +596,7 @@ if cmp -s "$INDEX_FILE" "$stage_index" && cmp -s "$VIEW_FILE" "$stage_view" && \
    cmp -s "$CONNECT_FILE" "$stage_connect" && \
    { [[ $allscan_version != v1.02 && $allscan_version != v1.03 ]] || { cmp -s "$FAVS_UTILS_FILE" "$stage_favs_utils" && cmp -s "$SIMPLE_CSS_FILE" "$stage_simple_css"; }; }; then
     echo "AllScan Mods are already installed. No changes made."
+    report_apache_sqlite_status
     exit 0
 fi
 
@@ -650,6 +674,7 @@ installed=true
 trap - ERR
 
 echo "AllScan Mods installed successfully."
+report_apache_sqlite_status
 echo "Backups:"
 echo "  $index_backup"
 echo "  $view_backup"
