@@ -39,9 +39,9 @@ CSS_FILE=$ALLSCAN_DIR/css/main.css
 CONNECT_FILE=$ALLSCAN_DIR/astapi/connect.php
 COMMON_FILE=$ALLSCAN_DIR/include/common.php
 FAVS_UTILS_FILE=$ALLSCAN_DIR/include/favsUtils.php
+SIMPLE_CSS_FILE=$ALLSCAN_DIR/css/simple.css
 SIMPLE_INDEX_FILE=$ALLSCAN_DIR/simple/index.php
 SIMPLE_JS_FILE=$ALLSCAN_DIR/js/simple.js
-SIMPLE_CSS_FILE=$ALLSCAN_DIR/css/simple.css
 
 for required in "$INDEX_FILE" "$VIEW_FILE" "$JS_FILE" "$CSS_FILE" "$CONNECT_FILE" "$COMMON_FILE"; do
     [[ -f $required ]] || { echo "ERROR: Required AllScan file not found: $required" >&2; exit 1; }
@@ -394,6 +394,9 @@ font-size:12px;
 if has_v102_layout and mobile_new not in simple_css:
     simple_css = replace_once(simple_css, mobile_marker, mobile_new, "TouchGUI compact status controls")
 
+
+
+
 # Server-side Edit Favorite action.
 edit_case_marker = '\tcase "Edit Favorite":'
 edit_case = r'''	case "Edit Favorite":
@@ -579,9 +582,7 @@ elif old_two_line_row in view:
     view = replace_once(view, old_two_line_row, final_checkbox_row, "two-line Monitor checkbox layout")
 elif unwrapped_checkbox_row in view:
     view = replace_once(view, unwrapped_checkbox_row, final_checkbox_row, "unwrapped Monitor checkbox layout")
-elif monitor_checkbox in view and base_checkbox_row in view:
-    view = replace_once(view, base_checkbox_row, final_checkbox_row, "existing checkbox row")
-elif monitor_checkbox not in view and base_checkbox_row in view:
+elif monitor_checkbox not in view:
     view = replace_once(view, base_checkbox_row, final_checkbox_row, "existing checkbox row")
 
 old_connect_js = '''\t// Disconnect before Connect checkbox. Only applies if conncnt > 0
@@ -782,15 +783,13 @@ checks = {
     'Favorites label source': not has_v102_layout or new_fav_row in favs_utils,
     'TouchGUI portrait header': not has_v102_layout or new_touch_header in simple_css,
     'TouchGUI disconnect toggle': (not has_v102_layout) or ('id="autodiscBtn"' in simple_index and 'function toggleAutodiscPreference()' in simple_js and "+ '&autodisc=' + simple.autodisc)" in simple_js),
-    'Main-page stored disconnect preference': 'function initAutodiscPreference()' in js,
-    'Main-page checkbox stored default': 'data-autodisc-default' in view,
-    'Monitor checkbox': not has_v102_layout or view.count('id="automondisc"') >= 1,
-    'Disconnect default marker': 'data-autodisc-default' in view,
-    'Monitor JavaScript flag': not has_v102_layout or js.count("var automondisc = (button === 'monitor')") == 1,
-    'Monitor request parameter': not has_v102_layout or js.count("'&automondisc='+automondisc") == 1,
-    'Monitor API field': not has_v102_layout or connect.count("'automondisc'") == 1,
-    'Monitor API boolean': not has_v102_layout or connect.count("$automondisc = ($automondisc === 'true');") == 1,
-    'Monitor disconnect action': not has_v102_layout or connect.count('if($automondisc)') == 1,
+    'Monitor checkbox': view.count('id="automondisc"') == 1,
+    'one-line checkbox row': final_checkbox_row in view,
+    'Monitor JavaScript flag': js.count("var automondisc = (button === 'monitor')") == 1,
+    'Monitor request parameter': js.count("'&automondisc='+automondisc") == 1,
+    'Monitor API field': connect.count("'automondisc'") == 1,
+    'Monitor API boolean': connect.count("$automondisc = ($automondisc === 'true');") == 1,
+    'Monitor disconnect action': connect.count('if($automondisc)') == 1,
 }
 failed = [name for name, ok in checks.items() if not ok]
 if failed:
@@ -802,10 +801,9 @@ js_path.write_text(js, encoding="utf-8")
 css_path.write_text(css, encoding="utf-8")
 connect_path.write_text(connect, encoding="utf-8")
 if has_v102_layout: favs_utils_path.write_text(favs_utils, encoding="utf-8")
-if has_v102_layout:
-    simple_css_path.write_text(simple_css, encoding="utf-8")
-    simple_index_path.write_text(simple_index, encoding="utf-8")
-    simple_js_path.write_text(simple_js, encoding="utf-8")
+if has_v102_layout: simple_css_path.write_text(simple_css, encoding="utf-8")
+if has_v102_layout: simple_index_path.write_text(simple_index, encoding="utf-8")
+if has_v102_layout: simple_js_path.write_text(simple_js, encoding="utf-8")
 print('patch-ready')
 PY
 
