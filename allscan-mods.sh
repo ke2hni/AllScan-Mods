@@ -50,14 +50,46 @@ done
 allscan_version=$(sed -nE 's/^\$AllScanVersion = "(v[0-9.]+)";.*/\1/p' "$COMMON_FILE")
 case "$allscan_version" in
     v1.01) favs_source=$INDEX_FILE ;;
-    v1.02|v1.03)
+    v1.02|v1.03|v1.04)
         [[ -f $SIMPLE_INDEX_FILE && -f $SIMPLE_JS_FILE ]] || { echo "ERROR: Required TouchGUI files are missing. No files changed." >&2; exit 1; }
         [[ -f $FAVS_UTILS_FILE ]] || { echo "ERROR: Required AllScan file not found: $FAVS_UTILS_FILE" >&2; exit 1; }
         [[ -f $SIMPLE_CSS_FILE ]] || { echo "ERROR: Required AllScan file not found: $SIMPLE_CSS_FILE" >&2; exit 1; }
         favs_source=$FAVS_UTILS_FILE
         ;;
-    *) echo "ERROR: Supports AllScan v1.01, v1.02, and v1.03; found ${allscan_version:-unknown}. No files changed." >&2; exit 1 ;;
+    *) echo "ERROR: Supports legacy AllScan v1.01-v1.03 and integrated v1.04; found ${allscan_version:-unknown}. No files changed." >&2; exit 1 ;;
 esac
+
+# PR #37 upstream integration guard. Check the complete feature set rather than
+# trusting a version string alone: v1.03 may be either pre- or post-merge;
+# v1.04 is the official release incorporating those features.
+# A match is read-only and must not create backups or rewrite upstream files.
+upstream_features_present() {
+    [[ $allscan_version == v1.03 || $allscan_version == v1.04 ]] || return 1
+    grep -Fq 'case "Edit Favorite":' "$INDEX_FILE" &&
+    grep -Fq 'sortFavStats(5)' "$INDEX_FILE" &&
+    grep -Fq 'sortFavStats(6)' "$INDEX_FILE" &&
+    grep -Fq 'Save &amp; Close</button>' "$VIEW_FILE" &&
+    grep -Fq 'id="automondisc"' "$VIEW_FILE" &&
+    grep -Fq 'function sortFavStats(' "$JS_FILE" &&
+    grep -Fq 'function openFavoriteEditor(' "$JS_FILE" &&
+    grep -Fq 'if($automondisc)' "$CONNECT_FILE" &&
+    grep -Fq 'Local modification: AllScan Favorites editor dialog.' "$CSS_FILE" &&
+    grep -Fq 'function toggleAutodiscPreference()' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'id="autodiscBtn"' "$SIMPLE_INDEX_FILE" &&
+    grep -Fq 'grid-template-columns:auto 1fr auto;' "$SIMPLE_CSS_FILE" &&
+    grep -Fq '$favList[] = [$n, $f->node, $name, $desc, $loc, NBSP, NBSP, $name];' "$FAVS_UTILS_FILE"
+}
+# v1.04 includes PR #37 upstream. Never run legacy patch transformations on
+# v1.04 even if feature markers change; stop until compatibility is reviewed.
+if [[ $allscan_version == v1.04 ]] && ! upstream_features_present; then
+    echo "ERROR: AllScan v1.04 did not match the reviewed PR #37 feature layout. No Mods patches or backups made. Review the upstream files before proceeding." >&2
+    exit 1
+fi
+if upstream_features_present; then
+    echo "AllScan already includes the integrated enhancements (PR #37). No Mods patches or backups needed."
+    echo "No AllScan application files changed."
+    exit 0
+fi
 
 command -v python3 >/dev/null 2>&1 || { echo "ERROR: python3 is required." >&2; exit 1; }
 

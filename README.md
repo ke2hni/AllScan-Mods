@@ -6,7 +6,7 @@
 
 ![Platform](https://img.shields.io/badge/Platform-AllStarLink%203-0b7285?style=for-the-badge)
 ![Debian](https://img.shields.io/badge/Debian-12%20%7C%2013-a81d33?style=for-the-badge&logo=debian&logoColor=white)
-![AllScan](https://img.shields.io/badge/AllScan-v1.01%20%7C%20v1.02%20%7C%20v1.03-2f9e44?style=for-the-badge)
+![AllScan](https://img.shields.io/badge/AllScan-v1.01%20%7C%20v1.02%20%7C%20v1.03%20%7C%20v1.04-2f9e44?style=for-the-badge)
 ![Installer](https://img.shields.io/badge/Installer-Idempotent-6741d9?style=for-the-badge)
 
 **AllScan Mods add a main-page Favorites editor, clickable sorting for the live `Rx%` and `LCnt` columns, and an independent Disconnect before Monitor option. Choose the Mods-only installer or the combined AllScan updater.**
@@ -15,6 +15,18 @@
 
 > [!NOTE]
 > This is an unofficial modification. AllScan is created by **David Gleason, NR9V**. The official upstream project is [davidgsd/AllScan](https://github.com/davidgsd/AllScan) and remains the source of truth.
+
+## Official AllScan integration (PR #37, v1.04)
+
+On October 14, 2026, David merged the dashboard and TouchGUI enhancements into the official [AllScan pull request #37](https://github.com/davidgsd/AllScan/pull/37). New AllScan installations containing these features **do not need the Mods patch**.
+
+David released **AllScan v1.04 on 2026-10-14** with PR #37 integrated. The legacy patch workflow only applies to v1.01-v1.03.
+
+Both installers now check the **full set of integrated features** on AllScan v1.03 or v1.04 before attempting any patch. If present, they exit without altering application files or generating Mods backups. The combined installer can still run the official updater and perform its PHP SQLite prerequisite checks before that detection; it is not a Mods-only no-op.
+
+Older pre-integration v1.01, v1.02 and v1.03 installations remain supported by the original patching workflow. AllScan v1.04 is **upstream-integrated only**: it is never processed by the legacy patcher, and a missing or changed feature marker causes a safe refusal with no Mods patch/backups. An unknown AllScan version is **not assumed compatible** and the Mods patch is refused pending review. Feature detection is not a substitute for reviewing future upstream changes or runtime testing.
+
+Never restore an older `.before-allscan-mods-*` backup onto a newer upstream installation: those backups may remove David's integrated features or later fixes. Use the official AllScan updater to recover current upstream files.
 
 ## Features
 
@@ -128,7 +140,7 @@ cd /home/asl && sudo ./allscan-mods.sh --allscan-dir /srv/http/allscan
 
 The installer:
 
-- Supports David Gleason's AllScan v1.01, v1.02, and v1.03 source layouts.
+- Supports legacy AllScan v1.01, v1.02, and v1.03 source layouts; v1.04 is detected and skipped without patching.
 - Works on clean AllScan v1.01, v1.02, and v1.03 installations.
 - Upgrades an installation containing only the earlier Rx%/LCnt sorting modification.
 - Upgrades the previous combined Favorites editor/sorting package.
@@ -294,7 +306,7 @@ The selected entry is not a standard adjacent `label[]` and `cmd[] = "rpt cmd %n
 |:--|:--|
 | Platform | AllStarLink 3 |
 | Operating system | Debian 13 |
-| AllScan | v1.01, v1.02, and v1.03 source layouts |
+| AllScan | v1.01-v1.03 legacy patches; v1.04 integrated feature detection and safe skip |
 | Default web root | `/var/www/html/allscan` |
 | Nodes | `node44690` and a separate test node |
 
