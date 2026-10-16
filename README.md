@@ -55,10 +55,13 @@ AllScan's Description and Location columns remain sourced from the AllStarLink d
 - Applies only to the **Monitor** button and does not change **Local Mon** behavior.
 - If no nodes are connected, Monitor proceeds normally without issuing an unnecessary disconnect command.
 
-### TouchGUI remote-node activity colors (testing)
+### TouchGUI remote-node activity and statistics (testing)
 
 - Uses AllScan's existing `stats.php` endpoint to color each configured TouchGUI channel by remote-node activity.
 - Uses the same red keyed/recently keyed activity shading and the same dark/medium green active states as the main Favorites table.
+- Replaces the previous Mods TouchGUI activity patch with the corrected calculation and creates fresh timestamped backups when upgrading it.
+- Shows each channel's `Rx%` and `LCnt` values in a compact footer beneath its node/callsign line. The values use fields from the same stats response already used for activity colors; they do not add API requests.
+- Keeps the channel name, node/callsign line, and TouchGUI controls intact. Cards grow slightly to fit the extra row; phone-width and short-screen CSS rules keep the values compact and readable.
 - Keeps TouchGUI's existing local connection border and status behavior.
 - Scans unique public node numbers one at a time. The interval is based on the channel count and keeps one TouchGUI page at or below 30 statistics requests per minute.
 - Applies to TouchGUI on AllScan v1.02, v1.03, and v1.04. AllScan v1.01 has no TouchGUI.

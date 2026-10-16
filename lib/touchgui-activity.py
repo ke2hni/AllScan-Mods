@@ -13,41 +13,64 @@ def main():
     css = css_path.read_text(encoding="utf-8")
 
     marker = "// AllScan Mods: TouchGUI remote-node activity colors."
-    if marker in js:
-        if "button.dataset.activity = keyed" in js and ".channel-btn[data-activity=\"active\"]" in css:
-            print("TouchGUI activity colors are already applied.")
-            return
-        raise SystemExit("ERROR: Partial TouchGUI activity patch detected; no files changed.")
+    patch_present = marker in js
+    if (patch_present and "function convertActivityRange(value, min, max)" in js
+            and "simple.txTim[node] = now" not in js
+            and "channel-stats" in js and ".channel-stats" in css
+            and "activity.rxPct" in js and "activity.linkCnt" in js
+            and "Number(channel.node) < 3000000" in js):
+        print("TouchGUI activity colors are already applied.")
+        return
 
     state_marker = "\tretryTmr: null\n};"
     state_new = "\tstatsTmr: null,\n\tstatsReq: null,\n\tstatsIndex: 0,\n\ttxCnt: {},\n\ttxTim: {},\n\ttxTT: {},\n\ttxAvg: {},\n" + state_marker
-    if js.count(state_marker) != 1:
-        raise SystemExit("ERROR: Expected TouchGUI state marker exactly once; no files changed.")
-    js = js.replace(state_marker, state_new, 1)
+    if patch_present:
+        old_state = "\tstatsTmr: null,\n\tstatsReq: null,\n\tstatsIndex: 0,\n\ttxKeyups: {},\n\ttxTimes: {},\n\ttxUpdated: {},\n\ttxAverage: {},\n"
+        new_state = state_new.removesuffix(state_marker)
+        if js.count(old_state) == 1:
+            js = js.replace(old_state, new_state, 1)
+        elif all(field in js for field in ("\ttxCnt: {},", "\ttxTim: {},", "\ttxTT: {},", "\ttxAvg: {},")):
+            pass
+        else:
+            raise SystemExit("ERROR: Existing TouchGUI activity patch has an unexpected state block; no files changed.")
+    else:
+        if js.count(state_marker) != 1:
+            raise SystemExit("ERROR: Expected TouchGUI state marker exactly once; no files changed.")
+        js = js.replace(state_marker, state_new, 1)
 
     init_marker = "\tinitEventSource();\n}"
     init_new = "\tinitEventSource();\n\tgetChannelStats();\n}"
-    if js.count(init_marker) != 1:
-        raise SystemExit("ERROR: Expected TouchGUI initialization marker exactly once; no files changed.")
-    js = js.replace(init_marker, init_new, 1)
+    if not patch_present:
+        if js.count(init_marker) != 1:
+            raise SystemExit("ERROR: Expected TouchGUI initialization marker exactly once; no files changed.")
+        js = js.replace(init_marker, init_new, 1)
 
     render_marker = "\t\tsimple.channelByNode[channel.node] = channel;"
     render_new = render_marker + "\n\t\tif(channel.activity)\n\t\t\tapplyChannelActivity(btn, channel.activity);"
-    if js.count(render_marker) != 1:
-        raise SystemExit("ERROR: Expected TouchGUI channel-render marker exactly once; no files changed.")
-    js = js.replace(render_marker, render_new, 1)
+    if not patch_present:
+        if js.count(render_marker) != 1:
+            raise SystemExit("ERROR: Expected TouchGUI channel-render marker exactly once; no files changed.")
+        js = js.replace(render_marker, render_new, 1)
+
+    stats_markup = "\t\t\t+ '<span class=\"channel-meta\">' + escapeHtml(channelMeta(channel)) + '</span>';"
+    stats_markup_new = stats_markup[:-1] + "\n\t\t\t+ '<span class=\"channel-stats\"><span class=\"channel-rx\">Rx% —</span><span class=\"channel-lcnt\">LCnt —</span></span>';"
+    if "channel-stats" not in js:
+        if js.count(stats_markup) != 1:
+            raise SystemExit("ERROR: Expected TouchGUI channel metadata markup exactly once; no files changed.")
+        js = js.replace(stats_markup, stats_markup_new, 1)
 
     unload_marker = "\twindow.addEventListener('beforeunload', closeEventSource);"
-    if js.count(unload_marker) != 1:
-        raise SystemExit("ERROR: Expected TouchGUI unload marker exactly once; no files changed.")
-    js = js.replace(unload_marker, unload_marker + "\n\twindow.addEventListener('beforeunload', closeChannelStats);", 1)
+    if not patch_present:
+        if js.count(unload_marker) != 1:
+            raise SystemExit("ERROR: Expected TouchGUI unload marker exactly once; no files changed.")
+        js = js.replace(unload_marker, unload_marker + "\n\twindow.addEventListener('beforeunload', closeChannelStats);", 1)
 
     handler_marker = "function handleConnectionEvent(event) {"
     handler = r'''// AllScan Mods: TouchGUI remote-node activity colors.
 function getChannelStats() {
 	var nodeList = {};
 	simple.channels.forEach(function(channel) {
-		if(Number(channel.node) >= 2000 && Number(channel.node) < 2000000)
+		if(Number(channel.node) >= 2000 && Number(channel.node) < 3000000)
 			nodeList[String(channel.node)] = true;
 	});
 	var nodes = Object.keys(nodeList);
@@ -114,7 +137,7 @@ function updateChannelActivity(stats) {
 	var channel = simple.channelByNode[node];
 	if(!channel)
 		return;
-	channel.activity = {active: stats.active == 1, wt: stats.wt == 1, txAverage: simple.txAvg[node]};
+	channel.activity = {active: stats.active == 1, wt: stats.wt == 1, txAverage: simple.txAvg[node], rxPct: stats.busyPct, linkCnt: stats.linkCnt};
 	var button = simple.channelsGrid.querySelector('[data-node="' + node + '"]');
 	if(button)
 		applyChannelActivity(button, channel.activity);
@@ -123,6 +146,12 @@ function updateChannelActivity(stats) {
 function applyChannelActivity(button, activity) {
 	var keyed = activity.txAverage > 5;
 	var shade = convertActivityRange(activity.txAverage, 15, 29);
+	var rx = button.querySelector('.channel-rx');
+	var links = button.querySelector('.channel-lcnt');
+	if(rx)
+		rx.textContent = 'Rx% ' + (activity.rxPct === undefined ? '—' : activity.rxPct);
+	if(links)
+		links.textContent = 'LCnt ' + (activity.linkCnt === undefined ? '—' : activity.linkCnt);
 	button.dataset.activity = keyed ? 'keyed' : (activity.active ? (activity.wt ? 'active-wt' : 'active') : 'idle');
 	button.style.backgroundColor = keyed
 		? 'hsl(0,100%,' + shade + '%)'
@@ -138,9 +167,16 @@ function convertActivityRange(value, min, max) {
 }
 
 '''
-    if js.count(handler_marker) != 1:
-        raise SystemExit("ERROR: Expected TouchGUI event-handler marker exactly once; no files changed.")
-    js = js.replace(handler_marker, handler + handler_marker, 1)
+    if patch_present:
+        start = js.find(marker)
+        end = js.find(handler_marker, start)
+        if start < 0 or end < 0 or js.find(marker, start + len(marker)) >= 0:
+            raise SystemExit("ERROR: Existing TouchGUI activity handler is ambiguous; no files changed.")
+        js = js[:start] + handler + js[end:]
+    else:
+        if js.count(handler_marker) != 1:
+            raise SystemExit("ERROR: Expected TouchGUI event-handler marker exactly once; no files changed.")
+        js = js.replace(handler_marker, handler + handler_marker, 1)
 
     css_marker = ".channel-btn.active {"
     css_rules = '''.channel-btn[data-activity="active"] {
@@ -153,9 +189,44 @@ background-color:hsl(150,50%,20%);
 color:#fff;
 }
 '''
-    if css.count(css_marker) != 1:
-        raise SystemExit("ERROR: Expected TouchGUI active-channel CSS marker exactly once; no files changed.")
-    css = css.replace(css_marker, css_rules + css_marker, 1)
+    stats_css = '''.channel-stats {
+grid-column:2;
+display:flex;
+justify-content:space-between;
+gap:4px;
+min-width:0;
+font-size:11px;
+font-weight:normal;
+line-height:1.15;
+color:#c8d8e5;
+white-space:nowrap;
+}
+.channel-btn {
+grid-template-rows:auto auto auto;
+min-height:120px;
+}
+.channel-index {
+grid-row:1 / span 3;
+}
+@media (max-width:700px) {
+.channel-btn { min-height:112px; }
+.channel-stats { font-size:10px; gap:3px; }
+}
+@media (max-height:430px) {
+.channel-btn { min-height:108px; }
+.channel-label { font-size:15px; }
+.channel-meta { font-size:12px; }
+.channel-stats { font-size:10px; }
+}
+'''
+    if not patch_present:
+        if css.count(css_marker) != 1:
+            raise SystemExit("ERROR: Expected TouchGUI active-channel CSS marker exactly once; no files changed.")
+        css = css.replace(css_marker, css_rules + css_marker, 1)
+    elif '.channel-btn[data-activity="active"]' not in css:
+        raise SystemExit("ERROR: Existing TouchGUI CSS patch is incomplete; no files changed.")
+    if ".channel-stats" not in css:
+        css = css.rstrip() + "\n" + stats_css
 
     if "simple.statsTmr = setTimeout(getChannelStats" not in js or 'data-activity="active-wt"' not in css:
         raise SystemExit("ERROR: TouchGUI activity patch validation failed; no files changed.")

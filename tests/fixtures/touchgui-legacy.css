@@ -1,0 +1,13 @@
+.channel-btn[data-activity="active"] {
+background-color:hsl(150,50%,15%);
+}
+.channel-btn[data-activity="active-wt"] {
+background-color:hsl(150,50%,20%);
+}
+.channel-btn[data-activity="keyed"] {
+color:#fff;
+}
+.channel-btn.active {
+border-color:#30c66d;
+background:#123d27;
+}

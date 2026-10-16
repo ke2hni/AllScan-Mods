@@ -15,6 +15,8 @@ def main():
         text = (ROOT / installer).read_text(encoding="utf-8")
         assert "apply_touchgui_activity_live" in text, installer
         assert "TOUCHGUI_ACTIVITY_PATCH" in text, installer
+        assert "activity.rxPct" in text and "activity.linkCnt" in text, installer
+        assert "channel-stats" in text, installer
         assert "allscan_version == v1.02 || $allscan_version == v1.03" in text, installer
         assert "AllScan already includes the integrated enhancements (PR #37)" in text, installer
 
@@ -34,6 +36,7 @@ def main():
         assert "30000 / nodes.length" in patched_js
         assert "status === 429" in patched_js
         assert "Object.keys(nodeList)" in patched_js
+        assert "Number(channel.node) < 3000000" in patched_js
         assert "data-activity=\"active-wt\"" in patched_css
         assert "hsl(150,50%,15%)" in patched_js
         assert "hsl(150,50%,20%)" in patched_js
@@ -42,12 +45,61 @@ def main():
         assert "convertActivityRange(activity.txAverage, 15, 29)" in patched_js
         assert "simple.txAvg[node] = Math.round(simple.txAvg[node] / 2 + txPercent / 2)" in patched_js
         assert "simple.txTim[node] = now" not in patched_js
+        runtime_js = temp / "runtime.js"
+        runtime_js.write_text(patched_js + r'''
+var rx = {textContent: ''};
+var lcnt = {textContent: ''};
+var button = {
+	dataset: {},
+	style: {},
+	querySelector: function(selector) { return selector === '.channel-rx' ? rx : lcnt; }
+};
+simple.channels = [{node: '2999999'}];
+simple.channelByNode['2999999'] = simple.channels[0];
+simple.channelsGrid = {querySelector: function() { return button; }};
+updateChannelActivity({node: '2999999', keyups: 1, txtime: 25, keyed: 1, active: 1, wt: 0, busyPct: 39, linkCnt: 153});
+if(rx.textContent !== 'Rx% 39' || lcnt.textContent !== 'LCnt 153')
+	throw new Error('TouchGUI stats values were not rendered');
+if(button.dataset.activity !== 'keyed' || button.style.backgroundColor !== 'hsl(0,100%,29%)')
+	throw new Error('Keyed activity color was not retained');
+''', encoding="utf-8")
+        subprocess.run(["node", str(runtime_js)], check=True)
         before = (js.read_bytes(), css.read_bytes())
         subprocess.run(["python3", str(PATCHER), str(js), str(css)], check=True)
         assert before == (js.read_bytes(), css.read_bytes()), "second application changed files"
 
+        legacy_js = temp / "legacy.js"
+        legacy_css = temp / "legacy.css"
+        shutil.copy2(FIXTURES / "touchgui-legacy.js", legacy_js)
+        shutil.copy2(FIXTURES / "touchgui-legacy.css", legacy_css)
+        subprocess.run(["python3", str(PATCHER), str(legacy_js), str(legacy_css)], check=True)
+        subprocess.run(["node", "--check", str(legacy_js)], check=True)
+        upgraded_js = legacy_js.read_text(encoding="utf-8")
+        assert "simple.txTim[node] = now" not in upgraded_js
+        assert "function convertActivityRange(value, min, max)" in upgraded_js
+        upgraded = (legacy_js.read_bytes(), legacy_css.read_bytes())
+        subprocess.run(["python3", str(PATCHER), str(legacy_js), str(legacy_css)], check=True)
+        assert upgraded == (legacy_js.read_bytes(), legacy_css.read_bytes()), "upgraded patch was not idempotent"
+
+        current_js = temp / "current.js"
+        current_css = temp / "current.css"
+        shutil.copy2(FIXTURES / "touchgui-colors-v3.js", current_js)
+        shutil.copy2(FIXTURES / "touchgui-colors-v3.css", current_css)
+        subprocess.run(["python3", str(PATCHER), str(current_js), str(current_css)], check=True)
+        subprocess.run(["node", "--check", str(current_js)], check=True)
+        current_source = current_js.read_text(encoding="utf-8")
+        current_style = current_css.read_text(encoding="utf-8")
+        assert "Rx% —" in current_source and "LCnt —" in current_source
+        assert "activity.rxPct" in current_source and "activity.linkCnt" in current_source
+        assert "grid-template-rows:auto auto auto" in current_style
+        assert "@media (max-width:700px)" in current_style
+        assert "@media (max-height:430px)" in current_style
+        current = (current_js.read_bytes(), current_css.read_bytes())
+        subprocess.run(["python3", str(PATCHER), str(current_js), str(current_css)], check=True)
+        assert current == (current_js.read_bytes(), current_css.read_bytes()), "stats patch was not idempotent"
+
     print("PASS: installers include the TouchGUI activity patch path.")
-    print("PASS: TouchGUI stats poller, status colors, syntax, and repeat application.")
+    print("PASS: TouchGUI stats poller, colors, Rx%/LCnt fields, responsive rules, syntax, upgrades, and repeat application.")
 
 
 if __name__ == "__main__":

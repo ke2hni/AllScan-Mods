@@ -241,6 +241,13 @@ TOUCHGUI_ACTIVITY_PATCH=$MODS_DIR/lib/touchgui-activity.py
 touchgui_activity_present() {
     grep -Fq 'function getChannelStats()' "$SIMPLE_JS_FILE" &&
     grep -Fq 'function updateChannelActivity(stats)' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'function convertActivityRange(value, min, max)' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'activity.rxPct' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'activity.linkCnt' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'channel-stats' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'Number(channel.node) < 3000000' "$SIMPLE_JS_FILE" &&
+    ! grep -Fq 'simple.txTim[node] = now' "$SIMPLE_JS_FILE" &&
+    grep -Fq '.channel-stats' "$SIMPLE_CSS_FILE" &&
     grep -Fq '.channel-btn[data-activity="active"]' "$SIMPLE_CSS_FILE"
 }
 
