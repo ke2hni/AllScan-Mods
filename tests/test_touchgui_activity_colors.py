@@ -31,6 +31,7 @@ def main():
         patched_js = js.read_text(encoding="utf-8")
         patched_css = css.read_text(encoding="utf-8")
         assert "getChannelStats()" in patched_js
+        assert "TouchGUI activity colors and Rx%/LCnt v1.05." in patched_js
         assert "updateChannelActivity(stats)" in patched_js
         assert "function closeChannelStats()" in patched_js
         assert "30000 / nodes.length" in patched_js
@@ -38,6 +39,7 @@ def main():
         assert "Object.keys(nodeList)" in patched_js
         assert "Number(channel.node) < 3000000" in patched_js
         assert "data-activity=\"active-wt\"" in patched_css
+        assert "TouchGUI activity colors and Rx%/LCnt v1.05." in patched_css
         assert "hsl(150,50%,15%)" in patched_js
         assert "hsl(150,50%,20%)" in patched_js
         assert "hsl(0,100%," in patched_js

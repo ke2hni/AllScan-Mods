@@ -67,6 +67,8 @@ MODS_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 TOUCHGUI_ACTIVITY_PATCH=$MODS_DIR/lib/touchgui-activity.py
 
 touchgui_activity_present() {
+    grep -Fq 'AllScan Mods: TouchGUI activity colors and Rx%/LCnt v1.05.' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'AllScan Mods: TouchGUI activity colors and Rx%/LCnt v1.05.' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'function getChannelStats()' "$SIMPLE_JS_FILE" &&
     grep -Fq 'function updateChannelActivity(stats)' "$SIMPLE_JS_FILE" &&
     grep -Fq 'function convertActivityRange(value, min, max)' "$SIMPLE_JS_FILE" &&

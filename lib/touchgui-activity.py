@@ -12,8 +12,10 @@ def main():
     js = js_path.read_text(encoding="utf-8")
     css = css_path.read_text(encoding="utf-8")
 
-    marker = "// AllScan Mods: TouchGUI remote-node activity colors."
-    patch_present = marker in js
+    marker = "// AllScan Mods: TouchGUI activity colors and Rx%/LCnt v1.05."
+    prior_marker = "// AllScan Mods: TouchGUI remote-node activity colors."
+    patch_marker = marker if marker in js else prior_marker
+    patch_present = patch_marker in js
     if (patch_present and "function convertActivityRange(value, min, max)" in js
             and "simple.txTim[node] = now" not in js
             and "channel-stats" in js and ".channel-stats" in css
@@ -66,7 +68,7 @@ def main():
         js = js.replace(unload_marker, unload_marker + "\n\twindow.addEventListener('beforeunload', closeChannelStats);", 1)
 
     handler_marker = "function handleConnectionEvent(event) {"
-    handler = r'''// AllScan Mods: TouchGUI remote-node activity colors.
+    handler = r'''// AllScan Mods: TouchGUI activity colors and Rx%/LCnt v1.05.
 function getChannelStats() {
 	var nodeList = {};
 	simple.channels.forEach(function(channel) {
@@ -168,9 +170,9 @@ function convertActivityRange(value, min, max) {
 
 '''
     if patch_present:
-        start = js.find(marker)
+        start = js.find(patch_marker)
         end = js.find(handler_marker, start)
-        if start < 0 or end < 0 or js.find(marker, start + len(marker)) >= 0:
+        if start < 0 or end < 0 or js.find(patch_marker, start + len(patch_marker)) >= 0:
             raise SystemExit("ERROR: Existing TouchGUI activity handler is ambiguous; no files changed.")
         js = js[:start] + handler + js[end:]
     else:
@@ -189,7 +191,8 @@ background-color:hsl(150,50%,20%);
 color:#fff;
 }
 '''
-    stats_css = '''.channel-stats {
+    stats_css = '''/* AllScan Mods: TouchGUI activity colors and Rx%/LCnt v1.05. */
+.channel-stats {
 grid-column:2;
 display:flex;
 justify-content:space-between;
@@ -227,6 +230,8 @@ grid-row:1 / span 3;
         raise SystemExit("ERROR: Existing TouchGUI CSS patch is incomplete; no files changed.")
     if ".channel-stats" not in css:
         css = css.rstrip() + "\n" + stats_css
+    if "AllScan Mods: TouchGUI activity colors and Rx%/LCnt v1.05." not in css:
+        css = css.rstrip() + "\n/* AllScan Mods: TouchGUI activity colors and Rx%/LCnt v1.05. */\n"
 
     if "simple.statsTmr = setTimeout(getChannelStats" not in js or 'data-activity="active-wt"' not in css:
         raise SystemExit("ERROR: TouchGUI activity patch validation failed; no files changed.")
