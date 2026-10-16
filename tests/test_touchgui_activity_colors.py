@@ -31,7 +31,7 @@ def main():
         patched_js = js.read_text(encoding="utf-8")
         patched_css = css.read_text(encoding="utf-8")
         assert "getChannelStats()" in patched_js
-        assert "TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.08." in patched_js
+        assert "TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.09." in patched_js
         assert "updateChannelActivity(stats)" in patched_js
         assert "function closeChannelStats()" in patched_js
         assert "function formatTouchguiStatusMessage(msg)" in patched_js
@@ -40,7 +40,7 @@ def main():
         assert "Object.keys(nodeList)" in patched_js
         assert "Number(channel.node) < 3000000" in patched_js
         assert "data-activity=\"active-wt\"" in patched_css
-        assert "TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.08." in patched_css
+        assert "TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.09." in patched_css
         assert "height:100vh;\nheight:100dvh" in patched_css
         assert "@media (max-height:430px) {\n.simple-footer { display:grid; }\n}" in patched_css
         assert ".simple-footer { height:auto; min-height:30px; flex:0 0 auto; overflow:visible; }" in patched_css
@@ -70,7 +70,7 @@ if(rx.textContent !== 'Rx% 39' || lcnt.textContent !== 'LCnt 153')
 	throw new Error('TouchGUI stats values were not rendered');
 if(button.dataset.activity !== 'keyed' || button.style.backgroundColor !== 'hsl(0,100%,29%)')
 	throw new Error('Keyed activity color was not retained');
-var footer = formatTouchguiStatusMessage('ASL Ver: 3.10.5, AllScan Ver: 1.04<br>RxAudioStats supported, Simpleusb driver<br>Channel driver settings:<br>Rx Level currently set to 550<br>Tx A Level currently set to 550<br>Tx B Level currently set to 550');
+var footer = formatTouchguiStatusMessage('ASL Ver: 3.10.5, AllScan Ver: 1.04<br>\nRxAudioStats supported, Simpleusb driver<br>\nChannel driver settings:<br>\nRx Level currently set to 550<br>\nTx A Level currently set to 550<br>\nTx B Level currently set to 550');
 if(footer !== 'ASL Ver: 3.10.5, AllScan Ver: 1.04<br>RxAudioStats supported, Simpleusb driver<br>Channel settings: Rx 550 | Tx A 550 | Tx B 550')
 	throw new Error('Footer driver settings were not condensed correctly: ' + footer);
 if(formatTouchguiStatusMessage('TouchGUI connected') !== 'TouchGUI connected')
@@ -86,10 +86,13 @@ if(formatTouchguiStatusMessage('TouchGUI connected') !== 'TouchGUI connected')
         shutil.copy2(FIXTURES / "touchgui-base.js", older_js)
         shutil.copy2(FIXTURES / "touchgui-base.css", older_css)
         subprocess.run(["python3", str(PATCHER), str(older_js), str(older_css)], check=True)
-        older_js.write_text(older_js.read_text(encoding="utf-8").replace("TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.08.", "TouchGUI activity colors, Rx%/LCnt, and complete status footer v1.07."), encoding="utf-8")
-        older_css.write_text(older_css.read_text(encoding="utf-8").replace("TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.08.", "TouchGUI activity colors, Rx%/LCnt, and complete status footer v1.07."), encoding="utf-8")
+        older_js.write_text(older_js.read_text(encoding="utf-8").replace("TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.09.", "TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.08."), encoding="utf-8")
+        older_css.write_text(older_css.read_text(encoding="utf-8").replace("TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.09.", "TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.08."), encoding="utf-8")
+        older_js.write_text(older_js.read_text(encoding="utf-8").replace("return line.trim();", "return line;"), encoding="utf-8")
         subprocess.run(["python3", str(PATCHER), str(older_js), str(older_css)], check=True)
-        assert "compact status footer v1.08" in older_js.read_text(encoding="utf-8")
+        upgraded_footer = older_js.read_text(encoding="utf-8")
+        assert "compact status footer v1.09" in upgraded_footer
+        assert "return line.trim();" in upgraded_footer
         assert "height:100dvh" in older_css.read_text(encoding="utf-8")
 
         legacy_js = temp / "legacy.js"
