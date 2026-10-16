@@ -31,7 +31,7 @@ def main():
         patched_js = js.read_text(encoding="utf-8")
         patched_css = css.read_text(encoding="utf-8")
         assert "getChannelStats()" in patched_js
-        assert "TouchGUI activity colors and Rx%/LCnt v1.05." in patched_js
+        assert "TouchGUI activity colors, Rx%/LCnt, and mobile footer v1.06." in patched_js
         assert "updateChannelActivity(stats)" in patched_js
         assert "function closeChannelStats()" in patched_js
         assert "30000 / nodes.length" in patched_js
@@ -39,7 +39,9 @@ def main():
         assert "Object.keys(nodeList)" in patched_js
         assert "Number(channel.node) < 3000000" in patched_js
         assert "data-activity=\"active-wt\"" in patched_css
-        assert "TouchGUI activity colors and Rx%/LCnt v1.05." in patched_css
+        assert "TouchGUI activity colors, Rx%/LCnt, and mobile footer v1.06." in patched_css
+        assert "height:100vh;\nheight:100dvh" in patched_css
+        assert "@media (max-height:430px) {\n.simple-footer { display:grid; }\n}" in patched_css
         assert "hsl(150,50%,15%)" in patched_js
         assert "hsl(150,50%,20%)" in patched_js
         assert "hsl(0,100%," in patched_js
@@ -69,6 +71,17 @@ if(button.dataset.activity !== 'keyed' || button.style.backgroundColor !== 'hsl(
         before = (js.read_bytes(), css.read_bytes())
         subprocess.run(["python3", str(PATCHER), str(js), str(css)], check=True)
         assert before == (js.read_bytes(), css.read_bytes()), "second application changed files"
+
+        older_js = temp / "older.js"
+        older_css = temp / "older.css"
+        shutil.copy2(FIXTURES / "touchgui-base.js", older_js)
+        shutil.copy2(FIXTURES / "touchgui-base.css", older_css)
+        subprocess.run(["python3", str(PATCHER), str(older_js), str(older_css)], check=True)
+        older_js.write_text(older_js.read_text(encoding="utf-8").replace("TouchGUI activity colors, Rx%/LCnt, and mobile footer v1.06.", "TouchGUI activity colors and Rx%/LCnt v1.05."), encoding="utf-8")
+        older_css.write_text(older_css.read_text(encoding="utf-8").replace("TouchGUI activity colors, Rx%/LCnt, and mobile footer v1.06.", "TouchGUI activity colors and Rx%/LCnt v1.05."), encoding="utf-8")
+        subprocess.run(["python3", str(PATCHER), str(older_js), str(older_css)], check=True)
+        assert "mobile footer v1.06" in older_js.read_text(encoding="utf-8")
+        assert "height:100dvh" in older_css.read_text(encoding="utf-8")
 
         legacy_js = temp / "legacy.js"
         legacy_css = temp / "legacy.css"
@@ -101,7 +114,7 @@ if(button.dataset.activity !== 'keyed' || button.style.backgroundColor !== 'hsl(
         assert current == (current_js.read_bytes(), current_css.read_bytes()), "stats patch was not idempotent"
 
     print("PASS: installers include the TouchGUI activity patch path.")
-    print("PASS: TouchGUI stats poller, colors, Rx%/LCnt fields, responsive rules, syntax, upgrades, and repeat application.")
+    print("PASS: TouchGUI stats poller, colors, Rx%/LCnt fields, mobile footer visibility, viewport sizing, upgrades, syntax, and repeat application.")
 
 
 if __name__ == "__main__":

@@ -12,16 +12,24 @@ def main():
     js = js_path.read_text(encoding="utf-8")
     css = css_path.read_text(encoding="utf-8")
 
-    marker = "// AllScan Mods: TouchGUI activity colors and Rx%/LCnt v1.05."
-    prior_marker = "// AllScan Mods: TouchGUI remote-node activity colors."
-    patch_marker = marker if marker in js else prior_marker
+    marker = "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and mobile footer v1.06."
+    previous_markers = (
+        "// AllScan Mods: TouchGUI activity colors and Rx%/LCnt v1.05.",
+        "// AllScan Mods: TouchGUI remote-node activity colors.",
+    )
+    patch_marker = marker if marker in js else next(
+        (item for item in previous_markers if item in js), previous_markers[0]
+    )
     patch_present = patch_marker in js
-    if (patch_present and "function convertActivityRange(value, min, max)" in js
+    if (patch_present and marker in js
+            and "function convertActivityRange(value, min, max)" in js
             and "simple.txTim[node] = now" not in js
             and "channel-stats" in js and ".channel-stats" in css
             and "activity.rxPct" in js and "activity.linkCnt" in js
-            and "Number(channel.node) < 3000000" in js):
-        print("TouchGUI activity colors are already applied.")
+            and "Number(channel.node) < 3000000" in js
+            and "height:100dvh" in css
+            and ".simple-footer { display:grid; }" in css):
+        print("TouchGUI activity colors and mobile footer fix are already applied.")
         return
 
     state_marker = "\tretryTmr: null\n};"
@@ -68,7 +76,7 @@ def main():
         js = js.replace(unload_marker, unload_marker + "\n\twindow.addEventListener('beforeunload', closeChannelStats);", 1)
 
     handler_marker = "function handleConnectionEvent(event) {"
-    handler = r'''// AllScan Mods: TouchGUI activity colors and Rx%/LCnt v1.05.
+    handler = r'''// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and mobile footer v1.06.
 function getChannelStats() {
 	var nodeList = {};
 	simple.channels.forEach(function(channel) {
@@ -191,7 +199,7 @@ background-color:hsl(150,50%,20%);
 color:#fff;
 }
 '''
-    stats_css = '''/* AllScan Mods: TouchGUI activity colors and Rx%/LCnt v1.05. */
+    stats_css = '''/* AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and mobile footer v1.06. */
 .channel-stats {
 grid-column:2;
 display:flex;
@@ -230,8 +238,16 @@ grid-row:1 / span 3;
         raise SystemExit("ERROR: Existing TouchGUI CSS patch is incomplete; no files changed.")
     if ".channel-stats" not in css:
         css = css.rstrip() + "\n" + stats_css
-    if "AllScan Mods: TouchGUI activity colors and Rx%/LCnt v1.05." not in css:
-        css = css.rstrip() + "\n/* AllScan Mods: TouchGUI activity colors and Rx%/LCnt v1.05. */\n"
+    css = css.replace(
+        "AllScan Mods: TouchGUI activity colors and Rx%/LCnt v1.05.",
+        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and mobile footer v1.06.",
+    )
+    if "mobile footer v1.06" not in css:
+        css = css.rstrip() + "\n/* AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and mobile footer v1.06. */\n"
+    if ".simple-app {\nheight:100vh;\nheight:100dvh;\n}" not in css:
+        css = css.rstrip() + "\n.simple-app {\nheight:100vh;\nheight:100dvh;\n}\n"
+    if "@media (max-height:430px) {\n.simple-footer { display:grid; }\n}" not in css:
+        css = css.rstrip() + "\n@media (max-height:430px) {\n.simple-footer { display:grid; }\n}\n"
 
     if "simple.statsTmr = setTimeout(getChannelStats" not in js or 'data-activity="active-wt"' not in css:
         raise SystemExit("ERROR: TouchGUI activity patch validation failed; no files changed.")
