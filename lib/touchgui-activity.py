@@ -12,8 +12,9 @@ def main():
     js = js_path.read_text(encoding="utf-8")
     css = css_path.read_text(encoding="utf-8")
 
-    marker = "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and mobile footer v1.06."
+    marker = "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and complete status footer v1.07."
     previous_markers = (
+        "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and mobile footer v1.06.",
         "// AllScan Mods: TouchGUI activity colors and Rx%/LCnt v1.05.",
         "// AllScan Mods: TouchGUI remote-node activity colors.",
     )
@@ -28,8 +29,10 @@ def main():
             and "activity.rxPct" in js and "activity.linkCnt" in js
             and "Number(channel.node) < 3000000" in js
             and "height:100dvh" in css
-            and ".simple-footer { display:grid; }" in css):
-        print("TouchGUI activity colors and mobile footer fix are already applied.")
+            and ".simple-footer { display:grid; }" in css
+            and ".simple-footer { height:auto; min-height:30px; flex:0 0 auto; overflow:visible; }" in css
+            and "white-space:normal; overflow:visible; overflow-wrap:anywhere; min-width:0;" in css):
+        print("TouchGUI activity colors and complete status footer are already applied.")
         return
 
     state_marker = "\tretryTmr: null\n};"
@@ -76,7 +79,7 @@ def main():
         js = js.replace(unload_marker, unload_marker + "\n\twindow.addEventListener('beforeunload', closeChannelStats);", 1)
 
     handler_marker = "function handleConnectionEvent(event) {"
-    handler = r'''// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and mobile footer v1.06.
+    handler = r'''// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and complete status footer v1.07.
 function getChannelStats() {
 	var nodeList = {};
 	simple.channels.forEach(function(channel) {
@@ -199,7 +202,7 @@ background-color:hsl(150,50%,20%);
 color:#fff;
 }
 '''
-    stats_css = '''/* AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and mobile footer v1.06. */
+    stats_css = '''/* AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and complete status footer v1.07. */
 .channel-stats {
 grid-column:2;
 display:flex;
@@ -240,14 +243,29 @@ grid-row:1 / span 3;
         css = css.rstrip() + "\n" + stats_css
     css = css.replace(
         "AllScan Mods: TouchGUI activity colors and Rx%/LCnt v1.05.",
-        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and mobile footer v1.06.",
+        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and complete status footer v1.07.",
     )
-    if "mobile footer v1.06" not in css:
-        css = css.rstrip() + "\n/* AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and mobile footer v1.06. */\n"
+    css = css.replace(
+        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and mobile footer v1.06.",
+        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and complete status footer v1.07.",
+    )
+    if "complete status footer v1.07" not in css:
+        css = css.rstrip() + "\n/* AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and complete status footer v1.07. */\n"
     if ".simple-app {\nheight:100vh;\nheight:100dvh;\n}" not in css:
         css = css.rstrip() + "\n.simple-app {\nheight:100vh;\nheight:100dvh;\n}\n"
     if "@media (max-height:430px) {\n.simple-footer { display:grid; }\n}" not in css:
         css = css.rstrip() + "\n@media (max-height:430px) {\n.simple-footer { display:grid; }\n}\n"
+    footer_css = '''.simple-footer { height:auto; min-height:30px; flex:0 0 auto; overflow:visible; }
+.simple-footer #scanmsg,
+.simple-footer #statmsg { white-space:normal; overflow:visible; overflow-wrap:anywhere; min-width:0; }
+@media (max-width:700px) {
+.simple-footer { grid-template-columns:1fr; gap:0; }
+.simple-footer #scanmsg,
+.simple-footer #statmsg { font-size:11px; line-height:1.2; }
+}
+'''
+    if ".simple-footer { height:auto; min-height:30px; flex:0 0 auto; overflow:visible; }" not in css:
+        css = css.rstrip() + "\n" + footer_css
 
     if "simple.statsTmr = setTimeout(getChannelStats" not in js or 'data-activity="active-wt"' not in css:
         raise SystemExit("ERROR: TouchGUI activity patch validation failed; no files changed.")

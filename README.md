@@ -61,7 +61,7 @@ AllScan's Description and Location columns remain sourced from the AllStarLink d
 - Uses the same red keyed/recently keyed activity shading and the same dark/medium green active states as the main Favorites table.
 - Replaces the previous Mods TouchGUI activity patch with the corrected calculation and creates fresh timestamped backups when upgrading it.
 - Shows each channel's `Rx%` and `LCnt` values in a compact footer beneath its node/callsign line. The values use fields from the same stats response already used for activity colors; they do not add API requests.
-- The two AllScan files modified by this TouchGUI feature are tagged `v1.06` in their JavaScript and CSS comments. The CSS keeps the status footer visible on short screens and uses the dynamic viewport height when supported.
+- The two AllScan files modified by this TouchGUI feature are tagged `v1.07` in their JavaScript and CSS comments. The CSS keeps the complete multi-line status footer visible on short screens and uses the dynamic viewport height when supported.
 - Keeps the channel name, node/callsign line, and TouchGUI controls intact. Cards grow slightly to fit the extra row; phone-width and short-screen CSS rules keep the values compact and readable.
 - Keeps TouchGUI's existing local connection border and status behavior.
 - Scans unique public node numbers one at a time. The interval is based on the channel count and keeps one TouchGUI page at or below 30 statistics requests per minute.

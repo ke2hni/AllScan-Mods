@@ -239,8 +239,8 @@ MODS_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 TOUCHGUI_ACTIVITY_PATCH=$MODS_DIR/lib/touchgui-activity.py
 
 touchgui_activity_present() {
-    grep -Fq 'AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and mobile footer v1.06.' "$SIMPLE_JS_FILE" &&
-    grep -Fq 'AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and mobile footer v1.06.' "$SIMPLE_CSS_FILE" &&
+    grep -Fq 'AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and complete status footer v1.07.' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and complete status footer v1.07.' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'function getChannelStats()' "$SIMPLE_JS_FILE" &&
     grep -Fq 'function updateChannelActivity(stats)' "$SIMPLE_JS_FILE" &&
     grep -Fq 'function convertActivityRange(value, min, max)' "$SIMPLE_JS_FILE" &&
@@ -252,7 +252,9 @@ touchgui_activity_present() {
     grep -Fq '.channel-stats' "$SIMPLE_CSS_FILE" &&
     grep -Fq '.channel-btn[data-activity="active"]' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'height:100dvh' "$SIMPLE_CSS_FILE" &&
-    grep -Fq '.simple-footer { display:grid; }' "$SIMPLE_CSS_FILE"
+    grep -Fq '.simple-footer { display:grid; }' "$SIMPLE_CSS_FILE" &&
+    grep -Fq '.simple-footer { height:auto; min-height:30px; flex:0 0 auto; overflow:visible; }' "$SIMPLE_CSS_FILE" &&
+    grep -Fq 'white-space:normal; overflow:visible; overflow-wrap:anywhere; min-width:0;' "$SIMPLE_CSS_FILE"
 }
 
 apply_touchgui_activity_live() {
