@@ -20,7 +20,7 @@ def main():
         raise SystemExit("ERROR: Partial TouchGUI activity patch detected; no files changed.")
 
     state_marker = "\tretryTmr: null\n};"
-    state_new = "\tstatsTmr: null,\n\tstatsReq: null,\n\tstatsIndex: 0,\n\ttxKeyups: {},\n\ttxTimes: {},\n\ttxUpdated: {},\n\ttxAverage: {},\n" + state_marker
+    state_new = "\tstatsTmr: null,\n\tstatsReq: null,\n\tstatsIndex: 0,\n\ttxCnt: {},\n\ttxTim: {},\n\ttxTT: {},\n\ttxAvg: {},\n" + state_marker
     if js.count(state_marker) != 1:
         raise SystemExit("ERROR: Expected TouchGUI state marker exactly once; no files changed.")
     js = js.replace(state_marker, state_new, 1)
@@ -91,31 +91,30 @@ function closeChannelStats() {
 function updateChannelActivity(stats) {
 	var node = String(stats.node);
 	var now = Math.floor(Date.now() / 1000);
-	if(simple.txKeyups[node] === undefined || stats.keyups < simple.txKeyups[node] || stats.txtime < simple.txTimes[node]) {
-		simple.txKeyups[node] = stats.keyups;
-		simple.txTimes[node] = stats.txtime;
-		simple.txUpdated[node] = now;
-		simple.txAverage[node] = 0;
+	if(!simple.txCnt[node] || stats.keyups < simple.txCnt[node] || stats.txtime < simple.txTT[node]) {
+		simple.txCnt[node] = stats.keyups;
+		simple.txTim[node] = 0;
+		simple.txTT[node] = stats.txtime;
+		simple.txAvg[node] = 0;
 	}
-	var keyupDelta = stats.keyups - simple.txKeyups[node];
-	var txDelta = stats.txtime - simple.txTimes[node];
-	var elapsed = now - simple.txUpdated[node];
+	var keyupDelta = stats.keyups - simple.txCnt[node];
+	var txDelta = stats.txtime - simple.txTT[node];
+	var elapsed = now - simple.txTim[node];
 	if(txDelta > 2 * elapsed || keyupDelta > elapsed / 3)
 		keyupDelta = txDelta = 0;
 	var txPercent = elapsed ? Math.min(100, Math.round(100 * txDelta / elapsed)) : 0;
 	if(stats.keyed == 1)
-		simple.txAverage[node] = 100;
-	else if(simple.txAverage[node] + txPercent > 2)
-		simple.txAverage[node] = Math.round(simple.txAverage[node] / 2 + txPercent / 2);
+		simple.txAvg[node] = 100;
+	else if(simple.txAvg[node] + txPercent > 2)
+		simple.txAvg[node] = Math.round(simple.txAvg[node] / 2 + txPercent / 2);
 	else
-		simple.txAverage[node] = 0;
-	simple.txKeyups[node] = stats.keyups;
-	simple.txTimes[node] = stats.txtime;
-	simple.txUpdated[node] = now;
+		simple.txAvg[node] = 0;
+	simple.txCnt[node] = stats.keyups;
+	simple.txTT[node] = stats.txtime;
 	var channel = simple.channelByNode[node];
 	if(!channel)
 		return;
-	channel.activity = {active: stats.active == 1, wt: stats.wt == 1, txAverage: simple.txAverage[node]};
+	channel.activity = {active: stats.active == 1, wt: stats.wt == 1, txAverage: simple.txAvg[node]};
 	var button = simple.channelsGrid.querySelector('[data-node="' + node + '"]');
 	if(button)
 		applyChannelActivity(button, channel.activity);
@@ -123,11 +122,19 @@ function updateChannelActivity(stats) {
 
 function applyChannelActivity(button, activity) {
 	var keyed = activity.txAverage > 5;
-	var shade = Math.round(Math.max(0, Math.min(100, activity.txAverage)) * 14 / 100 + 15);
+	var shade = convertActivityRange(activity.txAverage, 15, 29);
 	button.dataset.activity = keyed ? 'keyed' : (activity.active ? (activity.wt ? 'active-wt' : 'active') : 'idle');
 	button.style.backgroundColor = keyed
 		? 'hsl(0,100%,' + shade + '%)'
 		: (activity.active ? (activity.wt ? 'hsl(150,50%,20%)' : 'hsl(150,50%,15%)') : '');
+}
+
+function convertActivityRange(value, min, max) {
+	if(value > 100)
+		value = 100;
+	else if(value < 0)
+		value = 0;
+	return Math.round(value * (max - min) / 100 + min);
 }
 
 '''

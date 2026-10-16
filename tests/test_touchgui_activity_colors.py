@@ -38,6 +38,10 @@ def main():
         assert "hsl(150,50%,15%)" in patched_js
         assert "hsl(150,50%,20%)" in patched_js
         assert "hsl(0,100%," in patched_js
+        assert "var keyed = activity.txAverage > 5" in patched_js
+        assert "convertActivityRange(activity.txAverage, 15, 29)" in patched_js
+        assert "simple.txAvg[node] = Math.round(simple.txAvg[node] / 2 + txPercent / 2)" in patched_js
+        assert "simple.txTim[node] = now" not in patched_js
         before = (js.read_bytes(), css.read_bytes())
         subprocess.run(["python3", str(PATCHER), str(js), str(css)], check=True)
         assert before == (js.read_bytes(), css.read_bytes()), "second application changed files"
