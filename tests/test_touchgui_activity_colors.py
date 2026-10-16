@@ -31,7 +31,7 @@ def main():
         patched_js = js.read_text(encoding="utf-8")
         patched_css = css.read_text(encoding="utf-8")
         assert "getChannelStats()" in patched_js
-        assert "TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.10." in patched_js
+        assert "TouchGUI activity colors, Rx%/LCnt, and centered status footer v1.11." in patched_js
         assert "updateChannelActivity(stats)" in patched_js
         assert "function closeChannelStats()" in patched_js
         assert "function formatTouchguiStatusMessage(msg)" in patched_js
@@ -40,7 +40,7 @@ def main():
         assert "Object.keys(nodeList)" in patched_js
         assert "Number(channel.node) < 3000000" in patched_js
         assert "data-activity=\"active-wt\"" in patched_css
-        assert "TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.10." in patched_css
+        assert "TouchGUI activity colors, Rx%/LCnt, and centered status footer v1.11." in patched_css
         assert "height:100vh;\nheight:100dvh" in patched_css
         assert "@media (max-height:430px) {\n.simple-footer { display:grid; }\n}" in patched_css
         assert ".simple-footer { height:auto; min-height:30px; flex:0 0 auto; overflow:visible; }" in patched_css
@@ -49,6 +49,7 @@ def main():
         assert "@media (max-width:430px)" in patched_css
         assert "font-size:9px; line-height:1.15;" in patched_css
         assert "@media (max-width:380px)" in patched_css
+        assert ".simple-footer #statmsg { grid-column:1 / -1; text-align:center; }" in patched_css
         assert "hsl(150,50%,15%)" in patched_js
         assert "hsl(150,50%,20%)" in patched_js
         assert "hsl(0,100%," in patched_js
@@ -89,16 +90,15 @@ if(formatTouchguiStatusMessage('TouchGUI connected') !== 'TouchGUI connected')
         shutil.copy2(FIXTURES / "touchgui-base.js", older_js)
         shutil.copy2(FIXTURES / "touchgui-base.css", older_css)
         subprocess.run(["python3", str(PATCHER), str(older_js), str(older_css)], check=True)
-        older_js.write_text(older_js.read_text(encoding="utf-8").replace("TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.10.", "TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.09.").replace("join(' - ')", "join('<br>')"), encoding="utf-8")
-        older_style = older_css.read_text(encoding="utf-8").replace("TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.10.", "TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.09.")
-        older_style = older_style.replace("@media (max-width:430px) {\n.simple-footer #statmsg { font-size:9px; line-height:1.15; }\n}\n", "")
-        older_style = older_style.replace("@media (max-width:380px) {\n.simple-footer #statmsg { font-size:8px; }\n}\n", "")
+        older_js.write_text(older_js.read_text(encoding="utf-8").replace("TouchGUI activity colors, Rx%/LCnt, and centered status footer v1.11.", "TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.10."), encoding="utf-8")
+        older_style = older_css.read_text(encoding="utf-8").replace("TouchGUI activity colors, Rx%/LCnt, and centered status footer v1.11.", "TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.10.")
+        older_style = older_style.replace(".simple-footer #statmsg { grid-column:1 / -1; text-align:center; }\n", "")
         older_css.write_text(older_style, encoding="utf-8")
         subprocess.run(["python3", str(PATCHER), str(older_js), str(older_css)], check=True)
         upgraded_footer = older_js.read_text(encoding="utf-8")
-        assert "compact status footer v1.10" in upgraded_footer
+        assert "centered status footer v1.11" in upgraded_footer
         assert "join(' - ')" in upgraded_footer
-        assert "height:100dvh" in older_css.read_text(encoding="utf-8")
+        assert ".simple-footer #statmsg { grid-column:1 / -1; text-align:center; }" in older_css.read_text(encoding="utf-8")
 
         legacy_js = temp / "legacy.js"
         legacy_css = temp / "legacy.css"

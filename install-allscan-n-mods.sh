@@ -239,8 +239,8 @@ MODS_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 TOUCHGUI_ACTIVITY_PATCH=$MODS_DIR/lib/touchgui-activity.py
 
 touchgui_activity_present() {
-    grep -Fq 'AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.10.' "$SIMPLE_JS_FILE" &&
-    grep -Fq 'AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.10.' "$SIMPLE_CSS_FILE" &&
+    grep -Fq 'AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and centered status footer v1.11.' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and centered status footer v1.11.' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'function formatTouchguiStatusMessage(msg)' "$SIMPLE_JS_FILE" &&
     grep -Fq 'function getChannelStats()' "$SIMPLE_JS_FILE" &&
     grep -Fq 'function updateChannelActivity(stats)' "$SIMPLE_JS_FILE" &&
@@ -258,6 +258,7 @@ touchgui_activity_present() {
     grep -Fq '@media (max-width:430px)' "$SIMPLE_CSS_FILE" &&
     grep -Fq '@media (max-width:380px)' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'font-size:9px; line-height:1.15;' "$SIMPLE_CSS_FILE" &&
+    grep -Fq '.simple-footer #statmsg { grid-column:1 / -1; text-align:center; }' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'white-space:normal; overflow:visible; overflow-wrap:anywhere; min-width:0;' "$SIMPLE_CSS_FILE"
 }
 
