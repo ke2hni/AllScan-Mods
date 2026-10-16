@@ -228,13 +228,61 @@ allscan_version=$(sed -nE 's/^\$AllScanVersion = "(v[0-9.]+)";.*/\1/p' "$COMMON_
 case "$allscan_version" in
     v1.01) ;;
     v1.02|v1.03|v1.04) [[ -f $SIMPLE_INDEX_FILE && -f $SIMPLE_JS_FILE ]] || { echo "ERROR: Required TouchGUI files are missing. No files changed." >&2; exit 1; }; [[ -f $FAVS_UTILS_FILE ]] || { echo "ERROR: Required AllScan file not found: $FAVS_UTILS_FILE" >&2; exit 1; }; [[ -f $SIMPLE_CSS_FILE ]] || { echo "ERROR: Required AllScan file not found: $SIMPLE_CSS_FILE" >&2; exit 1; } ;;
-    *) echo "ERROR: Supports legacy AllScan v1.01-v1.03 and integrated v1.04; found ${allscan_version:-unknown}. No files changed." >&2; exit 1 ;;
+    *) echo "ERROR: Supports AllScan v1.01-v1.04; found ${allscan_version:-unknown}. No files changed." >&2; exit 1 ;;
 esac
 
 # PR #37 upstream integration guard. Check the complete feature set rather than
 # trusting a version string alone: v1.03 may be either pre- or post-merge;
 # v1.04 is the official release incorporating those features.
 # A match is read-only and must not create backups or rewrite upstream files.
+MODS_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+TOUCHGUI_ACTIVITY_PATCH=$MODS_DIR/lib/touchgui-activity.py
+
+touchgui_activity_present() {
+    grep -Fq 'function getChannelStats()' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'function updateChannelActivity(stats)' "$SIMPLE_JS_FILE" &&
+    grep -Fq '.channel-btn[data-activity="active"]' "$SIMPLE_CSS_FILE"
+}
+
+apply_touchgui_activity_live() {
+    if touchgui_activity_present; then
+        echo "TouchGUI activity colors are already present. No changes made."
+        return 0
+    fi
+    local work_dir stage_js stage_css timestamp js_backup css_backup
+    work_dir=$(mktemp -d /tmp/allscan-touchgui-activity.XXXXXX)
+    stage_js=$work_dir/simple.js
+    stage_css=$work_dir/simple.css
+    cp -- "$SIMPLE_JS_FILE" "$stage_js"
+    cp -- "$SIMPLE_CSS_FILE" "$stage_css"
+    python3 "$TOUCHGUI_ACTIVITY_PATCH" "$stage_js" "$stage_css"
+    if command -v node >/dev/null 2>&1; then node --check "$stage_js"; fi
+    if cmp -s "$SIMPLE_JS_FILE" "$stage_js" && cmp -s "$SIMPLE_CSS_FILE" "$stage_css"; then
+        rm -rf -- "$work_dir"
+        echo "TouchGUI activity colors already installed. No changes made."
+        return 0
+    fi
+    timestamp=$(date +%Y%m%d-%H%M%S)
+    js_backup=$SIMPLE_JS_FILE.before-touchgui-activity-$timestamp
+    css_backup=$SIMPLE_CSS_FILE.before-touchgui-activity-$timestamp
+    [[ ! -e $js_backup && ! -e $css_backup ]] || {
+        rm -rf -- "$work_dir"
+        echo "ERROR: TouchGUI backup path already exists; no files changed." >&2
+        return 1
+    }
+    cp -a -- "$SIMPLE_JS_FILE" "$js_backup"
+    cp -a -- "$SIMPLE_CSS_FILE" "$css_backup"
+    if ! cp -- "$stage_js" "$SIMPLE_JS_FILE" || ! cp -- "$stage_css" "$SIMPLE_CSS_FILE"; then
+        cp -a -- "$js_backup" "$SIMPLE_JS_FILE"
+        cp -a -- "$css_backup" "$SIMPLE_CSS_FILE"
+        rm -rf -- "$work_dir"
+        echo "ERROR: TouchGUI activity installation failed; original files were restored." >&2
+        return 1
+    fi
+    rm -rf -- "$work_dir"
+    echo "TouchGUI activity colors installed. Backups: $js_backup and $css_backup"
+}
+
 upstream_features_present() {
     [[ $allscan_version == v1.03 || $allscan_version == v1.04 ]] || return 1
     grep -Fq 'case "Edit Favorite":' "$INDEX_FILE" &&
@@ -258,8 +306,8 @@ if [[ $allscan_version == v1.04 ]] && ! upstream_features_present; then
     exit 1
 fi
 if upstream_features_present; then
-    echo "AllScan already includes the integrated enhancements (PR #37). No Mods patches or backups needed."
-    echo "No AllScan application files changed."
+    echo "AllScan already includes the integrated enhancements (PR #37). Applying/checking the independent TouchGUI activity-color feature."
+    apply_touchgui_activity_live
     exit 0
 fi
 
@@ -1006,6 +1054,10 @@ if has_v102_layout: simple_index_path.write_text(simple_index, encoding="utf-8")
 if has_v102_layout: simple_js_path.write_text(simple_js, encoding="utf-8")
 print('patch-ready')
 PY
+
+if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then
+    python3 "$TOUCHGUI_ACTIVITY_PATCH" "$stage_simple_js" "$stage_simple_css"
+fi
 
 if cmp -s "$INDEX_FILE" "$stage_index" && cmp -s "$VIEW_FILE" "$stage_view" && \
    cmp -s "$JS_FILE" "$stage_js" && cmp -s "$CSS_FILE" "$stage_css" && \
