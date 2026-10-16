@@ -12,8 +12,9 @@ def main():
     js = js_path.read_text(encoding="utf-8")
     css = css_path.read_text(encoding="utf-8")
 
-    marker = "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and complete status footer v1.07."
+    marker = "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.08."
     previous_markers = (
+        "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and complete status footer v1.07.",
         "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and mobile footer v1.06.",
         "// AllScan Mods: TouchGUI activity colors and Rx%/LCnt v1.05.",
         "// AllScan Mods: TouchGUI remote-node activity colors.",
@@ -32,7 +33,7 @@ def main():
             and ".simple-footer { display:grid; }" in css
             and ".simple-footer { height:auto; min-height:30px; flex:0 0 auto; overflow:visible; }" in css
             and "white-space:normal; overflow:visible; overflow-wrap:anywhere; min-width:0;" in css):
-        print("TouchGUI activity colors and complete status footer are already applied.")
+        print("TouchGUI activity colors and compact status footer are already applied.")
         return
 
     state_marker = "\tretryTmr: null\n};"
@@ -79,7 +80,7 @@ def main():
         js = js.replace(unload_marker, unload_marker + "\n\twindow.addEventListener('beforeunload', closeChannelStats);", 1)
 
     handler_marker = "function handleConnectionEvent(event) {"
-    handler = r'''// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and complete status footer v1.07.
+    handler = r'''// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.08.
 function getChannelStats() {
 	var nodeList = {};
 	simple.channels.forEach(function(channel) {
@@ -191,6 +192,37 @@ function convertActivityRange(value, min, max) {
             raise SystemExit("ERROR: Expected TouchGUI event-handler marker exactly once; no files changed.")
         js = js.replace(handler_marker, handler + handler_marker, 1)
 
+    statmsg_marker = "\tsimple.statmsg.innerHTML = msg;"
+    if "function formatTouchguiStatusMessage(msg)" not in js:
+        if statmsg_marker not in js:
+            pass
+        elif js.count(statmsg_marker) != 1:
+            raise SystemExit("ERROR: Expected TouchGUI status-message marker exactly once; no files changed.")
+        else:
+            formatter = r'''function formatTouchguiStatusMessage(msg) {
+	if(typeof msg !== 'string' || msg.indexOf('ASL Ver:') !== 0)
+		return msg;
+	var lines = msg.split(/<br\s*\/?\s*>/i);
+	if(lines.length < 3)
+		return msg;
+	var settingsIndex = lines.indexOf('Channel driver settings:');
+	if(settingsIndex < 0 || settingsIndex === lines.length - 1)
+		return msg;
+	var settings = lines.slice(settingsIndex + 1).filter(function(line) { return line !== ''; }).map(function(line) {
+		return line.replace(/ Level currently set to /, ' ');
+	});
+	if(!settings.length)
+		return msg;
+	return lines.slice(0, settingsIndex).join('<br>') + '<br>Channel settings: ' + settings.join(' | ');
+}
+
+'''
+            js = js.replace(statmsg_marker, "\tsimple.statmsg.innerHTML = formatTouchguiStatusMessage(msg);", 1)
+            statmsg_func = "function statMsg(msg) {"
+            if js.count(statmsg_func) != 1:
+                raise SystemExit("ERROR: Expected TouchGUI statMsg function exactly once; no files changed.")
+            js = js.replace(statmsg_func, formatter + statmsg_func, 1)
+
     css_marker = ".channel-btn.active {"
     css_rules = '''.channel-btn[data-activity="active"] {
 background-color:hsl(150,50%,15%);
@@ -202,7 +234,7 @@ background-color:hsl(150,50%,20%);
 color:#fff;
 }
 '''
-    stats_css = '''/* AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and complete status footer v1.07. */
+    stats_css = '''/* AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.08. */
 .channel-stats {
 grid-column:2;
 display:flex;
@@ -243,14 +275,14 @@ grid-row:1 / span 3;
         css = css.rstrip() + "\n" + stats_css
     css = css.replace(
         "AllScan Mods: TouchGUI activity colors and Rx%/LCnt v1.05.",
-        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and complete status footer v1.07.",
+        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.08.",
     )
     css = css.replace(
         "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and mobile footer v1.06.",
-        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and complete status footer v1.07.",
+        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.08.",
     )
-    if "complete status footer v1.07" not in css:
-        css = css.rstrip() + "\n/* AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and complete status footer v1.07. */\n"
+    if "compact status footer v1.08" not in css:
+        css = css.rstrip() + "\n/* AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.08. */\n"
     if ".simple-app {\nheight:100vh;\nheight:100dvh;\n}" not in css:
         css = css.rstrip() + "\n.simple-app {\nheight:100vh;\nheight:100dvh;\n}\n"
     if "@media (max-height:430px) {\n.simple-footer { display:grid; }\n}" not in css:

@@ -13,6 +13,11 @@ function bindControls() {
 	window.addEventListener('beforeunload', closeEventSource);
 }
 function closeEventSource() {}
+function statMsg(msg) {
+	if(!simple.statmsg || !msg)
+		return;
+	simple.statmsg.innerHTML = msg;
+}
 function renderChannels() {
 		btn.innerHTML = '<span class="channel-index">1</span>'
 			+ '<span class="channel-label">Channel</span>'
