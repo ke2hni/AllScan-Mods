@@ -2,6 +2,7 @@
 """Apply the AllScan Mods TouchGUI activity-color enhancement."""
 
 from pathlib import Path
+import re
 import sys
 
 
@@ -12,8 +13,9 @@ def main():
     js = js_path.read_text(encoding="utf-8")
     css = css_path.read_text(encoding="utf-8")
 
-    marker = "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and centered status footer v1.11."
+    marker = "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, row-matched colors and order v1.12."
     previous_markers = (
+        "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and centered status footer v1.11.",
         "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.10.",
         "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.09.",
         "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and complete status footer v1.07.",
@@ -27,21 +29,22 @@ def main():
     )
     patch_present = patch_marker in js
     if (patch_present and marker in js
-            and "centered status footer v1.11" in css
+            and "row-matched colors and order v1.12" in css
             and ".simple-footer #statmsg { grid-column:1 / -1; text-align:center; }" in css
             and "function formatTouchguiStatusMessage(msg)" in js
             and "function convertActivityRange(value, min, max)" in js
-            and "simple.txTim[node] = now" not in js
-            and "channel-stats" in js and ".channel-stats" in css
+            and "simple.txTim[node] = now" in js
+            and "getChannelStatsNodes()" in js
+            and "channel-side" in js and ".channel-side" in css
             and "activity.rxPct" in js and "activity.linkCnt" in js
-            and "Number(channel.node) < 3000000" in js
+            and "number < 3000000" in js
             and "height:100dvh" in css
             and ".simple-footer { display:grid; }" in css
             and ".simple-footer { height:auto; min-height:30px; flex:0 0 auto; overflow:visible; }" in css
             and "@media (max-width:430px)" in css
             and "@media (max-width:380px)" in css
             and "white-space:normal; overflow:visible; overflow-wrap:anywhere; min-width:0;" in css):
-        print("TouchGUI activity colors and compact status footer are already applied.")
+        print("TouchGUI activity, statistics, and card layout are already applied.")
         return
 
     state_marker = "\tretryTmr: null\n};"
@@ -74,12 +77,15 @@ def main():
             raise SystemExit("ERROR: Expected TouchGUI channel-render marker exactly once; no files changed.")
         js = js.replace(render_marker, render_new, 1)
 
-    stats_markup = "\t\t\t+ '<span class=\"channel-meta\">' + escapeHtml(channelMeta(channel)) + '</span>';"
-    stats_markup_new = stats_markup[:-1] + "\n\t\t\t+ '<span class=\"channel-stats\"><span class=\"channel-rx\">Rx% —</span><span class=\"channel-lcnt\">LCnt —</span></span>';"
-    if "channel-stats" not in js:
-        if js.count(stats_markup) != 1:
-            raise SystemExit("ERROR: Expected TouchGUI channel metadata markup exactly once; no files changed.")
-        js = js.replace(stats_markup, stats_markup_new, 1)
+    channel_markup = r'''(?m)^[ \t]*btn\.innerHTML = [\s\S]*?;'''
+    channel_markup_new = '''\t\tbtn.innerHTML = '<span class="channel-side"><span class="channel-index">' + (i + 1) + '</span>'
+\t\t\t+ '<span class="channel-stats"><span class="channel-rx">Rx% —</span><span class="channel-lcnt">LCnt —</span></span></span>'
+\t\t\t+ '<span class="channel-content"><span class="channel-label">' + escapeHtml(channelLabel(channel)) + '</span>'
+\t\t\t+ '<span class="channel-meta">' + escapeHtml(channelMeta(channel)) + '</span></span>';'''.replace("\\t", "\t")
+    updated_js, markup_count = re.subn(channel_markup, lambda _: channel_markup_new, js, count=1)
+    if markup_count != 1 or "channel-index" not in js or "channel-label" not in js:
+        raise SystemExit("ERROR: Expected one TouchGUI card markup block; no files changed.")
+    js = updated_js
 
     unload_marker = "\twindow.addEventListener('beforeunload', closeEventSource);"
     if not patch_present:
@@ -88,14 +94,20 @@ def main():
         js = js.replace(unload_marker, unload_marker + "\n\twindow.addEventListener('beforeunload', closeChannelStats);", 1)
 
     handler_marker = "function handleConnectionEvent(event) {"
-    handler = r'''// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and centered status footer v1.11.
-function getChannelStats() {
-	var nodeList = {};
+    handler = r'''// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, row-matched colors and order v1.12.
+function getChannelStatsNodes() {
+	var nodes = [];
 	simple.channels.forEach(function(channel) {
-		if(Number(channel.node) >= 2000 && Number(channel.node) < 3000000)
-			nodeList[String(channel.node)] = true;
+		var node = String(channel.node);
+		var number = Number(node);
+		if(number >= 2000 && number < 3000000 && nodes.indexOf(node) < 0)
+			nodes.push(node);
 	});
-	var nodes = Object.keys(nodeList);
+	return nodes;
+}
+
+function getChannelStats() {
+	var nodes = getChannelStatsNodes();
 	if(!nodes.length)
 		return;
 	if(simple.statsIndex >= nodes.length)
@@ -106,17 +118,21 @@ function getChannelStats() {
 		if(simple.statsReq.readyState !== 4)
 			return;
 		var delay = Math.max(2000, Math.ceil(30000 / nodes.length));
+		var responseData = null;
 		if(simple.statsReq.status === 200) {
 			try {
 				var response = JSON.parse(simple.statsReq.responseText);
-				var stats = response.data && response.data.stats;
-				if(stats && String(stats.node) === node)
-					updateChannelActivity(stats);
+				responseData = response.data || null;
 			} catch(e) {}
-		} else if(simple.statsReq.status === 429) {
+		}
+		if(simple.statsReq.status === 429 || (responseData && responseData.retcode == 429)) {
 			simple.statsIndex = Math.max(0, simple.statsIndex - 1);
 			delay = 15000;
-		} else if(simple.statsReq.status !== 0) {
+		} else if(responseData && responseData.stats && String(responseData.stats.node) === node) {
+			updateChannelActivity(responseData.stats);
+		} else if(simple.statsReq.status !== 200 && simple.statsReq.status !== 0) {
+			delay = 15000;
+		} else if(responseData && responseData.retcode != 404) {
 			delay = 15000;
 		}
 		simple.statsTmr = setTimeout(getChannelStats, delay);
@@ -147,6 +163,7 @@ function updateChannelActivity(stats) {
 	var elapsed = now - simple.txTim[node];
 	if(txDelta > 2 * elapsed || keyupDelta > elapsed / 3)
 		keyupDelta = txDelta = 0;
+	simple.txTim[node] = now;
 	var txPercent = elapsed ? Math.min(100, Math.round(100 * txDelta / elapsed)) : 0;
 	if(stats.keyed == 1)
 		simple.txAvg[node] = 100;
@@ -167,17 +184,31 @@ function updateChannelActivity(stats) {
 
 function applyChannelActivity(button, activity) {
 	var keyed = activity.txAverage > 5;
-	var shade = convertActivityRange(activity.txAverage, 15, 29);
+	var txColor = 'hsl(0,100%,' + convertActivityRange(activity.txAverage, 15, 29) + '%)';
+	var activeColor = activity.wt ? 'hsl(150,50%,20%)' : 'hsl(150,50%,15%)';
+	var rxPct = Number(activity.rxPct);
+	var linkCount = Number(activity.linkCnt);
+	var hasRx = activity.rxPct !== undefined && activity.rxPct !== null && activity.rxPct !== '-' && isFinite(rxPct);
+	var hasLinks = activity.linkCnt !== undefined && activity.linkCnt !== null && activity.linkCnt !== '-' && isFinite(linkCount);
+	var rxColor = hasRx && rxPct > 2 ? 'hsl(125,40%,' + convertActivityRange(2 * rxPct, 10, 30) + '%)' : '';
+	var linkColor = hasLinks && linkCount > 2 ? 'hsl(240,40%,' + convertActivityRange(3 * linkCount, 15, 30) + '%)' : '';
+	var index = button.querySelector('.channel-index');
 	var rx = button.querySelector('.channel-rx');
 	var links = button.querySelector('.channel-lcnt');
+	if(index)
+		index.style.backgroundColor = keyed ? txColor : (activity.active ? activeColor : '');
 	if(rx)
-		rx.textContent = 'Rx% ' + (activity.rxPct === undefined ? '—' : activity.rxPct);
+		rx.textContent = 'Rx% ' + (activity.rxPct === undefined || activity.rxPct === null ? '—' : activity.rxPct);
+	if(rx)
+		rx.style.backgroundColor = rxColor;
 	if(links)
-		links.textContent = 'LCnt ' + (activity.linkCnt === undefined ? '—' : activity.linkCnt);
+		links.textContent = 'LCnt ' + (activity.linkCnt === undefined || activity.linkCnt === null ? '—' : activity.linkCnt);
+	if(links)
+		links.style.backgroundColor = linkColor;
 	button.dataset.activity = keyed ? 'keyed' : (activity.active ? (activity.wt ? 'active-wt' : 'active') : 'idle');
 	button.style.backgroundColor = keyed
-		? 'hsl(0,100%,' + shade + '%)'
-		: (activity.active ? (activity.wt ? 'hsl(150,50%,20%)' : 'hsl(150,50%,15%)') : '');
+		? txColor
+		: (rxColor || (activity.active ? activeColor : ''));
 }
 
 function convertActivityRange(value, min, max) {
@@ -253,8 +284,73 @@ background-color:hsl(150,50%,20%);
 color:#fff;
 }
 '''
-    stats_css = '''/* AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and centered status footer v1.11. */
+    stats_css = '''/* AllScan Mods: TouchGUI activity colors, Rx%/LCnt, row-matched colors and order v1.12. */
+.channel-btn {
+grid-template-rows:auto;
+min-height:86px;
+padding:8px;
+align-items:stretch;
+}
+.channel-side {
+grid-column:1;
+grid-row:1;
+display:flex;
+flex-direction:column;
+align-items:flex-start;
+justify-content:flex-start;
+gap:4px;
+min-width:52px;
+}
+.channel-index {
+grid-row:auto;
+flex:0 0 34px;
+}
 .channel-stats {
+display:flex;
+flex-direction:column;
+align-items:flex-start;
+gap:2px;
+min-width:0;
+font-size:11px;
+font-weight:normal;
+line-height:1.1;
+color:#c8d8e5;
+white-space:nowrap;
+}
+.channel-stats span {
+padding:1px 3px;
+border-radius:3px;
+}
+.channel-content {
+grid-column:2;
+grid-row:1;
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+min-width:0;
+}
+.channel-meta {
+grid-column:auto;
+max-width:100%;
+}
+@media (max-width:700px) {
+.channel-btn { min-height:82px; padding:7px; }
+.channel-side { min-width:48px; }
+.channel-index { flex-basis:30px; width:30px; height:30px; }
+.channel-stats { font-size:10px; }
+}
+@media (max-height:430px) {
+.channel-btn { min-height:78px; }
+}
+'''
+    if not patch_present:
+        if css.count(css_marker) != 1:
+            raise SystemExit("ERROR: Expected TouchGUI active-channel CSS marker exactly once; no files changed.")
+        css = css.replace(css_marker, css_rules + css_marker, 1)
+    elif '.channel-btn[data-activity="active"]' not in css:
+        raise SystemExit("ERROR: Existing TouchGUI CSS patch is incomplete; no files changed.")
+    previous_stats_css_body = '''.channel-stats {
 grid-column:2;
 display:flex;
 justify-content:space-between;
@@ -284,40 +380,58 @@ grid-row:1 / span 3;
 .channel-stats { font-size:10px; }
 }
 '''
-    if not patch_present:
-        if css.count(css_marker) != 1:
-            raise SystemExit("ERROR: Expected TouchGUI active-channel CSS marker exactly once; no files changed.")
-        css = css.replace(css_marker, css_rules + css_marker, 1)
-    elif '.channel-btn[data-activity="active"]' not in css:
-        raise SystemExit("ERROR: Existing TouchGUI CSS patch is incomplete; no files changed.")
-    if ".channel-stats" not in css:
+    previous_stats_css_markers = (
+        "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and centered status footer v1.11.",
+        "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.10.",
+        "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.09.",
+        "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and complete status footer v1.07.",
+        "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.08.",
+        "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and mobile footer v1.06.",
+        "// AllScan Mods: TouchGUI activity colors and Rx%/LCnt v1.05.",
+    )
+    previous_block = next((
+        "/* " + item[3:] + " */\n" + previous_stats_css_body
+        for item in previous_stats_css_markers
+        if "/* " + item[3:] + " */\n" + previous_stats_css_body in css
+    ), None)
+    if previous_block:
+        css = css.replace(previous_block, stats_css, 1)
+    elif "row-matched colors and order v1.12" in css:
+        pass
+    elif ".channel-stats {" in css:
+        raise SystemExit("ERROR: Existing TouchGUI card CSS is not a recognized Mods version; no files changed.")
+    else:
         css = css.rstrip() + "\n" + stats_css
     css = css.replace(
-        "AllScan Mods: TouchGUI activity colors and Rx%/LCnt v1.05.",
         "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and centered status footer v1.11.",
+        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, row-matched colors and order v1.12.",
+    )
+    css = css.replace(
+        "AllScan Mods: TouchGUI activity colors and Rx%/LCnt v1.05.",
+        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, row-matched colors and order v1.12.",
     )
     css = css.replace(
         "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and mobile footer v1.06.",
-        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and centered status footer v1.11.",
+        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, row-matched colors and order v1.12.",
     )
     css = css.replace(
         "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and complete status footer v1.07.",
-        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and centered status footer v1.11.",
+        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, row-matched colors and order v1.12.",
     )
     css = css.replace(
         "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.08.",
-        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and centered status footer v1.11.",
+        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, row-matched colors and order v1.12.",
     )
     css = css.replace(
         "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.09.",
-        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and centered status footer v1.11.",
+        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, row-matched colors and order v1.12.",
     )
     css = css.replace(
         "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.10.",
-        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and centered status footer v1.11.",
+        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, row-matched colors and order v1.12.",
     )
-    if "centered status footer v1.11" not in css:
-        css = css.rstrip() + "\n/* AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and centered status footer v1.11. */\n"
+    if "row-matched colors and order v1.12" not in css:
+        css = css.rstrip() + "\n/* AllScan Mods: TouchGUI activity colors, Rx%/LCnt, row-matched colors and order v1.12. */\n"
     if ".simple-app {\nheight:100vh;\nheight:100dvh;\n}" not in css:
         css = css.rstrip() + "\n.simple-app {\nheight:100vh;\nheight:100dvh;\n}\n"
     if "@media (max-height:430px) {\n.simple-footer { display:grid; }\n}" not in css:
@@ -355,11 +469,16 @@ grid-row:1 / span 3;
     if ".simple-footer #statmsg { grid-column:1 / -1; text-align:center; }" not in css:
         css = css.rstrip() + "\n" + center_footer_css
 
-    if "simple.statsTmr = setTimeout(getChannelStats" not in js or 'data-activity="active-wt"' not in css:
+    if ("simple.statsTmr = setTimeout(getChannelStats" not in js
+            or 'data-activity="active-wt"' not in css
+            or "simple.txTim[node] = now" not in js
+            or "getChannelStatsNodes()" not in js
+            or "channel-side" not in js
+            or ".channel-side" not in css):
         raise SystemExit("ERROR: TouchGUI activity patch validation failed; no files changed.")
     js_path.write_text(js, encoding="utf-8")
     css_path.write_text(css, encoding="utf-8")
-    print("TouchGUI activity colors are patch-ready.")
+    print("TouchGUI activity, statistics, and card layout are patch-ready.")
 
 
 if __name__ == "__main__":

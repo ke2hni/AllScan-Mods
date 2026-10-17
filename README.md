@@ -57,16 +57,14 @@ AllScan's Description and Location columns remain sourced from the AllStarLink d
 
 ### TouchGUI remote-node activity and statistics (testing)
 
-- Uses AllScan's existing `stats.php` endpoint to color each configured TouchGUI channel by remote-node activity.
-- Uses the same red keyed/recently keyed activity shading and the same dark/medium green active states as the main Favorites table.
-- Replaces the previous Mods TouchGUI activity patch with the corrected calculation and creates fresh timestamped backups when upgrading it.
-- Shows each channel's `Rx%` and `LCnt` values in a compact footer beneath its node/callsign line. The values use fields from the same stats response already used for activity colors; they do not add API requests.
-- The modified AllScan JavaScript and CSS contain `v1.11` feature markers. Both shell installers show a standalone `v1.11` mod-version tag near the top of the file. The footer preserves the AllScan and ASL versions, RxAudioStats driver information, and all Rx/Tx level values. The version and driver-support text share one centered line, separated by a dash; channel levels appear together on the centered next line. Small-phone font sizing helps the first line fit in portrait mode. Other status messages are unchanged.
-- Keeps the channel name, node/callsign line, and TouchGUI controls intact. Cards grow slightly to fit the extra row; phone-width and short-screen CSS rules keep the values compact and readable.
-- Keeps TouchGUI's existing local connection border and status behavior.
-- Scans unique public node numbers one at a time, with a 2-second minimum between requests. This stays at or below 30 requests per minute for up to 15 unique public nodes on one TouchGUI page. Multiple open AllScan clients share the ASL statistics API's per-IP limit.
+- Uses AllScan's existing `stats.php` endpoint. `Rx%`, `LCnt`, and activity colors come from the same response, so displaying the added values does not create extra requests.
+- Mirrors the Favorites table calculations: red Tx coloring uses the rolling percentage calculated from the difference in total Tx time across consecutive responses, with the same `>5%` threshold and red gradient; Rx uses the same green percentage gradient; LCnt uses the same blue count gradient; active and WebTransceiver states retain the table's green shades.
+- Polls unique public favorites one at a time in the displayed Favorites order. The existing 2-second minimum between requests and 30-second minimum refresh interval per node are retained, limiting one TouchGUI page to at most 30 statistics requests per minute. A JSON-level 429 response retries the same node after 15 seconds.
+- Places the favorite number at the upper left, with `Rx%` and `LCnt` stacked below it. The channel label and node/callsign text stay in the larger right-hand area, reducing card height while keeping text readable on phones, tablets, and small screens.
+- Preserves the existing TouchGUI connection border and footer layout. Other status messages remain unchanged.
+- The AllScan JavaScript and CSS carry `v1.12` feature markers. Both shell installers show a standalone `v1.12` tag near the top and upgrade known Mods TouchGUI versions v1.05-v1.11 with timestamped backups.
 - Applies to TouchGUI on AllScan v1.02, v1.03, and v1.04. AllScan v1.01 has no TouchGUI.
-- This feature is under testing. The integrated v1.03/v1.04 path creates dedicated timestamped TouchGUI backups; the legacy v1.02/pre-integration v1.03 path uses the installer's existing full-file backups.
+- On the integrated v1.03/v1.04 path, the installer creates dedicated timestamped TouchGUI backups; the legacy v1.02/pre-integration v1.03 path uses the installer's existing full-file backups.
 
 ### Sort Rx% and LCnt
 
@@ -198,7 +196,7 @@ The actual name matches whichever `favorites*.ini` file is selected in AllScan.
 /var/www/html/allscan/js/simple.js (v1.02-v1.04)
 ```
 
-The main-page statistics polling is unchanged. TouchGUI requests one unique public node at a time, with a 2-second minimum delay. Its rate is at or below 30 requests per minute for up to 15 unique public nodes on one page. Multiple open AllScan clients share the ASL statistics API's per-IP limit.
+The main-page statistics polling is unchanged. TouchGUI requests one unique public node at a time in Favorites order, with at least 2 seconds between requests and at least 30 seconds between requests for the same node. This limits one TouchGUI page to at most 30 statistics requests per minute; larger favorite lists take longer than 30 seconds to complete a full pass. Multiple open AllScan clients still share the ASL statistics API's per-IP limit.
 
 `favorites*.ini` changes only when an authorized user explicitly saves an edit.
 
@@ -223,10 +221,11 @@ The main-page statistics polling is unchanged. TouchGUI requests one unique publ
 
 ### TouchGUI activity, statistics, and footer
 
-1. Open TouchGUI and confirm the channel buttons change color with node activity.
-2. Confirm each card shows changing `Rx%` and `LCnt` values.
-3. Check the status footer on a desktop browser and a phone; it should remain centered and fit in two compact lines.
-4. Confirm the TouchGUI controls and local-connection border still work.
+1. Confirm card numbers follow the displayed Favorites order and appear at upper left, with `Rx%` and `LCnt` beneath.
+2. Confirm a higher `Rx%` produces a brighter green, `LCnt` follows the blue gradient, active/WebTransceiver states match the table, and Tx activity produces the red gradient.
+3. Confirm red Tx state responds to changes in total Tx time across successive stats responses, even when the raw keyed field is zero.
+4. Check the layout on a desktop browser and phone; the label should have the wider right-hand area and cards should fit more favorites vertically.
+5. Check the status footer and confirm the TouchGUI controls and local-connection border still work.
 
 ### Disconnect before Monitor
 
@@ -270,6 +269,8 @@ For integrated AllScan v1.03 or v1.04, the TouchGUI enhancement has its own Java
 ```bash
 sudo cp -a /var/www/html/allscan/js/simple.js.before-touchgui-activity-YYYYMMDD-HHMMSS /var/www/html/allscan/js/simple.js && sudo cp -a /var/www/html/allscan/css/simple.css.before-touchgui-activity-YYYYMMDD-HHMMSS /var/www/html/allscan/css/simple.css
 ```
+
+Only restore these backups while the same AllScan version and files are still installed. If an official AllScan update has replaced these files or integrated the feature, do not restore the older backups; that could remove upstream changes. Reinstall or update AllScan through David's official installer instead.
 
 To reverse an individual Favorite edit, copy its matching `.before-edit-YYYYMMDD-HHMMSS` backup over the active `favorites*.ini` file.
 
@@ -320,6 +321,7 @@ The selected entry is not a standard adjacent `label[]` and `cmd[] = "rpt cmd %n
 | AllScan | v1.01-v1.03 legacy patches; v1.04 integrated feature detection and TouchGUI patch |
 | Default web root | `/var/www/html/allscan` |
 | TouchGUI v1.11 | Upgrade test: `node446900`; fresh install: `pi4test`; other test-node installs pending |
+| TouchGUI v1.12 | Workspace regression tests passed; test-node testing pending |
 
 The editor, layout, Save & Close workflow, validation, backups, Add/Delete controls, connection controls, Rx%/LCnt sorting, and Disconnect before Monitor behavior were browser-tested before consolidation.
 

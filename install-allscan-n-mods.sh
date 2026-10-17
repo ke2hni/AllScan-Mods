@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.11
+# TouchGUI activity colors mod version: v1.12
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -240,18 +240,25 @@ MODS_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 TOUCHGUI_ACTIVITY_PATCH=$MODS_DIR/lib/touchgui-activity.py
 
 touchgui_activity_present() {
-    grep -Fq 'AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and centered status footer v1.11.' "$SIMPLE_JS_FILE" &&
-    grep -Fq 'AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and centered status footer v1.11.' "$SIMPLE_CSS_FILE" &&
+    grep -Fq 'AllScan Mods: TouchGUI activity colors, Rx%/LCnt, row-matched colors and order v1.12.' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'AllScan Mods: TouchGUI activity colors, Rx%/LCnt, row-matched colors and order v1.12.' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'function formatTouchguiStatusMessage(msg)' "$SIMPLE_JS_FILE" &&
     grep -Fq 'function getChannelStats()' "$SIMPLE_JS_FILE" &&
     grep -Fq 'function updateChannelActivity(stats)' "$SIMPLE_JS_FILE" &&
     grep -Fq 'function convertActivityRange(value, min, max)' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'function getChannelStatsNodes()' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'nodes.indexOf(node) < 0' "$SIMPLE_JS_FILE" &&
     grep -Fq 'activity.rxPct' "$SIMPLE_JS_FILE" &&
     grep -Fq 'activity.linkCnt' "$SIMPLE_JS_FILE" &&
-    grep -Fq 'channel-stats' "$SIMPLE_JS_FILE" &&
-    grep -Fq 'Number(channel.node) < 3000000' "$SIMPLE_JS_FILE" &&
-    ! grep -Fq 'simple.txTim[node] = now' "$SIMPLE_JS_FILE" &&
-    grep -Fq '.channel-stats' "$SIMPLE_CSS_FILE" &&
+    grep -Fq 'channel-side' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'channel-content' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'number < 3000000' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'simple.txTim[node] = now' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'responseData.retcode == 429' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'convertActivityRange(2 * rxPct, 10, 30)' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'convertActivityRange(3 * linkCount, 15, 30)' "$SIMPLE_JS_FILE" &&
+    grep -Fq '.channel-side' "$SIMPLE_CSS_FILE" &&
+    grep -Fq '.channel-content' "$SIMPLE_CSS_FILE" &&
     grep -Fq '.channel-btn[data-activity="active"]' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'height:100dvh' "$SIMPLE_CSS_FILE" &&
     grep -Fq '.simple-footer { display:grid; }' "$SIMPLE_CSS_FILE" &&
@@ -265,7 +272,7 @@ touchgui_activity_present() {
 
 apply_touchgui_activity_live() {
     if touchgui_activity_present; then
-        echo "TouchGUI activity colors are already present. No changes made."
+        echo "TouchGUI activity, statistics, and card layout are already present. No changes made."
         return 0
     fi
     local work_dir stage_js stage_css timestamp js_backup css_backup
@@ -278,7 +285,7 @@ apply_touchgui_activity_live() {
     if command -v node >/dev/null 2>&1; then node --check "$stage_js"; fi
     if cmp -s "$SIMPLE_JS_FILE" "$stage_js" && cmp -s "$SIMPLE_CSS_FILE" "$stage_css"; then
         rm -rf -- "$work_dir"
-        echo "TouchGUI activity colors already installed. No changes made."
+        echo "TouchGUI activity, statistics, and card layout already installed. No changes made."
         return 0
     fi
     timestamp=$(date +%Y%m%d-%H%M%S)
@@ -299,7 +306,7 @@ apply_touchgui_activity_live() {
         return 1
     fi
     rm -rf -- "$work_dir"
-    echo "TouchGUI activity colors installed. Backups: $js_backup and $css_backup"
+    echo "TouchGUI activity, statistics, and card layout installed. Backups: $js_backup and $css_backup"
 }
 
 upstream_features_present() {
@@ -325,7 +332,7 @@ if [[ $allscan_version == v1.04 ]] && ! upstream_features_present; then
     exit 1
 fi
 if upstream_features_present; then
-    echo "AllScan already includes the integrated enhancements (PR #37). Applying/checking the independent TouchGUI activity-color feature."
+    echo "AllScan already includes the integrated enhancements (PR #37). Applying/checking the independent TouchGUI activity, statistics, and card-layout feature."
     apply_touchgui_activity_live
     exit 0
 fi
