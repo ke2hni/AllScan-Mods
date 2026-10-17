@@ -61,10 +61,10 @@ AllScan's Description and Location columns remain sourced from the AllStarLink d
 - Uses the same red keyed/recently keyed activity shading and the same dark/medium green active states as the main Favorites table.
 - Replaces the previous Mods TouchGUI activity patch with the corrected calculation and creates fresh timestamped backups when upgrading it.
 - Shows each channel's `Rx%` and `LCnt` values in a compact footer beneath its node/callsign line. The values use fields from the same stats response already used for activity colors; they do not add API requests.
-- The two AllScan files modified by this TouchGUI feature are tagged `v1.11` in their JavaScript and CSS comments. The footer preserves the AllScan and ASL versions, RxAudioStats driver information, and all Rx/Tx level values. The version and driver-support text share one centered line, separated by a dash; channel levels appear together on the centered next line. Small-phone font sizing helps the first line fit in portrait mode. Other status messages are unchanged.
+- The modified AllScan JavaScript and CSS contain `v1.11` feature markers. Both shell installers show a standalone `v1.11` mod-version tag near the top of the file. The footer preserves the AllScan and ASL versions, RxAudioStats driver information, and all Rx/Tx level values. The version and driver-support text share one centered line, separated by a dash; channel levels appear together on the centered next line. Small-phone font sizing helps the first line fit in portrait mode. Other status messages are unchanged.
 - Keeps the channel name, node/callsign line, and TouchGUI controls intact. Cards grow slightly to fit the extra row; phone-width and short-screen CSS rules keep the values compact and readable.
 - Keeps TouchGUI's existing local connection border and status behavior.
-- Scans unique public node numbers one at a time. The interval is based on the channel count and keeps one TouchGUI page at or below 30 statistics requests per minute.
+- Scans unique public node numbers one at a time, with a 2-second minimum between requests. This stays at or below 30 requests per minute for up to 15 unique public nodes on one TouchGUI page. Multiple open AllScan clients share the ASL statistics API's per-IP limit.
 - Applies to TouchGUI on AllScan v1.02, v1.03, and v1.04. AllScan v1.01 has no TouchGUI.
 - This feature is under testing. The integrated v1.03/v1.04 path creates dedicated timestamped TouchGUI backups; the legacy v1.02/pre-integration v1.03 path uses the installer's existing full-file backups.
 
@@ -81,46 +81,29 @@ AllScan's Description and Location columns remain sourced from the AllStarLink d
 
 ## Installation
 
-Repository: [github.com/ke2hni/AllScan-Mods](https://github.com/ke2hni/AllScan-Mods)
+On the AllStarLink node, choose the command for your situation. The commands below clone the repository for a new checkout. If it is already cloned, run the selected installer from `/home/asl/AllScan-Mods` instead; use the Upgrade section first if you need the latest Mods.
 
-This package contains two installers:
+- **Install AllScan and Mods, or update AllScan before applying Mods:**
 
-- `allscan-mods.sh` is the original installer for nodes where AllScan is already installed. It only applies the AllScan Mods changes and does not install AllScan or its packages.
-- `install-allscan-n-mods.sh` is the combined installer. At the default AllScan location, it runs David's current official installer/updater first, then verifies PHP SQLite support for Apache and applies AllScan Mods. It installs AllScan on a new node and offers to upgrade an older release to the current release. If an update is declined and v1.01 remains, it stops without applying Mods. For a custom AllScan path, the official updater is skipped and AllScan must already be installed there.
+  ```bash
+  cd /home/asl && git clone https://github.com/ke2hni/AllScan-Mods.git && cd AllScan-Mods && sudo ./install-allscan-n-mods.sh
+  ```
 
-Use `install-allscan-n-mods.sh` for a new node or to check/update the default AllScan installation before applying Mods. David's updater asks for confirmation before installing/updating. Decline its optional OS/package upgrade and optional DTMF support-file replacement unless you specifically want those actions. Use `allscan-mods.sh` when AllScan is already at a supported version and you only want to apply the Mods.
+  This runs David's official installer/updater, checks Apache PHP SQLite support, then applies the Mods. Review its prompts; accept the optional OS/package upgrade or DTMF-file replacement only if you want those actions.
 
-Both scripts are stored in Git with executable permissions, which Git preserves when you clone the repository. Files downloaded directly with Wget or Curl need `chmod +x`; the commands below include that step.
+- **AllScan is already installed; apply Mods without running David's updater:**
 
-### Git
+  ```bash
+  cd /home/asl && git clone https://github.com/ke2hni/AllScan-Mods.git && cd AllScan-Mods && sudo ./allscan-mods.sh
+  ```
 
-New node: install AllScan and AllScan Mods:
+  For a custom AllScan directory, add `--allscan-dir PATH`; AllScan must already be installed there.
 
-```bash
-cd /home/asl && git clone https://github.com/ke2hni/AllScan-Mods.git && cd AllScan-Mods && sudo ./install-allscan-n-mods.sh
-```
-
-For a node that already has AllScan installed, first use the **Upgrade** section below to update this repository, then run `sudo ./allscan-mods.sh`.
-
-### Wget
-
-```bash
-cd /home/asl && mkdir -p lib && wget -O install-allscan-n-mods.sh https://raw.githubusercontent.com/ke2hni/AllScan-Mods/refs/heads/main/install-allscan-n-mods.sh && wget -O lib/touchgui-activity.py https://raw.githubusercontent.com/ke2hni/AllScan-Mods/refs/heads/main/lib/touchgui-activity.py && chmod +x install-allscan-n-mods.sh && sudo ./install-allscan-n-mods.sh
-```
-
-### Curl
-
-```bash
-cd /home/asl && mkdir -p lib && curl -fL https://raw.githubusercontent.com/ke2hni/AllScan-Mods/refs/heads/main/install-allscan-n-mods.sh -o install-allscan-n-mods.sh && curl -fL https://raw.githubusercontent.com/ke2hni/AllScan-Mods/refs/heads/main/lib/touchgui-activity.py -o lib/touchgui-activity.py && chmod +x install-allscan-n-mods.sh && sudo ./install-allscan-n-mods.sh
-```
-
-The Wget and Curl examples use the combined installer. For an existing AllScan installation where you only want the Mods and do not want to run David's updater, download `allscan-mods.sh` and `lib/touchgui-activity.py` to the same `/home/asl` and `/home/asl/lib` locations, then run `sudo ./allscan-mods.sh`. Use only one method. Every terminal example is one copy-and-paste command.
-
-After installation, open AllScan and press **Ctrl+F5** to reload the page, JavaScript, and CSS.
+The repository includes both scripts and the TouchGUI helper. After installation, open AllScan and press **Ctrl+F5** (or clear the browser cache on a phone) to reload the page, JavaScript, and CSS.
 
 ## Upgrade
 
-This updates the AllScan Mods repository on a node where it is already cloned. It saves the current commit on a local backup branch, stashes any local changes, and updates `main` from GitHub. The command does not commit or push your changes.
+To update the Mods repository on a node where it is already cloned, run this from its directory. It saves the current commit on a local backup branch, stashes local changes, and updates `main` from GitHub. It does not commit or push changes.
 
 ```bash
 cd /home/asl/AllScan-Mods && git fetch origin && backup="pre-update-$(date +%Y%m%d-%H%M%S)-$$" && git branch "$backup" HEAD && git stash push -u -m "Pre-update $backup" && git switch -C main origin/main
@@ -138,13 +121,13 @@ The combined installer can update AllScan itself and may prompt you to confirm t
 The default directory is `/var/www/html/allscan`.
 
 ```bash
-cd /home/asl && sudo ./allscan-mods.sh --allscan-dir /your/allscan/path
+cd /home/asl/AllScan-Mods && sudo ./allscan-mods.sh --allscan-dir /your/allscan/path
 ```
 
 HamVOIP example:
 
 ```bash
-cd /home/asl && sudo ./allscan-mods.sh --allscan-dir /srv/http/allscan
+cd /home/asl/AllScan-Mods && sudo ./allscan-mods.sh --allscan-dir /srv/http/allscan
 ```
 
 ## Safety
@@ -152,7 +135,7 @@ cd /home/asl && sudo ./allscan-mods.sh --allscan-dir /srv/http/allscan
 The installer:
 
 - Supports AllScan v1.01 through v1.04. TouchGUI activity colors apply to v1.02-v1.04; v1.01 has no TouchGUI.
-- Works on clean AllScan v1.01, v1.02, and v1.03 installations.
+- Applies the legacy Mods to clean v1.01-v1.03 layouts; v1.04 uses PR #37 feature detection and the independent TouchGUI enhancement.
 - Upgrades an installation containing only the earlier Rx%/LCnt sorting modification.
 - Upgrades the previous combined Favorites editor/sorting package.
 - Recognizes installations containing the separately tested Disconnect before Monitor patch.
@@ -171,7 +154,7 @@ The installer:
 - On v1.02 and v1.03, also backs up and patches `include/favsUtils.php`, where upstream builds Favorites rows.
 - On v1.02 and v1.03, also patches `css/simple.css` so the AllScan link remains visible in TouchGUI portrait mode; v1.01 is unchanged.
 - On v1.02-v1.04, applies the independent TouchGUI activity-color enhancement without removing or replacing upstream functionality.
-- The TouchGUI enhancement helper is included in the repository. Direct Wget/Curl installation downloads the helper to `lib/touchgui-activity.py` beside the installer.
+- The TouchGUI enhancement helper is included at `lib/touchgui-activity.py`; keep it beside the installer directory when running either script.
 - Preserves v1.03's TouchGUI selected-favorites-file link behavior and its duplicate-favorite handling in upstream code.
 - At phone widths, including portrait mode, stacks the TouchGUI status and extra-connection panels so text and controls do not overlap or overflow.
 - On v1.02 and v1.03, adds a TouchGUI Disconnect before Connect toggle synchronized with the regular-page checkbox. Its selection persists across reloads and tabs in the same browser, keyed to the local node; the configured AllScan default seeds first use. v1.01 has no TouchGUI and retains the regular-page behavior.
@@ -215,7 +198,7 @@ The actual name matches whichever `favorites*.ini` file is selected in AllScan.
 /var/www/html/allscan/js/simple.js (v1.02-v1.04)
 ```
 
-The main-page statistics polling is unchanged. TouchGUI requests one unique public node at a time and adjusts its delay to keep its own request rate at or below 30 per minute. Multiple open AllScan clients share the ASL statistics API's per-IP limit.
+The main-page statistics polling is unchanged. TouchGUI requests one unique public node at a time, with a 2-second minimum delay. Its rate is at or below 30 requests per minute for up to 15 unique public nodes on one page. Multiple open AllScan clients share the ASL statistics API's per-IP limit.
 
 `favorites*.ini` changes only when an authorized user explicitly saves an edit.
 
@@ -238,6 +221,13 @@ The main-page statistics polling is unchanged. TouchGUI requests one unique publ
 4. Repeat with `LCnt`.
 5. Click and double-click nodes to confirm the original controls still work.
 
+### TouchGUI activity, statistics, and footer
+
+1. Open TouchGUI and confirm the channel buttons change color with node activity.
+2. Confirm each card shows changing `Rx%` and `LCnt` values.
+3. Check the status footer on a desktop browser and a phone; it should remain centered and fit in two compact lines.
+4. Confirm the TouchGUI controls and local-connection border still work.
+
 ### Disconnect before Monitor
 
 1. Connect to a node normally.
@@ -258,7 +248,7 @@ All four final counts should be `1`.
 
 ## Rollback
 
-Restore the five core files bearing the same timestamp printed by the installer. On v1.02 and v1.03, also restore the four TouchGUI/Favorites files listed below:
+Restore only files changed by that installation, using backups with its timestamp. For a legacy v1.01-v1.03 install, restore the five core files below. For v1.02 and pre-integration v1.03, also restore the four TouchGUI/Favorites files. Do not restore legacy backups onto a later upstream installation.
 
 ```bash
 sudo cp -a /var/www/html/allscan/index.php.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/index.php && sudo cp -a /var/www/html/allscan/include/viewUtils.php.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/include/viewUtils.php && sudo cp -a /var/www/html/allscan/js/main.js.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/js/main.js && sudo cp -a /var/www/html/allscan/css/main.css.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/css/main.css && sudo cp -a /var/www/html/allscan/astapi/connect.php.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/astapi/connect.php
@@ -266,13 +256,19 @@ sudo cp -a /var/www/html/allscan/index.php.before-allscan-mods-YYYYMMDD-HHMMSS /
 
 Replace the timestamp, restore all five matching files, and press **Ctrl+F5**.
 
-For v1.02 and v1.03, also run these commands with the same timestamp:
+For v1.02 and pre-integration v1.03, also run these commands with the same timestamp:
 
 ```bash
 sudo cp -a /var/www/html/allscan/include/favsUtils.php.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/include/favsUtils.php
 sudo cp -a /var/www/html/allscan/css/simple.css.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/css/simple.css
 sudo cp -a /var/www/html/allscan/simple/index.php.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/simple/index.php
 sudo cp -a /var/www/html/allscan/js/simple.js.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/js/simple.js
+```
+
+For integrated AllScan v1.03 or v1.04, the TouchGUI enhancement has its own JavaScript and CSS backups. Restore the matching pair printed by the installer:
+
+```bash
+sudo cp -a /var/www/html/allscan/js/simple.js.before-touchgui-activity-YYYYMMDD-HHMMSS /var/www/html/allscan/js/simple.js && sudo cp -a /var/www/html/allscan/css/simple.css.before-touchgui-activity-YYYYMMDD-HHMMSS /var/www/html/allscan/css/simple.css
 ```
 
 To reverse an individual Favorite edit, copy its matching `.before-edit-YYYYMMDD-HHMMSS` backup over the active `favorites*.ini` file.
@@ -285,9 +281,9 @@ David's official updater may replace locally modified files. Before an installed
 sudo mv /var/www/html/allscan /var/www/html/allscan.failed-YYYYMMDD-HHMMSS && sudo cp -a /var/www/html/allscan.before-update-v1.01-YYYYMMDD-HHMMSS /var/www/html/allscan
 ```
 
-After an update, press **Ctrl+F5** and check the editor, sorting, and Monitor-disconnect option. Run `allscan-mods.sh` again if you separately ran David's updater and only want to reapply Mods.
+After an update, press **Ctrl+F5** and check the editor, sorting, Monitor-disconnect option, and TouchGUI activity colors, statistics, and footer. Run `allscan-mods.sh` again if you separately ran David's updater and only want to reapply Mods.
 
-The installer safely reapplies the package on reviewed v1.01, v1.02, and v1.03 layouts. If the upstream version or required structure changes, it stops without modifying live files so compatibility can be reviewed first.
+The installer safely reapplies the package on reviewed AllScan v1.01-v1.04 layouts. It recognizes the integrated PR #37 features on v1.03/v1.04 and applies the independent TouchGUI enhancement. If the upstream version or required structure changes, it stops without modifying live files so compatibility can be reviewed first.
 
 ## Troubleshooting
 
@@ -320,10 +316,10 @@ The selected entry is not a standard adjacent `label[]` and `cmd[] = "rpt cmd %n
 | Component | Tested configuration |
 |:--|:--|
 | Platform | AllStarLink 3 |
-| Operating system | Debian 13 |
-| AllScan | v1.01-v1.03 legacy patches; v1.04 integrated feature detection and safe skip |
+| Operating system | Debian 12 (Bookworm) and Debian 13 (Trixie) |
+| AllScan | v1.01-v1.03 legacy patches; v1.04 integrated feature detection and TouchGUI patch |
 | Default web root | `/var/www/html/allscan` |
-| Nodes | `node44690` and a separate test node |
+| TouchGUI v1.11 | Upgrade test: `node446900`; fresh install: `pi4test`; other test-node installs pending |
 
 The editor, layout, Save & Close workflow, validation, backups, Add/Delete controls, connection controls, Rx%/LCnt sorting, and Disconnect before Monitor behavior were browser-tested before consolidation.
 
