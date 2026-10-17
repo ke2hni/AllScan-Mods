@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.13
+# TouchGUI activity colors mod version: v1.14
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -240,8 +240,8 @@ MODS_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 TOUCHGUI_ACTIVITY_PATCH=$MODS_DIR/lib/touchgui-activity.py
 
 touchgui_activity_present() {
-    grep -Fq 'AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping v1.13.' "$SIMPLE_JS_FILE" &&
-    grep -Fq 'AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping v1.13.' "$SIMPLE_CSS_FILE" &&
+    grep -Fq 'AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and value-only statistics v1.14.' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and value-only statistics v1.14.' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'function formatTouchguiStatusMessage(msg)' "$SIMPLE_JS_FILE" &&
     grep -Fq 'function getChannelStats()' "$SIMPLE_JS_FILE" &&
     grep -Fq 'function updateChannelActivity(stats)' "$SIMPLE_JS_FILE" &&
@@ -250,6 +250,8 @@ touchgui_activity_present() {
     grep -Fq 'nodes.indexOf(node) < 0' "$SIMPLE_JS_FILE" &&
     grep -Fq 'activity.rxPct' "$SIMPLE_JS_FILE" &&
     grep -Fq 'activity.linkCnt' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'rx.textContent = activity.rxPct === undefined' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'links.textContent = activity.linkCnt === undefined' "$SIMPLE_JS_FILE" &&
     grep -Fq 'channel-side' "$SIMPLE_JS_FILE" &&
     grep -Fq 'channel-content' "$SIMPLE_JS_FILE" &&
     grep -Fq 'number < 3000000' "$SIMPLE_JS_FILE" &&

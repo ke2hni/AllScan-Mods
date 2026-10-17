@@ -13,7 +13,7 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.13" in text, installer
+        assert "TouchGUI activity colors mod version: v1.14" in text, installer
         assert "apply_touchgui_activity_live" in text, installer
         assert "TOUCHGUI_ACTIVITY_PATCH" in text, installer
         assert "activity.rxPct" in text and "activity.linkCnt" in text, installer
@@ -36,7 +36,7 @@ def main():
         patched_js = js.read_text(encoding="utf-8")
         patched_css = css.read_text(encoding="utf-8")
         assert "getChannelStats()" in patched_js
-        assert "TouchGUI activity colors, Rx%/LCnt, main-table color mapping v1.13." in patched_js
+        assert "TouchGUI activity colors, Rx%/LCnt, main-table color mapping and value-only statistics v1.14." in patched_js
         assert "updateChannelActivity(stats)" in patched_js
         assert "function closeChannelStats()" in patched_js
         assert "function formatTouchguiStatusMessage(msg)" in patched_js
@@ -53,7 +53,7 @@ def main():
         assert "channel-side" in patched_js and "channel-content" in patched_js
         assert patched_js.index('class="channel-side"') < patched_js.index('class="channel-content"')
         assert "active-wt" in patched_js
-        assert "TouchGUI activity colors, Rx%/LCnt, main-table color mapping v1.13." in patched_css
+        assert "TouchGUI activity colors, Rx%/LCnt, main-table color mapping and value-only statistics v1.14." in patched_css
         assert "font-size:11px;\nfont-weight:normal;\nline-height:1.1;" in patched_css
         assert ".channel-stats { font-size:10px; }" in patched_css
         assert "height:100vh;\nheight:100dvh" in patched_css
@@ -101,8 +101,8 @@ simple.channels = [{node: '2999999'}];
 simple.channelByNode['2999999'] = simple.channels[0];
 simple.channelsGrid = {querySelector: function() { return button; }};
 updateChannelActivity({node: '2999999', keyups: 100, txtime: 1000, keyed: 0, active: 1, wt: 0, busyPct: 39, linkCnt: 153});
-if(rx.textContent !== 'Rx% 39' || lcnt.textContent !== 'LCnt 153')
-	throw new Error('TouchGUI stats values were not rendered');
+if(rx.textContent !== '39' || lcnt.textContent !== '153')
+	throw new Error('TouchGUI stats values were not rendered: rx=' + rx.textContent + ', lcnt=' + lcnt.textContent);
 if(simple.txTim['2999999'] !== 100)
 	throw new Error('TouchGUI did not store the current Tx time snapshot');
 if(button.style.backgroundColor !== '' || index.style.backgroundColor !== 'hsl(150,50%,15%)' || rx.style.backgroundColor !== 'hsl(125,40%,26%)')
@@ -183,7 +183,7 @@ if(formatTouchguiStatusMessage('TouchGUI connected') !== 'TouchGUI connected')
             subprocess.run(["node", "--check", str(older_js)], check=True)
             upgraded_js = older_js.read_text(encoding="utf-8")
             upgraded_css = older_css.read_text(encoding="utf-8")
-            assert "main-table color mapping v1.13" in upgraded_js
+            assert "value-only statistics v1.14" in upgraded_js
             assert "simple.txTim[node] = now" in upgraded_js
             assert "channel-side" in upgraded_js and ".channel-side" in upgraded_css
             assert '.channel-btn[data-activity="active"]' not in upgraded_css
@@ -201,12 +201,29 @@ if(formatTouchguiStatusMessage('TouchGUI connected') !== 'TouchGUI connected')
         subprocess.run(["node", "--check", str(v112_js)], check=True)
         upgraded_js = v112_js.read_text(encoding="utf-8")
         upgraded_css = v112_css.read_text(encoding="utf-8")
-        assert "main-table color mapping v1.13" in upgraded_js
+        assert "value-only statistics v1.14" in upgraded_js
         assert "button.style.backgroundColor = '';" in upgraded_js
         assert '.channel-btn[data-activity="active"]' not in upgraded_css
         v112_upgraded = (v112_js.read_bytes(), v112_css.read_bytes())
         subprocess.run(["python3", str(PATCHER), str(v112_js), str(v112_css)], check=True)
         assert v112_upgraded == (v112_js.read_bytes(), v112_css.read_bytes()), "v1.12 upgrade was not idempotent"
+
+        v113_js = temp / "v1.13.js"
+        v113_css = temp / "v1.13.css"
+        shutil.copy2(FIXTURES / "touchgui-installed-v1.13.js", v113_js)
+        shutil.copy2(FIXTURES / "touchgui-installed-v1.13.css", v113_css)
+        subprocess.run(["python3", str(PATCHER), str(v113_js), str(v113_css)], check=True)
+        subprocess.run(["node", "--check", str(v113_js)], check=True)
+        upgraded_js = v113_js.read_text(encoding="utf-8")
+        upgraded_css = v113_css.read_text(encoding="utf-8")
+        assert "value-only statistics v1.14" in upgraded_js
+        assert "value-only statistics v1.14" in upgraded_css
+        assert "Rx% —" not in upgraded_js and "LCnt —" not in upgraded_js
+        assert "rx.textContent = activity.rxPct === undefined" in upgraded_js
+        assert "links.textContent = activity.linkCnt === undefined" in upgraded_js
+        v113_upgraded = (v113_js.read_bytes(), v113_css.read_bytes())
+        subprocess.run(["python3", str(PATCHER), str(v113_js), str(v113_css)], check=True)
+        assert v113_upgraded == (v113_js.read_bytes(), v113_css.read_bytes()), "v1.13 upgrade was not idempotent"
 
         legacy_js = temp / "legacy.js"
         legacy_css = temp / "legacy.css"
@@ -230,7 +247,7 @@ if(formatTouchguiStatusMessage('TouchGUI connected') !== 'TouchGUI connected')
         subprocess.run(["node", "--check", str(current_js)], check=True)
         current_source = current_js.read_text(encoding="utf-8")
         current_style = current_css.read_text(encoding="utf-8")
-        assert "Rx% —" in current_source and "LCnt —" in current_source
+        assert 'class="channel-rx">—</span>' in current_source and 'class="channel-lcnt">—</span>' in current_source
         assert "activity.rxPct" in current_source and "activity.linkCnt" in current_source
         assert "grid-template-rows:auto;" in current_style
         assert "grid-template-rows:auto auto auto" not in current_style

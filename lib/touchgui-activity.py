@@ -13,8 +13,9 @@ def main():
     js = js_path.read_text(encoding="utf-8")
     css = css_path.read_text(encoding="utf-8")
 
-    marker = "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping v1.13."
+    marker = "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and value-only statistics v1.14."
     previous_markers = (
+        "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping v1.13.",
         "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, row-matched colors and order v1.12.",
         "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and centered status footer v1.11.",
         "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.10.",
@@ -30,14 +31,15 @@ def main():
     )
     patch_present = patch_marker in js
     if (patch_present and marker in js
-            and "main-table color mapping v1.13" in css
+            and "main-table color mapping and value-only statistics v1.14" in css
             and ".simple-footer #statmsg { grid-column:1 / -1; text-align:center; }" in css
-            and "function formatTouchguiStatusMessage(msg)" in js
             and "function convertActivityRange(value, min, max)" in js
             and "simple.txTim[node] = now" in js
             and "getChannelStatsNodes()" in js
             and "channel-side" in js and ".channel-side" in css
             and "activity.rxPct" in js and "activity.linkCnt" in js
+            and "rx.textContent = activity.rxPct === undefined" in js
+            and "links.textContent = activity.linkCnt === undefined" in js
             and "button.style.backgroundColor = '';" in js
             and '.channel-btn[data-activity="active"]' not in css
             and "number < 3000000" in js
@@ -82,7 +84,7 @@ def main():
 
     channel_markup = r'''(?m)^[ \t]*btn\.innerHTML = [\s\S]*?;'''
     channel_markup_new = '''\t\tbtn.innerHTML = '<span class="channel-side"><span class="channel-index">' + (i + 1) + '</span>'
-\t\t\t+ '<span class="channel-stats"><span class="channel-rx">Rx% —</span><span class="channel-lcnt">LCnt —</span></span></span>'
+\t\t\t+ '<span class="channel-stats"><span class="channel-rx">—</span><span class="channel-lcnt">—</span></span></span>'
 \t\t\t+ '<span class="channel-content"><span class="channel-label">' + escapeHtml(channelLabel(channel)) + '</span>'
 \t\t\t+ '<span class="channel-meta">' + escapeHtml(channelMeta(channel)) + '</span></span>';'''.replace("\\t", "\t")
     updated_js, markup_count = re.subn(channel_markup, lambda _: channel_markup_new, js, count=1)
@@ -97,7 +99,7 @@ def main():
         js = js.replace(unload_marker, unload_marker + "\n\twindow.addEventListener('beforeunload', closeChannelStats);", 1)
 
     handler_marker = "function handleConnectionEvent(event) {"
-    handler = r'''// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping v1.13.
+    handler = r'''// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and value-only statistics v1.14.
 function getChannelStatsNodes() {
 	var nodes = [];
 	simple.channels.forEach(function(channel) {
@@ -201,11 +203,11 @@ function applyChannelActivity(button, activity) {
 	if(index)
 		index.style.backgroundColor = keyed ? txColor : (activity.active ? activeColor : 'transparent');
 	if(rx)
-		rx.textContent = 'Rx% ' + (activity.rxPct === undefined || activity.rxPct === null ? '—' : activity.rxPct);
+		rx.textContent = activity.rxPct === undefined || activity.rxPct === null ? '—' : String(activity.rxPct);
 	if(rx)
 		rx.style.backgroundColor = rxColor;
 	if(links)
-		links.textContent = 'LCnt ' + (activity.linkCnt === undefined || activity.linkCnt === null ? '—' : activity.linkCnt);
+		links.textContent = activity.linkCnt === undefined || activity.linkCnt === null ? '—' : String(activity.linkCnt);
 	if(links)
 		links.style.backgroundColor = linkColor;
 	button.dataset.activity = keyed ? 'keyed' : (activity.active ? (activity.wt ? 'active-wt' : 'active') : 'idle');
@@ -288,7 +290,7 @@ color:#fff;
     if css.count(old_activity_css) > 1:
         raise SystemExit("ERROR: TouchGUI activity color CSS is duplicated; no files changed.")
     css = css.replace(old_activity_css, "", 1)
-    stats_css = '''/* AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping v1.13. */
+    stats_css = '''/* AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and value-only statistics v1.14. */
 .channel-btn {
 grid-template-rows:auto;
 min-height:86px;
@@ -381,6 +383,7 @@ grid-row:1 / span 3;
 }
 '''
     previous_stats_css_markers = (
+        "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping v1.13.",
         "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, row-matched colors and order v1.12.",
         "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and centered status footer v1.11.",
         "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.10.",
@@ -396,52 +399,62 @@ grid-row:1 / span 3;
         if "/* " + item[3:] + " */\n" + previous_stats_css_body in css
     ), None)
     v112_stats_css = stats_css.replace(
-        "main-table color mapping v1.13", "row-matched colors and order v1.12"
+        "main-table color mapping and value-only statistics v1.14",
+        "row-matched colors and order v1.12",
+    )
+    v113_stats_css = stats_css.replace(
+        "main-table color mapping and value-only statistics v1.14",
+        "main-table color mapping v1.13",
     )
     if previous_block:
         css = css.replace(previous_block, stats_css, 1)
+    elif v113_stats_css in css:
+        css = css.replace(v113_stats_css, stats_css, 1)
     elif v112_stats_css in css:
         css = css.replace(v112_stats_css, stats_css, 1)
     elif "main-table color mapping v1.13" in css:
-        pass
+        css = css.replace(
+            "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping v1.13.",
+            "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and value-only statistics v1.14.",
+        )
     elif ".channel-stats {" in css:
         raise SystemExit("ERROR: Existing TouchGUI card CSS is not a recognized Mods version; no files changed.")
     else:
         css = css.rstrip() + "\n" + stats_css
     css = css.replace(
         "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, row-matched colors and order v1.12.",
-        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping v1.13.",
+        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and value-only statistics v1.14.",
     )
     css = css.replace(
         "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and centered status footer v1.11.",
-        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping v1.13.",
+        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and value-only statistics v1.14.",
     )
     css = css.replace(
         "AllScan Mods: TouchGUI activity colors and Rx%/LCnt v1.05.",
-        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping v1.13.",
+        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and value-only statistics v1.14.",
     )
     css = css.replace(
         "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and mobile footer v1.06.",
-        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping v1.13.",
+        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and value-only statistics v1.14.",
     )
     css = css.replace(
         "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and complete status footer v1.07.",
-        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping v1.13.",
+        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and value-only statistics v1.14.",
     )
     css = css.replace(
         "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.08.",
-        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping v1.13.",
+        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and value-only statistics v1.14.",
     )
     css = css.replace(
         "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.09.",
-        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping v1.13.",
+        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and value-only statistics v1.14.",
     )
     css = css.replace(
         "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.10.",
-        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping v1.13.",
+        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and value-only statistics v1.14.",
     )
-    if "main-table color mapping v1.13" not in css:
-        css = css.rstrip() + "\n/* AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping v1.13. */\n"
+    if "main-table color mapping and value-only statistics v1.14" not in css:
+        css = css.rstrip() + "\n/* AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and value-only statistics v1.14. */\n"
     if ".simple-app {\nheight:100vh;\nheight:100dvh;\n}" not in css:
         css = css.rstrip() + "\n.simple-app {\nheight:100vh;\nheight:100dvh;\n}\n"
     if "@media (max-height:430px) {\n.simple-footer { display:grid; }\n}" not in css:
@@ -484,11 +497,15 @@ grid-row:1 / span 3;
             or "simple.txTim[node] = now" not in js
             or "getChannelStatsNodes()" not in js
             or "button.style.backgroundColor = '';" not in js
-            or "main-table color mapping v1.13" not in css
+            or "main-table color mapping and value-only statistics v1.14" not in css
             or '.channel-btn[data-activity="active"]' in css
             or "channel-side" not in js
             or ".channel-side" not in css):
         raise SystemExit("ERROR: TouchGUI activity patch validation failed; no files changed.")
+    js = js.replace(
+        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping v1.13.",
+        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and value-only statistics v1.14.",
+    )
     js_path.write_text(js, encoding="utf-8")
     css_path.write_text(css, encoding="utf-8")
     print("TouchGUI activity, statistics, and card layout are patch-ready.")
