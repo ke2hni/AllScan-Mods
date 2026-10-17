@@ -60,9 +60,9 @@ AllScan's Description and Location columns remain sourced from the AllStarLink d
 - Uses AllScan's existing `stats.php` endpoint. `Rx%`, `LCnt`, and activity colors come from the same response, so displaying the added values does not create extra requests.
 - Mirrors the Favorites table calculations: red Tx coloring uses the rolling percentage calculated from the difference in total Tx time across consecutive responses, with the same `>5%` threshold and red gradient; Rx uses the same green percentage gradient; LCnt uses the same blue count gradient; active and WebTransceiver states retain the table's green shades.
 - Polls unique public favorites one at a time in the displayed Favorites order. The existing 2-second minimum between requests and 30-second minimum refresh interval per node are retained, limiting one TouchGUI page to at most 30 statistics requests per minute. A JSON-level 429 response retries the same node after 15 seconds.
-- Places the favorite number at the upper left, with `Rx%` and `LCnt` stacked below it. The channel label and node/callsign text stay in the larger right-hand area, reducing card height while keeping text readable on phones, tablets, and small screens.
+- Places the favorite number at the upper left, with `Rx%` and `LCnt` stacked below it. Each item in that left strip uses the same color and threshold as its matching Favorites-table column: `#` for Tx/active state, green for Rx%, and blue for LCnt. Stats no longer recolor the full card; existing TouchGUI selected/connection styling remains.
 - Preserves the existing TouchGUI connection border and footer layout. Other status messages remain unchanged.
-- The AllScan JavaScript and CSS carry `v1.12` feature markers. Both shell installers show a standalone `v1.12` tag near the top and upgrade known Mods TouchGUI versions v1.05-v1.11 with timestamped backups.
+- The AllScan JavaScript and CSS carry `v1.13` feature markers. Both shell installers show a standalone `v1.13` tag near the top and upgrade known Mods TouchGUI versions v1.05-v1.12 with timestamped backups.
 - Applies to TouchGUI on AllScan v1.02, v1.03, and v1.04. AllScan v1.01 has no TouchGUI.
 - On the integrated v1.03/v1.04 path, the installer creates dedicated timestamped TouchGUI backups; the legacy v1.02/pre-integration v1.03 path uses the installer's existing full-file backups.
 
@@ -222,7 +222,7 @@ The main-page statistics polling is unchanged. TouchGUI requests one unique publ
 ### TouchGUI activity, statistics, and footer
 
 1. Confirm card numbers follow the displayed Favorites order and appear at upper left, with `Rx%` and `LCnt` beneath.
-2. Confirm a higher `Rx%` produces a brighter green, `LCnt` follows the blue gradient, active/WebTransceiver states match the table, and Tx activity produces the red gradient.
+2. Confirm only the left stats strip is colored by activity: `#` follows the table's red/green/clear rules, higher `Rx%` produces a brighter green, and `LCnt` follows the blue gradient. Existing TouchGUI selected/connection styling should remain.
 3. Confirm red Tx state responds to changes in total Tx time across successive stats responses, even when the raw keyed field is zero.
 4. Check the layout on a desktop browser and phone; the label should have the wider right-hand area and cards should fit more favorites vertically.
 5. Check the status footer and confirm the TouchGUI controls and local-connection border still work.
@@ -321,7 +321,8 @@ The selected entry is not a standard adjacent `label[]` and `cmd[] = "rpt cmd %n
 | AllScan | v1.01-v1.03 legacy patches; v1.04 integrated feature detection and TouchGUI patch |
 | Default web root | `/var/www/html/allscan` |
 | TouchGUI v1.11 | Upgrade test: `node446900`; fresh install: `pi4test`; other test-node installs pending |
-| TouchGUI v1.12 | Workspace regression tests passed; test-node testing pending |
+| TouchGUI v1.12 | Installed and visually checked on `pi4test`; matched main-screen activity behavior reported by user |
+| TouchGUI v1.13 | Workspace regression tests passed; test-node testing pending |
 
 The editor, layout, Save & Close workflow, validation, backups, Add/Delete controls, connection controls, Rx%/LCnt sorting, and Disconnect before Monitor behavior were browser-tested before consolidation.
 

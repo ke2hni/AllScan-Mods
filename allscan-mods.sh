@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.12
+# TouchGUI activity colors mod version: v1.13
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -68,8 +68,8 @@ MODS_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 TOUCHGUI_ACTIVITY_PATCH=$MODS_DIR/lib/touchgui-activity.py
 
 touchgui_activity_present() {
-    grep -Fq 'AllScan Mods: TouchGUI activity colors, Rx%/LCnt, row-matched colors and order v1.12.' "$SIMPLE_JS_FILE" &&
-    grep -Fq 'AllScan Mods: TouchGUI activity colors, Rx%/LCnt, row-matched colors and order v1.12.' "$SIMPLE_CSS_FILE" &&
+    grep -Fq 'AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping v1.13.' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping v1.13.' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'function formatTouchguiStatusMessage(msg)' "$SIMPLE_JS_FILE" &&
     grep -Fq 'function getChannelStats()' "$SIMPLE_JS_FILE" &&
     grep -Fq 'function updateChannelActivity(stats)' "$SIMPLE_JS_FILE" &&
@@ -85,9 +85,10 @@ touchgui_activity_present() {
     grep -Fq 'responseData.retcode == 429' "$SIMPLE_JS_FILE" &&
     grep -Fq 'convertActivityRange(2 * rxPct, 10, 30)' "$SIMPLE_JS_FILE" &&
     grep -Fq 'convertActivityRange(3 * linkCount, 15, 30)' "$SIMPLE_JS_FILE" &&
+    grep -Fq "button.style.backgroundColor = '';" "$SIMPLE_JS_FILE" &&
     grep -Fq '.channel-side' "$SIMPLE_CSS_FILE" &&
     grep -Fq '.channel-content' "$SIMPLE_CSS_FILE" &&
-    grep -Fq '.channel-btn[data-activity="active"]' "$SIMPLE_CSS_FILE" &&
+    ! grep -Fq '.channel-btn[data-activity="active"]' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'height:100dvh' "$SIMPLE_CSS_FILE" &&
     grep -Fq '.simple-footer { display:grid; }' "$SIMPLE_CSS_FILE" &&
     grep -Fq '.simple-footer { height:auto; min-height:30px; flex:0 0 auto; overflow:visible; }' "$SIMPLE_CSS_FILE" &&

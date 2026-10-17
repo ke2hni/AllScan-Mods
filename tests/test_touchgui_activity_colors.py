@@ -13,7 +13,7 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.12" in text, installer
+        assert "TouchGUI activity colors mod version: v1.13" in text, installer
         assert "apply_touchgui_activity_live" in text, installer
         assert "TOUCHGUI_ACTIVITY_PATCH" in text, installer
         assert "activity.rxPct" in text and "activity.linkCnt" in text, installer
@@ -21,6 +21,7 @@ def main():
         assert "simple.txTim[node] = now" in text, installer
         assert "responseData.retcode == 429" in text, installer
         assert "convertActivityRange(2 * rxPct, 10, 30)" in text, installer
+        assert "button.style.backgroundColor = '';" in text, installer
         assert "allscan_version == v1.02 || $allscan_version == v1.03" in text, installer
         assert "AllScan already includes the integrated enhancements (PR #37)" in text, installer
 
@@ -35,7 +36,7 @@ def main():
         patched_js = js.read_text(encoding="utf-8")
         patched_css = css.read_text(encoding="utf-8")
         assert "getChannelStats()" in patched_js
-        assert "TouchGUI activity colors, Rx%/LCnt, row-matched colors and order v1.12." in patched_js
+        assert "TouchGUI activity colors, Rx%/LCnt, main-table color mapping v1.13." in patched_js
         assert "updateChannelActivity(stats)" in patched_js
         assert "function closeChannelStats()" in patched_js
         assert "function formatTouchguiStatusMessage(msg)" in patched_js
@@ -51,8 +52,8 @@ def main():
         assert "convertActivityRange(3 * linkCount, 15, 30)" in patched_js
         assert "channel-side" in patched_js and "channel-content" in patched_js
         assert patched_js.index('class="channel-side"') < patched_js.index('class="channel-content"')
-        assert "data-activity=\"active-wt\"" in patched_css
-        assert "TouchGUI activity colors, Rx%/LCnt, row-matched colors and order v1.12." in patched_css
+        assert "active-wt" in patched_js
+        assert "TouchGUI activity colors, Rx%/LCnt, main-table color mapping v1.13." in patched_css
         assert "font-size:11px;\nfont-weight:normal;\nline-height:1.1;" in patched_css
         assert ".channel-stats { font-size:10px; }" in patched_css
         assert "height:100vh;\nheight:100dvh" in patched_css
@@ -67,6 +68,8 @@ def main():
         assert "hsl(150,50%,15%)" in patched_js
         assert "hsl(150,50%,20%)" in patched_js
         assert "hsl(0,100%," in patched_js
+        assert "button.style.backgroundColor = '';" in patched_js
+        assert '.channel-btn[data-activity="active"]' not in patched_css
         assert "var keyed = activity.txAverage > 5" in patched_js
         assert "convertActivityRange(activity.txAverage, 15, 29)" in patched_js
         assert "simple.txAvg[node] = Math.round(simple.txAvg[node] / 2 + txPercent / 2)" in patched_js
@@ -102,24 +105,33 @@ if(rx.textContent !== 'Rx% 39' || lcnt.textContent !== 'LCnt 153')
 	throw new Error('TouchGUI stats values were not rendered');
 if(simple.txTim['2999999'] !== 100)
 	throw new Error('TouchGUI did not store the current Tx time snapshot');
-if(button.style.backgroundColor !== 'hsl(125,40%,26%)' || rx.style.backgroundColor !== 'hsl(125,40%,26%)')
+if(button.style.backgroundColor !== '' || index.style.backgroundColor !== 'hsl(150,50%,15%)' || rx.style.backgroundColor !== 'hsl(125,40%,26%)')
 	throw new Error('Rx green did not use the main-page percentage gradient');
 if(lcnt.style.backgroundColor !== 'hsl(240,40%,30%)')
 	throw new Error('LCnt blue did not use the main-page count gradient');
+applyChannelActivity(button, {active: 0, wt: 0, txAverage: 0, rxPct: 2, linkCnt: 2});
+if(index.style.backgroundColor !== 'transparent' || rx.style.backgroundColor !== '' || lcnt.style.backgroundColor !== '')
+	throw new Error('The #, Rx%, and LCnt backgrounds did not follow the table zero/inactive thresholds');
 applyChannelActivity(button, {active: 1, wt: 0, txAverage: 0, rxPct: 10, linkCnt: 3});
-var lowRxShade = button.style.backgroundColor;
+var lowRxShade = rx.style.backgroundColor;
 applyChannelActivity(button, {active: 1, wt: 0, txAverage: 0, rxPct: 39, linkCnt: 153});
-if(lowRxShade !== 'hsl(125,40%,14%)' || button.style.backgroundColor !== 'hsl(125,40%,26%)')
+if(lowRxShade !== 'hsl(125,40%,14%)' || rx.style.backgroundColor !== 'hsl(125,40%,26%)' || button.style.backgroundColor !== '')
 	throw new Error('Higher Rx% did not produce a brighter green');
 applyChannelActivity(button, {active: 1, wt: 1, txAverage: 0, rxPct: '-', linkCnt: '-'});
-if(button.style.backgroundColor !== 'hsl(150,50%,20%)' || index.style.backgroundColor !== 'hsl(150,50%,20%)')
+if(button.style.backgroundColor !== '' || index.style.backgroundColor !== 'hsl(150,50%,20%)')
 	throw new Error('The WebTransceiver active color did not match the table');
 applyChannelActivity(button, {active: 1, wt: 0, txAverage: 100, rxPct: 39, linkCnt: 153});
-if(button.style.backgroundColor !== 'hsl(0,100%,29%)' || index.style.backgroundColor !== 'hsl(0,100%,29%)')
+if(button.style.backgroundColor !== '' || index.style.backgroundColor !== 'hsl(0,100%,29%)')
 	throw new Error('Current keyed activity did not use the table red color');
+applyChannelActivity(button, {active: 1, wt: 1, txAverage: 5, rxPct: '-', linkCnt: '-'});
+if(index.style.backgroundColor !== 'hsl(150,50%,20%)')
+	throw new Error('Tx color threshold changed at exactly 5%');
+applyChannelActivity(button, {active: 1, wt: 1, txAverage: 6, rxPct: '-', linkCnt: '-'});
+if(index.style.backgroundColor !== 'hsl(0,100%,16%)')
+	throw new Error('Tx red did not start above the table 5% threshold');
 nowSeconds = 130;
 updateChannelActivity({node: '2999999', keyups: 101, txtime: 1005, keyed: 0, active: 1, wt: 0, busyPct: 39, linkCnt: 153});
-if(simple.txAvg['2999999'] !== 9 || button.dataset.activity !== 'keyed' || button.style.backgroundColor !== 'hsl(0,100%,16%)')
+if(simple.txAvg['2999999'] !== 9 || button.dataset.activity !== 'keyed' || index.style.backgroundColor !== 'hsl(0,100%,16%)' || button.style.backgroundColor !== '')
 	throw new Error('Tx% was not calculated from consecutive total-Tx-time samples');
 var scheduledDelay = null;
 var originalSetTimeout = setTimeout;
@@ -171,14 +183,30 @@ if(formatTouchguiStatusMessage('TouchGUI connected') !== 'TouchGUI connected')
             subprocess.run(["node", "--check", str(older_js)], check=True)
             upgraded_js = older_js.read_text(encoding="utf-8")
             upgraded_css = older_css.read_text(encoding="utf-8")
-            assert "row-matched colors and order v1.12" in upgraded_js
+            assert "main-table color mapping v1.13" in upgraded_js
             assert "simple.txTim[node] = now" in upgraded_js
             assert "channel-side" in upgraded_js and ".channel-side" in upgraded_css
+            assert '.channel-btn[data-activity="active"]' not in upgraded_css
             assert "join(' - ')" in upgraded_js
             assert ".simple-footer #statmsg { grid-column:1 / -1; text-align:center; }" in upgraded_css
             upgraded = (older_js.read_bytes(), older_css.read_bytes())
             subprocess.run(["python3", str(PATCHER), str(older_js), str(older_css)], check=True)
             assert upgraded == (older_js.read_bytes(), older_css.read_bytes()), f"v1.12 was not idempotent after {prior_marker} upgrade"
+
+        v112_js = temp / "v1.12.js"
+        v112_css = temp / "v1.12.css"
+        shutil.copy2(FIXTURES / "touchgui-installed-v1.12.js", v112_js)
+        shutil.copy2(FIXTURES / "touchgui-installed-v1.12.css", v112_css)
+        subprocess.run(["python3", str(PATCHER), str(v112_js), str(v112_css)], check=True)
+        subprocess.run(["node", "--check", str(v112_js)], check=True)
+        upgraded_js = v112_js.read_text(encoding="utf-8")
+        upgraded_css = v112_css.read_text(encoding="utf-8")
+        assert "main-table color mapping v1.13" in upgraded_js
+        assert "button.style.backgroundColor = '';" in upgraded_js
+        assert '.channel-btn[data-activity="active"]' not in upgraded_css
+        v112_upgraded = (v112_js.read_bytes(), v112_css.read_bytes())
+        subprocess.run(["python3", str(PATCHER), str(v112_js), str(v112_css)], check=True)
+        assert v112_upgraded == (v112_js.read_bytes(), v112_css.read_bytes()), "v1.12 upgrade was not idempotent"
 
         legacy_js = temp / "legacy.js"
         legacy_css = temp / "legacy.css"
