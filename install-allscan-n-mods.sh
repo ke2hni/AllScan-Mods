@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.15
+# TouchGUI activity colors mod version: v1.16
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -240,8 +240,8 @@ MODS_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 TOUCHGUI_ACTIVITY_PATCH=$MODS_DIR/lib/touchgui-activity.py
 
 touchgui_activity_present() {
-    grep -Fq 'AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.15.' "$SIMPLE_JS_FILE" &&
-    grep -Fq 'AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.15.' "$SIMPLE_CSS_FILE" &&
+    grep -Fq 'AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.16.' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.16.' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'function formatTouchguiStatusMessage(msg)' "$SIMPLE_JS_FILE" &&
     grep -Fq 'function getChannelStats()' "$SIMPLE_JS_FILE" &&
     grep -Fq 'function updateChannelActivity(stats)' "$SIMPLE_JS_FILE" &&
@@ -253,6 +253,7 @@ touchgui_activity_present() {
     grep -Fq "rx.textContent = hasRx ? String(activity.rxPct) + '%' : '—';" "$SIMPLE_JS_FILE" &&
     grep -Fq 'links.textContent = activity.linkCnt === undefined' "$SIMPLE_JS_FILE" &&
     grep -Fq 'border-radius:8px;' "$SIMPLE_CSS_FILE" &&
+    grep -A7 -F '.channel-stats {' "$SIMPLE_CSS_FILE" | grep -Fq 'font-size:12px;' &&
     [[ $(grep -Fc 'border-radius:8px;' "$SIMPLE_CSS_FILE") -ge 2 ]] &&
     grep -Fq 'channel-side' "$SIMPLE_JS_FILE" &&
     grep -Fq 'channel-content' "$SIMPLE_JS_FILE" &&
