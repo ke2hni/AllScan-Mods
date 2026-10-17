@@ -60,9 +60,9 @@ AllScan's Description and Location columns remain sourced from the AllStarLink d
 - Uses AllScan's existing `stats.php` endpoint. `Rx%`, `LCnt`, and activity colors come from the same response, so displaying the added values does not create extra requests.
 - Mirrors the Favorites table calculations: red Tx coloring uses the rolling percentage calculated from the difference in total Tx time across consecutive responses, with the same `>5%` threshold and red gradient; Rx uses the same green percentage gradient; LCnt uses the same blue count gradient; active and WebTransceiver states retain the table's green shades.
 - Polls unique public favorites one at a time in the displayed Favorites order. The existing 2-second minimum between requests and 30-second minimum refresh interval per node are retained, limiting one TouchGUI page to at most 30 statistics requests per minute. A JSON-level 429 response retries the same node after 15 seconds.
-- Places the favorite number at the upper left, with the Rx% and LCnt values stacked below it without labels to save card space. Rx values include the `%` sign. All three color fields have rounded corners. The Rx% and LCnt value text and badges are slightly larger, with compact line spacing; card height, width, and favorite-number badge size remain unchanged. Each item in that left strip uses the same color and threshold as its matching Favorites-table column: `#` for Tx/active state, green for Rx%, and blue for LCnt. Stats no longer recolor the full card; existing TouchGUI selected/connection styling remains.
+- Places the favorite number at the upper left, with the Rx% and LCnt values stacked below it without labels to save card space. Rx values include the `%` sign. All three color fields have rounded corners. The Rx% and LCnt value text and badges are slightly larger, with compact line spacing. Card labels and metadata share a constrained, centered text column; long labels wrap within the existing three-line limit, and metadata keeps its existing one-line ellipsis. Laptop labels use the same 16px size as phone labels. Card sizing rules and the favorite-number badge size remain unchanged. Each item in that left strip uses the same color and threshold as its matching Favorites-table column: `#` for Tx/active state, green for Rx%, and blue for LCnt. Stats no longer recolor the full card; existing TouchGUI selected/connection styling remains.
 - Preserves the existing TouchGUI connection border and footer layout. Other status messages remain unchanged.
-- The AllScan JavaScript and CSS carry `v1.16` feature markers. Both shell installers show a standalone `v1.16` tag near the top and upgrade known Mods TouchGUI versions v1.05-v1.15 with timestamped backups.
+- The AllScan JavaScript and CSS carry `v1.17` feature markers. Both shell installers show a standalone `v1.17` tag near the top and upgrade known Mods TouchGUI versions v1.05-v1.16 with timestamped backups.
 - Applies to TouchGUI on AllScan v1.02, v1.03, and v1.04. AllScan v1.01 has no TouchGUI.
 - On the integrated v1.03/v1.04 path, the installer creates dedicated timestamped TouchGUI backups; the legacy v1.02/pre-integration v1.03 path uses the installer's existing full-file backups.
 
@@ -224,7 +224,7 @@ The main-page statistics polling is unchanged. TouchGUI requests one unique publ
 1. Confirm card numbers follow the displayed Favorites order and appear at upper left, with the Rx% (including `%`) and LCnt values beneath them and without text labels.
 2. Confirm only the left stats strip is colored by activity: `#` follows the table's red/green/clear rules, higher `Rx%` produces a brighter green, and `LCnt` follows the blue gradient. Existing TouchGUI selected/connection styling should remain.
 3. Confirm red Tx state responds to changes in total Tx time across successive stats responses, even when the raw keyed field is zero.
-4. Check the layout on a desktop browser and phone; the callsign/friendly label should have the wider right-hand area and cards should fit more favorites vertically.
+4. Check the layout on a laptop, tablet, and phone; card labels and metadata should stay centered within the text column, wrap or truncate inside it, and never overlap the #/Rx/LCnt strip.
 5. Check the status footer and confirm the TouchGUI controls and local-connection border still work.
 
 ### Disconnect before Monitor
@@ -326,6 +326,7 @@ The selected entry is not a standard adjacent `label[]` and `cmd[] = "rpt cmd %n
 | TouchGUI v1.14 | User confirmed the value-only cards worked after AllStar stats requests recovered |
 | TouchGUI v1.15 | Workspace regression tests passed; test-node testing pending |
 | TouchGUI v1.16 | Workspace regression tests passed; test-node testing pending |
+| TouchGUI v1.17 | Workspace regression tests passed; test-node testing pending |
 
 The editor, layout, Save & Close workflow, validation, backups, Add/Delete controls, connection controls, Rx%/LCnt sorting, and Disconnect before Monitor behavior were browser-tested before consolidation.
 

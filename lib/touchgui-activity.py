@@ -13,8 +13,9 @@ def main():
     js = js_path.read_text(encoding="utf-8")
     css = css_path.read_text(encoding="utf-8")
 
-    marker = "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.16."
+    marker = "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.17."
     previous_markers = (
+        "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.16.",
         "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.15.",
         "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and value-only statistics v1.14.",
         "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping v1.13.",
@@ -33,7 +34,7 @@ def main():
     )
     patch_present = patch_marker in js
     if (patch_present and marker in js
-            and "main-table color mapping and rounded value badges v1.16" in css
+            and "main-table color mapping and rounded value badges v1.17" in css
             and ".simple-footer #statmsg { grid-column:1 / -1; text-align:center; }" in css
             and "function convertActivityRange(value, min, max)" in js
             and "simple.txTim[node] = now" in js
@@ -51,7 +52,8 @@ def main():
             and ".simple-footer { height:auto; min-height:30px; flex:0 0 auto; overflow:visible; }" in css
             and "@media (max-width:430px)" in css
             and "@media (max-width:380px)" in css
-            and "white-space:normal; overflow:visible; overflow-wrap:anywhere; min-width:0;" in css):
+            and "white-space:normal; overflow:visible; overflow-wrap:anywhere; min-width:0;" in css
+            and "TouchGUI centered card text v1.17" in css):
         print("TouchGUI activity, statistics, and card layout are already applied.")
         return
 
@@ -102,7 +104,7 @@ def main():
         js = js.replace(unload_marker, unload_marker + "\n\twindow.addEventListener('beforeunload', closeChannelStats);", 1)
 
     handler_marker = "function handleConnectionEvent(event) {"
-    handler = r'''// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.16.
+    handler = r'''// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.17.
 function getChannelStatsNodes() {
 	var nodes = [];
 	simple.channels.forEach(function(channel) {
@@ -293,7 +295,7 @@ color:#fff;
     if css.count(old_activity_css) > 1:
         raise SystemExit("ERROR: TouchGUI activity color CSS is duplicated; no files changed.")
     css = css.replace(old_activity_css, "", 1)
-    stats_css = '''/* AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.16. */
+    stats_css = '''/* AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.17. */
 .channel-btn {
 grid-template-rows:auto;
 min-height:86px;
@@ -417,6 +419,10 @@ grid-row:1 / span 3;
     ).replace(
         "padding:1px 3px;\nborder-radius:8px;", "padding:1px 3px;\nborder-radius:3px;"
     )
+    v116_stats_css = stats_css.replace(
+        "main-table color mapping and rounded value badges v1.17",
+        "main-table color mapping and rounded value badges v1.16",
+    )
     v115_stats_css = stats_css.replace(
         "font-size:12px;\nfont-weight:normal;\nline-height:1;",
         "font-size:11px;\nfont-weight:normal;\nline-height:1.1;",
@@ -427,23 +433,25 @@ grid-row:1 / span 3;
         ".channel-stats { font-size:11px; }",
         ".channel-stats { font-size:10px; }",
     ).replace(
-        "main-table color mapping and rounded value badges v1.16",
+        "main-table color mapping and rounded value badges v1.17",
         "main-table color mapping and rounded value badges v1.15",
     )
     v114_stats_css = previous_mapping_css.replace(
-        "main-table color mapping and rounded value badges v1.16",
+        "main-table color mapping and rounded value badges v1.17",
         "main-table color mapping and value-only statistics v1.14",
     )
     v113_stats_css = previous_mapping_css.replace(
-        "main-table color mapping and rounded value badges v1.16",
+        "main-table color mapping and rounded value badges v1.17",
         "main-table color mapping v1.13",
     )
     v112_stats_css = previous_mapping_css.replace(
-        "main-table color mapping and rounded value badges v1.16",
+        "main-table color mapping and rounded value badges v1.17",
         "row-matched colors and order v1.12",
     )
     if previous_block:
         css = css.replace(previous_block, stats_css, 1)
+    elif v116_stats_css in css:
+        css = css.replace(v116_stats_css, stats_css, 1)
     elif v115_stats_css in css:
         css = css.replace(v115_stats_css, stats_css, 1)
     elif v114_stats_css in css:
@@ -455,7 +463,7 @@ grid-row:1 / span 3;
     elif "main-table color mapping v1.13" in css:
         css = css.replace(
             "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping v1.13.",
-            "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.16.",
+            "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.17.",
         )
     elif ".channel-stats {" in css:
         raise SystemExit("ERROR: Existing TouchGUI card CSS is not a recognized Mods version; no files changed.")
@@ -463,42 +471,61 @@ grid-row:1 / span 3;
         css = css.rstrip() + "\n" + stats_css
     css = css.replace(
         "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, row-matched colors and order v1.12.",
-        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.16.",
+        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.17.",
     )
     css = css.replace(
         "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and centered status footer v1.11.",
-        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.16.",
+        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.17.",
     )
     css = css.replace(
         "AllScan Mods: TouchGUI activity colors and Rx%/LCnt v1.05.",
-        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.16.",
+        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.17.",
     )
     css = css.replace(
         "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and mobile footer v1.06.",
-        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.16.",
+        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.17.",
     )
     css = css.replace(
         "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and complete status footer v1.07.",
-        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.16.",
+        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.17.",
     )
     css = css.replace(
         "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.08.",
-        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.16.",
+        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.17.",
     )
     css = css.replace(
         "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.09.",
-        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.16.",
+        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.17.",
     )
     css = css.replace(
         "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, and compact status footer v1.10.",
-        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.16.",
+        "AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.17.",
     )
-    if "main-table color mapping and rounded value badges v1.16" not in css:
-        css = css.rstrip() + "\n/* AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.16. */\n"
+    if "main-table color mapping and rounded value badges v1.17" not in css:
+        css = css.rstrip() + "\n/* AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.17. */\n"
     if ".simple-app {\nheight:100vh;\nheight:100dvh;\n}" not in css:
         css = css.rstrip() + "\n.simple-app {\nheight:100vh;\nheight:100dvh;\n}\n"
     if "@media (max-height:430px) {\n.simple-footer { display:grid; }\n}" not in css:
         css = css.rstrip() + "\n@media (max-height:430px) {\n.simple-footer { display:grid; }\n}\n"
+    card_text_css = '''/* AllScan Mods: TouchGUI centered card text v1.17. */
+.channel-content {
+width:100%;
+box-sizing:border-box;
+}
+.channel-label, .channel-meta {
+width:100%;
+min-width:0;
+box-sizing:border-box;
+text-align:center;
+}
+.channel-label {
+font-size:16px;
+overflow-wrap:anywhere;
+}
+'''
+    if "TouchGUI centered card text v1.17" not in css:
+        css = css.rstrip() + "\n" + card_text_css
+
     footer_css = '''.simple-footer { height:auto; min-height:30px; flex:0 0 auto; overflow:visible; }
 .simple-footer #scanmsg,
 .simple-footer #statmsg { white-space:normal; overflow:visible; overflow-wrap:anywhere; min-width:0; }
@@ -537,10 +564,11 @@ grid-row:1 / span 3;
             or "simple.txTim[node] = now" not in js
             or "getChannelStatsNodes()" not in js
             or "button.style.backgroundColor = '';" not in js
-            or "main-table color mapping and rounded value badges v1.16" not in css
+            or "main-table color mapping and rounded value badges v1.17" not in css
             or '.channel-btn[data-activity="active"]' in css
             or "channel-side" not in js
-            or ".channel-side" not in css):
+            or ".channel-side" not in css
+            or "TouchGUI centered card text v1.17" not in css):
         raise SystemExit("ERROR: TouchGUI activity patch validation failed; no files changed.")
     js_path.write_text(js, encoding="utf-8")
     css_path.write_text(css, encoding="utf-8")
