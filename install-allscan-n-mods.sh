@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.20
+# TouchGUI activity colors mod version: v1.21
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -335,7 +335,7 @@ apply_favorite_label_live() {
     fi
     if cmp -s "$target" "$stage"; then
         rm -rf -- "$work_dir"
-        echo "Favorite editor already uses the original favorite label. No changes made."
+        echo "Favorite editor already uses the complete node-free name. No changes made."
         return 0
     fi
     timestamp=$(date +%Y%m%d-%H%M%S)
@@ -357,7 +357,7 @@ apply_favorite_label_live() {
         return 1
     fi
     rm -rf -- "$work_dir"
-    echo "Favorite editor now uses the original favorite label. Backup: $backup"
+    echo "Favorite editor now uses the complete node-free name. Backup: $backup"
 }
 
 upstream_features_present() {
@@ -1141,8 +1141,9 @@ else
     favorite_label_stage=$stage_favs_utils
 fi
 python3 "$FAVORITE_LABEL_PATCH" "$favorite_label_stage"
-grep -Fq 'Use original favorite label in editor v1.20.' "$favorite_label_stage"
-grep -Fq '$favList[] = [$n, $f->node, $name, $desc, $loc, NBSP, NBSP, $f->label];' "$favorite_label_stage"
+grep -Fq 'Use complete favorite name in editor v1.21.' "$favorite_label_stage"
+grep -Fq "\$editName = str_replace('&hellip;', '', \$name);" "$favorite_label_stage"
+grep -Fq '$favList[] = [$n, $f->node, $name, $desc, $loc, NBSP, NBSP, $editName];' "$favorite_label_stage"
 
 if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then
     python3 "$TOUCHGUI_ACTIVITY_PATCH" "$stage_simple_js" "$stage_simple_css"
