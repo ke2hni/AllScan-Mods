@@ -36,7 +36,7 @@ Never restore an older `.before-allscan-mods-*` backup onto a newer upstream ins
 - Keeps **Permanent**, **Disconnect before Connect**, and **Disconnect before Monitor** together on one line.
 - Click a favorite's node number, then click **Edit Favorite**.
 - On AllScan v1.04, the editor keeps David’s single shared Friendly Name/Label field and favorite order field. AllScan adds the callsign for the main table; the editor omits it and allows up to 33 label characters.
-- Existing favorites prefill the shared name without the automatically added callsign; new favorites use David’s normal default behavior. A short note explains the 33-character limit and automatic callsign. Saving updates the one shared label used by both views.
+- Existing favorites prefill the shared name without the automatically added callsign; new favorites use David’s normal default behavior. A clear 13px bold note says the callsign is added automatically. Saving updates the one shared label used by both views.
 - Edit the **favorite's order number** from the same dialog; moving a favorite inserts it at that position and shifts the other favorites automatically.
 - Use **Save & Close** to apply the edit or **Cancel** to leave the file unchanged.
 - Click outside the dialog or press Escape to close it.
@@ -64,7 +64,7 @@ AllScan’s Description and Location columns remain sourced from the AllStarLink
 - Places the favorite number at the upper left, with the Rx% and LCnt values stacked below it without labels to save card space. Rx values include the `%` sign. All three color fields have rounded corners. The Rx% and LCnt value text and badges are slightly larger, with compact line spacing. Card labels and metadata share a constrained, centered text column; the card label stays on one line and automatically shrinks/scales to fit without clipping. Metadata keeps its existing single-line fit. Laptop labels use the same 16px size as phone labels. Card sizing rules and the favorite-number badge size remain unchanged. Each item in that left strip uses the same color and threshold as its matching Favorites-table column: `#` for Tx/active state, green for Rx%, and blue for LCnt. Stats no longer recolor the full card; existing TouchGUI selected/connection styling remains.
 - Preserves the existing TouchGUI connection border and footer layout. Other status messages remain unchanged.
 - The TouchGUI card title removes the AllScan-reported callsign only when it appears as a matching whole token in the favorite label. It keeps the full remaining label visible on one line by resizing the text; it does not append an ellipsis. If no label remains, the card uses the node description/location, then the node number.
-- The AllScan JavaScript keeps the matching-callsign cleanup and responsive card text fitting. Both shell installers show a standalone `v1.38` tag near the top. The TouchGUI auto-fit behavior fits long card labels and metadata within the existing card dimensions; the portrait-only metadata adjustment preserves landscape sizing.
+- The AllScan JavaScript keeps the matching-callsign cleanup and responsive card text fitting. Both shell installers show a standalone `v1.39` tag near the top. The TouchGUI auto-fit behavior fits long card labels and metadata within the existing card dimensions; the portrait-only metadata adjustment preserves landscape sizing.
 - TouchGUI card labels and their node/callsign metadata use responsive text sizing. Long card titles stay on one line and shrink/scale within the existing card dimensions. New editor labels are limited to 33 characters. In portrait orientation only, the node/callsign metadata may shrink to 10px to fit its single line; the existing landscape sizing remains unchanged.
 - Applies to TouchGUI on AllScan v1.02, v1.03, and v1.04. AllScan v1.01 has no TouchGUI.
 - On the integrated v1.03/v1.04 path, the installer creates dedicated timestamped TouchGUI backups; the legacy v1.02/pre-integration v1.03 path uses the installer's existing full-file backups.
@@ -177,6 +177,7 @@ include/viewUtils.php.before-favorite-editor-label-YYYYMMDD-HHMMSS (integrated v
 js/main.js.before-favorite-editor-label-YYYYMMDD-HHMMSS (integrated v1.03 and v1.04)
 include/favsUtils.php.before-favorite-editor-label-YYYYMMDD-HHMMSS (integrated v1.03 and v1.04)
 css/simple.css.before-touchgui-activity-YYYYMMDD-HHMMSS (integrated v1.03 and v1.04)
+css/main.css.before-favorite-editor-label-YYYYMMDD-HHMMSS (integrated v1.03 and v1.04)
 simple/index.php.before-allscan-mods-YYYYMMDD-HHMMSS (v1.02 and v1.03)
 js/simple.js.before-allscan-mods-YYYYMMDD-HHMMSS (v1.02 and v1.03)
 ```
@@ -204,6 +205,7 @@ The actual name matches whichever `favorites*.ini` file is selected in AllScan.
 /var/www/html/allscan/include/favsUtils.php (integrated v1.03 and v1.04)
 /var/www/html/allscan/include/viewUtils.php (integrated v1.03 and v1.04)
 /var/www/html/allscan/js/main.js (integrated v1.03 and v1.04)
+/var/www/html/allscan/css/main.css (integrated v1.03 and v1.04)
 ```
 
 The main-page statistics polling is unchanged. TouchGUI requests one unique public node at a time in Favorites order, with at least 2 seconds between requests and at least 30 seconds between requests for the same node. This limits one TouchGUI page to at most 30 statistics requests per minute; larger favorite lists take longer than 30 seconds to complete a full pass. Multiple open AllScan clients still share the ASL statistics API's per-IP limit.
@@ -217,7 +219,7 @@ The main-page statistics polling is unchanged. TouchGUI requests one unique publ
 1. Click an existing favorite's node number.
 2. Click **Edit Favorite**.
 3. Confirm that Node Number, Order, and the single Friendly Name/Label field appear.
-4. Confirm the single shared label field omits the callsign, shows the 33-character note, prefills existing text without an ellipsis, and contains no stray internal marker text.
+4. Confirm the single shared label field omits the callsign, shows the callsign-only guidance in clear bold text, prefills existing text without an ellipsis, and contains no stray internal marker text.
 5. Change the shared name (test 33 characters and a 34th), node number, and/or order, then click **Save & Close**.
 6. Confirm the favorite updates at the selected order and both views remain based on the same saved label; verify a long TouchGUI title stays one line without clipping.
 7. Reopen the editor and confirm the shared name remains. Add a favorite and confirm David’s default add/edit behavior is unchanged.
@@ -359,6 +361,7 @@ The selected entry is not a standard adjacent `label[]` and `cmd[] = "rpt cmd %n
 | AllScan Mods v1.36 | Restores David’s stock single-field Favorites editor; keeps TouchGUI statistics, color mapping, responsive text sizing, and the confirmed portrait clipping fix |
 | AllScan Mods v1.37 | Shows the shared label without the automatic callsign in the editor, limits it to 33 characters, and fits TouchGUI titles on one line without an ellipsis |
 | AllScan Mods v1.38 | Hides the Favorites editor patch marker from the dialog and safely upgrades the v1.37 marker in place |
+| AllScan Mods v1.39 | Removes the redundant length phrase and makes the callsign guidance larger, bold, and clearer |
 
 The editor, layout, Save & Close workflow, validation, backups, Add/Delete controls, connection controls, Rx%/LCnt sorting, and Disconnect before Monitor behavior were browser-tested before consolidation.
 

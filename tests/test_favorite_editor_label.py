@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-"""Check the shared, call-sign-free 33-character editor patch and migration."""
+"""Check the shared Favorites label, readable hint, and v1.37/v1.38 migration."""
 from pathlib import Path
-import shutil
 import subprocess
 import tempfile
 
@@ -9,10 +8,10 @@ ROOT = Path(__file__).resolve().parents[1]
 PATCHER = ROOT / "lib/favorite-editor-label.py"
 
 INDEX = '''<?php
-			if($newLabel === '' || strlen($newLabel) > 120 || !checkAscii($newLabel) ||
-				strpos($newLabel, '"') !== false) {
-				$msg[] = error("Friendly label must be 1 to 120 plain-text characters and "
-					. "cannot contain double quotes or line breaks.");
+\t\t\tif($newLabel === '' || strlen($newLabel) > 120 || !checkAscii($newLabel) ||
+\t\t\t\tstrpos($newLabel, '"') !== false) {
+\t\t\t\t$msg[] = error("Friendly label must be 1 to 120 plain-text characters and "
+\t\t\t\t\t. "cannot contain double quotes or line breaks.");
 }
 '''
 VIEW = '''<label for="favoriteEditLabel">Friendly Name/Label</label>
@@ -20,8 +19,8 @@ VIEW = '''<label for="favoriteEditLabel">Friendly Name/Label</label>
 '''
 JS = '''function submitFavoriteEdit() {
     var newLabel = document.getElementById('favoriteEditLabel').value.trim();
-	if(!newLabel || newLabel.length > 120 || /["\\r\\n]/.test(newLabel)) {
-		alert('Friendly label must be 1 to 120 characters and cannot contain double quotes or line breaks.');
+\tif(!newLabel || newLabel.length > 120 || /["\\r\\n]/.test(newLabel)) {
+\t\talert('Friendly label must be 1 to 120 characters and cannot contain double quotes or line breaks.');
         return false;
     }
 }
@@ -32,7 +31,7 @@ function buildFavList($favs) {
     // Fix common misspellings
     foreach(['name', 'desc'] as $var)
         $$var = str_replace(['mhz', 'MHZ', 'hz'], ['MHz', 'MHz', 'Hz'], $$var);
-		// Name is derived from favorites file text, but if that contained only redundant information to what
+\t\t// Name is derived from favorites file text, but if that contained only redundant information to what
     // was in astdb and is thus now blank, use the call sign
     if(!$name)
         $name = $call;
@@ -43,64 +42,75 @@ function buildFavList($favs) {
     $favList[] = [$n, $f->node, $name, $desc, $loc, NBSP, NBSP, $name];
 }
 '''
+CSS = '''body, textarea, input, select { font:12px/1.25 Verdana,Arial,Helvetica,sans-serif; }
+'''
+
+
+def write_files(temp: Path, content: dict[str, str]) -> None:
+    for name, text in content.items():
+        (temp / name).write_text(text, encoding="utf-8")
+
+
+def run_patcher(temp: Path) -> None:
+    args = [str(temp / name) for name in
+            ("index.php", "viewUtils.php", "main.js", "favsUtils.php", "main.css")]
+    subprocess.run(["python3", str(PATCHER), *args], check=True)
 
 
 def main() -> None:
-    with tempfile.TemporaryDirectory(prefix="favorite-editor-v138-") as folder:
+    base = {"index.php": INDEX, "viewUtils.php": VIEW, "main.js": JS,
+            "favsUtils.php": FAVS, "main.css": CSS}
+    with tempfile.TemporaryDirectory(prefix="favorite-editor-v139-") as folder:
         temp = Path(folder)
-        files = {
-            "index.php": INDEX,
-            "viewUtils.php": VIEW,
-            "main.js": JS,
-            "favsUtils.php": FAVS,
-        }
-        for name, text in files.items():
-            (temp / name).write_text(text, encoding="utf-8")
-        args = [str(temp / name) for name in files]
-        subprocess.run(["python3", str(PATCHER), *args], check=True)
-        after_first = {name: (temp / name).read_bytes() for name in files}
-        subprocess.run(["python3", str(PATCHER), *args], check=True)
-        assert after_first == {name: (temp / name).read_bytes() for name in files}, "patch is not idempotent"
+        write_files(temp, base)
+        run_patcher(temp)
+        current = {name: (temp / name).read_text(encoding="utf-8") for name in base}
+        first_bytes = {name: (temp / name).read_bytes() for name in base}
+        run_patcher(temp)
+        assert first_bytes == {name: (temp / name).read_bytes() for name in base}, "patch is not idempotent"
 
-        index = (temp / "index.php").read_text(encoding="utf-8")
-        view = (temp / "viewUtils.php").read_text(encoding="utf-8")
-        js = (temp / "main.js").read_text(encoding="utf-8")
-        favs = (temp / "favsUtils.php").read_text(encoding="utf-8")
-        assert "strlen($newLabel) > 33" in index and "$newLabel === ''" not in index
-        assert 'maxlength="33"' in view and "Up to 33 characters" in view
-        assert "newLabel.length > 33" in js and "!newLabel" not in js
-        assert "$editName = substr($name, 0, 33);" in favs
-        assert "$favList[] = [$n, $f->node, $name, $desc, $loc, NBSP, NBSP, $editName];" in favs
-        assert "&hellip;" not in after_first["viewUtils.php"].decode()
+        view = current["viewUtils.php"]
+        assert 'maxlength="33"' in view and 'class="favoriteEditHint">The callsign is added automatically.' in view
+        assert "Up to 33 characters." not in view
         assert "// AllScan Mods: 33-character" not in view
-        assert "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.38. -->" in view
+        assert "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.39. -->" in view
+        assert "font-size:13px;font-weight:bold" in current["main.css"]
+        assert "strlen($newLabel) > 33" in current["index.php"] and "$newLabel === ''" not in current["index.php"]
+        assert "newLabel.length > 33" in current["main.js"] and "!newLabel" not in current["main.js"]
+        assert "$editName = substr($name, 0, 33);" in current["favsUtils.php"]
+        assert "$favList[] = [$n, $f->node, $name, $desc, $loc, NBSP, NBSP, $editName];" in current["favsUtils.php"]
 
-        # Simulate an installed v1.37 editor where the marker was rendered as dialog text.
-        old_view = view.replace(
-            "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.38. -->",
-            "// AllScan Mods: 33-character call-sign-free Favorites editor label v1.37.",
-            1,
-        )
-        old_favs = favs.replace(
-            "Call-sign-free Favorites editor value v1.38.",
-            "Call-sign-free Favorites editor value v1.37.",
-            1,
-        )
-        (temp / "viewUtils.php").write_text(old_view, encoding="utf-8")
-        (temp / "favsUtils.php").write_text(old_favs, encoding="utf-8")
-        index_before = (temp / "index.php").read_bytes()
-        js_before = (temp / "main.js").read_bytes()
-        subprocess.run(["python3", str(PATCHER), *args], check=True)
-        migrated_view = (temp / "viewUtils.php").read_text(encoding="utf-8")
-        migrated_favs = (temp / "favsUtils.php").read_text(encoding="utf-8")
-        assert "// AllScan Mods: 33-character" not in migrated_view
-        assert "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.38. -->" in migrated_view
-        assert "Call-sign-free Favorites editor value v1.38." in migrated_favs
-        assert (temp / "index.php").read_bytes() == index_before
-        assert (temp / "main.js").read_bytes() == js_before
-    print("PASS: editor patch uses one shared, call-sign-free label capped at 33 characters.")
-    print("PASS: empty labels remain valid for callsign-only favorites; server and browser enforce the same maximum.")
-    print("PASS: dialog marker is hidden, and installed v1.37 markers migrate without changing label behavior.")
+        # Upgrade both historical marker/help combinations without altering behavior.
+        for old_version, old_marker, old_help in (
+            ("1.37", "// AllScan Mods: 33-character call-sign-free Favorites editor label v1.37.",
+             "<small>Up to 33 characters. The callsign is added automatically.</small>"),
+            ("1.38", "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.38. -->",
+             "<small>Up to 33 characters. The callsign is added automatically.</small>"),
+        ):
+            legacy = dict(current)
+            legacy["viewUtils.php"] = view.replace(
+                "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.39. -->",
+                old_marker, 1).replace(
+                '<div class="favoriteEditHint">The callsign is added automatically.</div>',
+                old_help, 1)
+            legacy["favsUtils.php"] = current["favsUtils.php"].replace(
+                "Call-sign-free Favorites editor value v1.39.",
+                f"Call-sign-free Favorites editor value v{old_version}.", 1)
+            legacy["main.css"] = CSS
+            write_files(temp, legacy)
+            before = {name: (temp / name).read_bytes() for name in ("index.php", "main.js")}
+            run_patcher(temp)
+            migrated_view = (temp / "viewUtils.php").read_text(encoding="utf-8")
+            assert "// AllScan Mods: 33-character" not in migrated_view
+            assert old_help not in migrated_view and "Up to 33 characters." not in migrated_view
+            assert '<div class="favoriteEditHint">The callsign is added automatically.</div>' in migrated_view
+            assert "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.39. -->" in migrated_view
+            assert (temp / "index.php").read_bytes() == before["index.php"]
+            assert (temp / "main.js").read_bytes() == before["main.js"]
+
+    print("PASS: one shared call-sign-free label is capped at 33 characters.")
+    print("PASS: the hint is 13px bold, omits the redundant length note, and has no visible internal marker.")
+    print("PASS: clean install, repeat install, and v1.37/v1.38 editor migrations.")
 
 
 if __name__ == "__main__":

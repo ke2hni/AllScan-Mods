@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.38
+# TouchGUI activity colors mod version: v1.39
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -258,8 +258,10 @@ fi
 
 
 favorite_editor_label_present() {
-    grep -Fq '<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.38. -->' "$VIEW_FILE" &&
-    grep -Fq 'Call-sign-free Favorites editor value v1.38.' "$FAVS_UTILS_FILE" &&
+    grep -Fq '<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.39. -->' "$VIEW_FILE" &&
+    grep -Fq 'Call-sign-free Favorites editor value v1.39.' "$FAVS_UTILS_FILE" &&
+    grep -Fq '<div class="favoriteEditHint">The callsign is added automatically.</div>' "$VIEW_FILE" &&
+    grep -Fq 'Favorites editor call-sign hint v1.39.' "$CSS_FILE" &&
     grep -Fq 'maxlength="33"' "$VIEW_FILE" &&
     grep -Fq 'no more than 33 plain-text characters' "$INDEX_FILE" &&
     grep -Fq 'newLabel.length > 33' "$JS_FILE"
@@ -273,10 +275,10 @@ apply_favorite_editor_label_live() {
     local work_dir timestamp i
     local -a originals staged backups
     work_dir=$(mktemp -d /tmp/allscan-favorite-editor.XXXXXX)
-    staged=("$work_dir/index.php" "$work_dir/viewUtils.php" "$work_dir/main.js" "$work_dir/favsUtils.php")
-    originals=("$INDEX_FILE" "$VIEW_FILE" "$JS_FILE" "$FAVS_UTILS_FILE")
+    staged=("$work_dir/index.php" "$work_dir/viewUtils.php" "$work_dir/main.js" "$work_dir/favsUtils.php" "$work_dir/main.css")
+    originals=("$INDEX_FILE" "$VIEW_FILE" "$JS_FILE" "$FAVS_UTILS_FILE" "$CSS_FILE")
     for i in "${!originals[@]}"; do cp -- "${originals[$i]}" "${staged[$i]}"; done
-    python3 "$FAVORITE_EDITOR_PATCH" "${staged[0]}" "${staged[1]}" "${staged[2]}" "${staged[3]}"
+    python3 "$FAVORITE_EDITOR_PATCH" "${staged[0]}" "${staged[1]}" "${staged[2]}" "${staged[3]}" "${staged[4]}"
     if command -v node >/dev/null 2>&1; then node --check "${staged[2]}"; fi
     if command -v php >/dev/null 2>&1; then
         php -l "${staged[0]}" >/dev/null
