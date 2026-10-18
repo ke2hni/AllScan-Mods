@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.18
+# TouchGUI activity colors mod version: v1.19
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -238,6 +238,8 @@ esac
 # A match is read-only and must not create backups or rewrite upstream files.
 MODS_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 TOUCHGUI_ACTIVITY_PATCH=$MODS_DIR/lib/touchgui-activity.py
+FAVORITE_LABEL_PATCH=$MODS_DIR/lib/favorite-editor-label.py
+[[ -f $FAVORITE_LABEL_PATCH ]] || { echo "ERROR: Favorite-label patch helper is missing: $FAVORITE_LABEL_PATCH" >&2; exit 1; }
 
 touchgui_activity_present() {
     grep -Fq 'AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.18.' "$SIMPLE_JS_FILE" &&
@@ -317,6 +319,47 @@ apply_touchgui_activity_live() {
     echo "TouchGUI activity, statistics, and card layout installed. Backups: $js_backup and $css_backup"
 }
 
+apply_favorite_label_live() {
+    local target work_dir stage timestamp backup
+    if [[ $allscan_version == v1.01 ]]; then target=$INDEX_FILE; else target=$FAVS_UTILS_FILE; fi
+    work_dir=$(mktemp -d /tmp/allscan-favorite-label.XXXXXX)
+    stage=$work_dir/source.php
+    if ! cp -- "$target" "$stage" || ! python3 "$FAVORITE_LABEL_PATCH" "$stage"; then
+        rm -rf -- "$work_dir"
+        return 1
+    fi
+    if command -v php >/dev/null 2>&1 && ! php -l "$stage" >/dev/null; then
+        rm -rf -- "$work_dir"
+        echo "ERROR: Favorite-label PHP syntax validation failed; no files changed." >&2
+        return 1
+    fi
+    if cmp -s "$target" "$stage"; then
+        rm -rf -- "$work_dir"
+        echo "Favorite editor already uses the unshortened name. No changes made."
+        return 0
+    fi
+    timestamp=$(date +%Y%m%d-%H%M%S)
+    backup=$target.before-allscan-mods-favorite-label-$timestamp
+    if [[ -e $backup ]]; then
+        rm -rf -- "$work_dir"
+        echo "ERROR: Favorite-label backup already exists; no changes made." >&2
+        return 1
+    fi
+    if ! cp -a -- "$target" "$backup"; then
+        rm -rf -- "$work_dir"
+        echo "ERROR: Could not back up the Favorites source; no changes made." >&2
+        return 1
+    fi
+    if ! cp -- "$stage" "$target"; then
+        cp -a -- "$backup" "$target"
+        rm -rf -- "$work_dir"
+        echo "ERROR: Favorite-label update failed; original file restored." >&2
+        return 1
+    fi
+    rm -rf -- "$work_dir"
+    echo "Favorite editor now uses the unshortened name. Backup: $backup"
+}
+
 upstream_features_present() {
     [[ $allscan_version == v1.03 || $allscan_version == v1.04 ]] || return 1
     grep -Fq 'case "Edit Favorite":' "$INDEX_FILE" &&
@@ -331,7 +374,9 @@ upstream_features_present() {
     grep -Fq 'function toggleAutodiscPreference()' "$SIMPLE_JS_FILE" &&
     grep -Fq 'id="autodiscBtn"' "$SIMPLE_INDEX_FILE" &&
     grep -Fq 'grid-template-columns:auto 1fr auto;' "$SIMPLE_CSS_FILE" &&
-    grep -Fq '$favList[] = [$n, $f->node, $name, $desc, $loc, NBSP, NBSP, $name];' "$FAVS_UTILS_FILE"
+    { grep -Fq '$favList[] = [$n, $f->node, $name, $desc, $loc, NBSP, NBSP, $name];' "$FAVS_UTILS_FILE" ||
+      grep -Fq '$favList[] = [$n, $f->node, $name, $desc, $loc, NBSP, NBSP, $editName];' "$FAVS_UTILS_FILE" ||
+      grep -Fq '$favList[] = [$n, $f->node, $name, $desc, $loc, NBSP, NBSP, $f->label];' "$FAVS_UTILS_FILE"; }
 }
 # v1.04 includes PR #37 upstream. Never run legacy patch transformations on
 # v1.04 even if feature markers change; stop until compatibility is reviewed.
@@ -340,7 +385,8 @@ if [[ $allscan_version == v1.04 ]] && ! upstream_features_present; then
     exit 1
 fi
 if upstream_features_present; then
-    echo "AllScan already includes the integrated enhancements (PR #37). Applying/checking the independent TouchGUI activity, statistics, and card-layout feature."
+    echo "AllScan already includes the integrated enhancements (PR #37). Applying/checking the favorite-editor label fix and independent TouchGUI activity feature."
+    apply_favorite_label_live
     apply_touchgui_activity_live
     exit 0
 fi
@@ -1088,6 +1134,16 @@ if has_v102_layout: simple_index_path.write_text(simple_index, encoding="utf-8")
 if has_v102_layout: simple_js_path.write_text(simple_js, encoding="utf-8")
 print('patch-ready')
 PY
+
+if [[ $allscan_version == v1.01 ]]; then
+    favorite_label_stage=$stage_index
+else
+    favorite_label_stage=$stage_favs_utils
+fi
+python3 "$FAVORITE_LABEL_PATCH" "$favorite_label_stage"
+grep -Fq 'Preserve full favorite name for editor v1.19.' "$favorite_label_stage"
+grep -Fq '$editName = $name;' "$favorite_label_stage"
+grep -Fq '$favList[] = [$n, $f->node, $name, $desc, $loc, NBSP, NBSP, $editName];' "$favorite_label_stage"
 
 if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then
     python3 "$TOUCHGUI_ACTIVITY_PATCH" "$stage_simple_js" "$stage_simple_css"
