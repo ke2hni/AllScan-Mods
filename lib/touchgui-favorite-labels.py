@@ -8,6 +8,7 @@ import sys
 
 MARKER = "TouchGUI favorite card label v1.22"
 HELP_STYLE_MARKER = "/* AllScan Mods: Favorites editor helper text v1.25. */"
+FIELD_LABEL_STYLE_MARKER = "/* AllScan Mods: Favorites editor field labels v1.29. */"
 OLD_HELP_STYLE = '''/* AllScan Mods: Favorites editor helper text v1.23. */
 .favEditPanel .favoriteEditHelp {
 	margin:0 0 8px;
@@ -21,6 +22,10 @@ NEW_HELP_STYLE = '''/* AllScan Mods: Favorites editor helper text v1.25. */
 	color:#aebacc;
 	font-size:11px;
 	line-height:1.25;
+}'''
+FIELD_LABEL_STYLE = '''/* AllScan Mods: Favorites editor field labels v1.29. */
+.favEditPanel label {
+	font-weight:bold;
 }'''
 
 
@@ -225,10 +230,14 @@ def patch_view(path: Path) -> None:
         )
     if 'id="favoriteEditTitle">Edit Favorite' in source:
         source = source.replace('id="favoriteEditTitle">Edit Favorite', 'id="favoriteEditTitle">Edit Favorite', 1)
-    old_help = '<small>AllScan adds the node callsign to this name.</small>\n<label for="favoriteEditTouchguiLabel">TouchGUI Card Label <small>(up to 33 characters; callsign not needed)</small></label>'
-    new_help = '<div class="favoriteEditHelp">AllScan adds the node callsign to this name.</div>\n<label for="favoriteEditTouchguiLabel">TouchGUI Card Label</label>\n<div class="favoriteEditHelp">Up to 33 characters. Callsign not needed.</div>'
+    new_help = '<div class="favoriteEditHelp">AllScan adds the node callsign to this name.</div>\n<label for="favoriteEditTouchguiLabel">TouchGUI Card Label</label>\n<input type="text" id="favoriteEditTouchguiLabel" maxlength="33">\n<!-- AllScan Mods: TouchGUI favorite-label help order v1.29. -->\n<div class="favoriteEditHelp">Up to 33 characters. Callsign not needed.</div>'
+    old_help_v128 = '<div class="favoriteEditHelp">AllScan adds the node callsign to this name.</div>\n<label for="favoriteEditTouchguiLabel">TouchGUI Card Label</label>\n<div class="favoriteEditHelp">Up to 33 characters. Callsign not needed.</div>\n<input type="text" id="favoriteEditTouchguiLabel" maxlength="33">'
+    old_help_v125 = '<small>AllScan adds the node callsign to this name.</small>\n<label for="favoriteEditTouchguiLabel">TouchGUI Card Label <small>(up to 33 characters; callsign not needed)</small></label>\n<input type="text" id="favoriteEditTouchguiLabel" maxlength="33">'
     if new_help not in source:
-        source = replace_once(source, old_help, new_help, "Favorites editor helper text")
+        if old_help_v128 in source:
+            source = replace_once(source, old_help_v128, new_help, "v1.28 Favorites editor helper placement")
+        else:
+            source = replace_once(source, old_help_v125, new_help, "Favorites editor helper text")
     path.write_text(source, encoding="utf-8")
 
 
@@ -241,6 +250,8 @@ def patch_main_css(path: Path) -> None:
             source = source.rstrip() + "\n\n" + NEW_HELP_STYLE + "\n"
         else:
             raise SystemExit("ERROR: Existing Favorites editor guidance CSS is unexpected; files left unchanged.")
+    if FIELD_LABEL_STYLE_MARKER not in source:
+        source = source.rstrip() + "\n\n" + FIELD_LABEL_STYLE + "\n"
     path.write_text(source, encoding="utf-8")
 
 

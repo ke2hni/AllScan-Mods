@@ -26,7 +26,7 @@ def run_patch(path: Path, success: bool = True) -> subprocess.CompletedProcess:
 def main() -> None:
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.28" in text
+        assert "TouchGUI activity colors mod version: v1.29" in text
         assert "FAVORITE_LABEL_PATCH" in text
         assert "apply_favorite_label_live" in text
         assert MARKER in text

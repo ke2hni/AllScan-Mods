@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.28
+# TouchGUI activity colors mod version: v1.29
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -102,7 +102,8 @@ touchgui_activity_present() {
     grep -Fq '.channel-side' "$SIMPLE_CSS_FILE" &&
     grep -Fq '.channel-content' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'TouchGUI centered card text v1.17' "$SIMPLE_CSS_FILE" &&
-    grep -Fq 'Responsive TouchGUI label auto-fit v1.28' "$SIMPLE_CSS_FILE" &&
+    grep -Fq 'Responsive TouchGUI label auto-fit v1.29' "$SIMPLE_CSS_FILE" &&
+    grep -Fq "window.matchMedia && window.matchMedia('(orientation: portrait)').matches" "$SIMPLE_JS_FILE" &&
     ! grep -Fq '.channel-btn[data-activity="active"]' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'height:100dvh' "$SIMPLE_CSS_FILE" &&
     grep -Fq '.simple-footer { display:grid; }' "$SIMPLE_CSS_FILE" &&
@@ -201,16 +202,20 @@ touchgui_favorite_labels_present() {
        grep -Fq 'Read TouchGUI favorite labels v1.22.' "$FAVS_UTILS_FILE" &&
        grep -Fq 'TouchGUI favorite card label JSON v1.22.' "$SIMPLE_INDEX_FILE" &&
        grep -Fq 'TouchGUI card label override v1.22.' "$SIMPLE_JS_FILE" &&
-       grep -Fq 'Favorites editor helper text v1.25.' "$CSS_FILE"; then
+       grep -Fq 'Favorites editor helper text v1.25.' "$CSS_FILE" &&
+       grep -Fq 'Favorites editor field labels v1.29.' "$CSS_FILE" &&
+       grep -Fq 'TouchGUI favorite-label help order v1.29.' "$VIEW_FILE"; then
         return 0
     fi
     # Recognize equivalent upstream support even when its comment markers differ.
+    if grep -Fq 'TouchGUI favorite labels v1.22.' "$VIEW_FILE"; then
+        return 1
+    fi
     grep -Fq 'id="favoriteEditTouchguiLabel"' "$VIEW_FILE" &&
     grep -Fq 'data-fav-touchgui-label' "$INDEX_FILE" &&
     grep -Fq 'touchguiLabel' "$SIMPLE_INDEX_FILE" &&
     grep -Fq 'touchguiLabel' "$SIMPLE_JS_FILE" &&
-    grep -Fq 'TouchGUI Card Label' "$VIEW_FILE" &&
-    grep -Fq 'Favorites editor helper text v1.25.' "$CSS_FILE"
+    grep -Fq 'TouchGUI Card Label' "$VIEW_FILE"
 }
 
 apply_touchgui_favorite_labels_live() {

@@ -67,9 +67,9 @@ AllScan's Description and Location columns remain sourced from the AllStarLink d
 - Preserves the existing TouchGUI connection border and footer layout. Other status messages remain unchanged.
 - The TouchGUI card title removes the AllScan-reported callsign only when it appears as a matching whole token in the favorite label, then displays the remaining text up to 33 characters. If that leaves no title, the card uses the node description/location, then the node number. The main Favorites table is unchanged.
 - An optional TouchGUI card label overrides the automatic card title for that favorite only. An empty label retains the existing automatic title.
-- The AllScan JavaScript retains the `v1.18` callsign-removal marker, and TouchGUI CSS carries the responsive card layout marker. Both shell installers show a standalone `v1.28` tag near the top. The editor uses AllScan's node-cleaned name before the table shortens it, strips a previously saved literal `&hellip;`, and leaves the table display unchanged. This prevents the editor from resaving the appended node number repeatedly. The installer upgrades known Mods TouchGUI versions v1.05-v1.18 with timestamped backups and migrates v1.19-v1.25 favorite-editor states and v1.19-v1.27 TouchGUI layouts in place.
-- TouchGUI card labels and their node/callsign metadata use responsive text sizing. The metadata stays on one line and keeps at least 90% of its responsive font size; centered horizontal fitting handles any remaining overflow. This prevents different callsign glyphs from clipping or increasing card height. The maximum 33-character card title scales with the available card text width while preserving word wrapping.
-- Favorite-editor guidance is separated from the field labels and shown in a compact, higher-contrast text style.
+- The AllScan JavaScript retains the `v1.18` callsign-removal marker, and TouchGUI CSS carries the responsive card layout marker. Both shell installers show a standalone `v1.29` tag near the top. The editor uses AllScan's node-cleaned name before the table shortens it, strips a previously saved literal `&hellip;`, and leaves the table display unchanged. This prevents the editor from resaving the appended node number repeatedly. The installer upgrades known Mods TouchGUI versions v1.05-v1.18 with timestamped backups and migrates v1.19-v1.28 favorite-editor states and v1.19-v1.28 TouchGUI layouts in place.
+- TouchGUI card labels and their node/callsign metadata use responsive text sizing. The maximum 33-character card title fits within three lines without changing card dimensions. In portrait orientation only, the node/callsign metadata may shrink to 10px to fit its single line; the existing landscape sizing remains unchanged.
+- Favorite-editor guidance remains compact. The 33-character reminder appears below its input, and all four field titles are bold.
 - Applies to TouchGUI on AllScan v1.02, v1.03, and v1.04. AllScan v1.01 has no TouchGUI.
 - On the integrated v1.03/v1.04 path, the installer creates dedicated timestamped TouchGUI backups; the legacy v1.02/pre-integration v1.03 path uses the installer's existing full-file backups.
 
@@ -352,7 +352,8 @@ The selected entry is not a standard adjacent `label[]` and `cmd[] = "rpt cmd %n
 | AllScan Mods v1.25 | Tighter TouchGUI card column spacing and smaller Favorites editor guidance; user reported node/callsign metadata became too small |
 | AllScan Mods v1.26 | User test found the v1.25 metadata helper did not match the migration pattern; installer stopped safely without changes |
 | AllScan Mods v1.27 | User confirmed install succeeded; node/callsign metadata still looked smaller than upstream 14px |
-| AllScan Mods v1.28 | Autosize long card titles from upstream screen sizes; restore metadata to 14px (12px short landscape), shrink only to a 12px minimum; `pi4test` visual review pending |
+| AllScan Mods v1.28 | Desktop and landscape layout looked good; phone portrait showed node/callsign clipping, addressed in v1.29 |
+| AllScan Mods v1.29 | Portrait-only node/callsign fitting; move the 33-character reminder below its field and bold the editor field titles; workspace testing and `pi4test` review pending |
 
 The editor, layout, Save & Close workflow, validation, backups, Add/Delete controls, connection controls, Rx%/LCnt sorting, and Disconnect before Monitor behavior were browser-tested before consolidation.
 

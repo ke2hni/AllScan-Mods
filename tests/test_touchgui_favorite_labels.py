@@ -19,10 +19,11 @@ def write(path: Path, value: str) -> None:
 def main() -> None:
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.28" in text
+        assert "TouchGUI activity colors mod version: v1.29" in text
         assert "apply_touchgui_favorite_labels_live" in text
         assert "TOUCHGUI_FAVORITE_LABEL_PATCH" in text
         assert 'Favorites editor helper text v1.25.' in text
+        assert 'Favorites editor field labels v1.29.' in text
         assert "before-touchgui-labels-" in text
 
     with tempfile.TemporaryDirectory(prefix="touchgui-favorite-labels-") as temp:
@@ -117,8 +118,12 @@ function openFavoriteEditor() {}
         assert "maxlength=\"33\"" in view.read_text(encoding="utf-8")
         assert '<div class="favoriteEditHelp">AllScan adds the node callsign to this name.</div>' in view_text
         assert '<div class="favoriteEditHelp">Up to 33 characters. Callsign not needed.</div>' in view_text
+        touchgui_input = '<input type="text" id="favoriteEditTouchguiLabel" maxlength="33">'
+        help_order_marker = '<!-- AllScan Mods: TouchGUI favorite-label help order v1.29. -->'
+        assert view_text.index(touchgui_input) < view_text.index(help_order_marker) < view_text.index('Up to 33 characters. Callsign not needed.')
         assert "Favorites editor helper text v1.25" in main_css.read_text(encoding="utf-8")
         assert "font-size:11px;" in main_css.read_text(encoding="utf-8")
+        assert ".favEditPanel label {\n\tfont-weight:bold;\n}" in main_css.read_text(encoding="utf-8")
         assert "openNewFavoriteEditor()" in main_js.read_text(encoding="utf-8")
         assert "touchguiLabel" in favs.read_text(encoding="utf-8")
         assert "touchguiLabel" in simple_index.read_text(encoding="utf-8")
@@ -126,6 +131,30 @@ function openFavoriteEditor() {}
         before = {path: path.read_bytes() for path in (index, view, main_js, favs, simple_index, simple_js, main_css)}
         subprocess.run(command, check=True)
         assert before == {path: path.read_bytes() for path in before}, "Reapplying changed the patched files."
+
+        migration_root = root / "v128"
+        migration_root.mkdir()
+        migration_sources = (index, view, main_js, favs, simple_index, simple_js, main_css)
+        migration_paths = tuple(migration_root / path.name for path in migration_sources)
+        for source_path, dest_path in zip(migration_sources, migration_paths):
+            shutil.copy2(source_path, dest_path)
+        old_v128_help = '<div class="favoriteEditHelp">AllScan adds the node callsign to this name.</div>\n<label for="favoriteEditTouchguiLabel">TouchGUI Card Label</label>\n<div class="favoriteEditHelp">Up to 33 characters. Callsign not needed.</div>\n<input type="text" id="favoriteEditTouchguiLabel" maxlength="33">'
+        current_v129_help = '<div class="favoriteEditHelp">AllScan adds the node callsign to this name.</div>\n<label for="favoriteEditTouchguiLabel">TouchGUI Card Label</label>\n<input type="text" id="favoriteEditTouchguiLabel" maxlength="33">\n<!-- AllScan Mods: TouchGUI favorite-label help order v1.29. -->\n<div class="favoriteEditHelp">Up to 33 characters. Callsign not needed.</div>'
+        v128_view = migration_paths[1].read_text(encoding="utf-8")
+        assert current_v129_help in v128_view
+        migration_paths[1].write_text(v128_view.replace(current_v129_help, old_v128_help, 1), encoding="utf-8")
+        v128_css = migration_paths[6].read_text(encoding="utf-8")
+        v129_label_css = '''/* AllScan Mods: Favorites editor field labels v1.29. */\n.favEditPanel label {\n\tfont-weight:bold;\n}\n'''
+        assert v129_label_css in v128_css
+        migration_paths[6].write_text(v128_css.replace("\n\n" + v129_label_css, "\n", 1), encoding="utf-8")
+        migration_command = ["python3", str(PATCHER), *map(str, migration_paths)]
+        subprocess.run(migration_command, check=True)
+        migrated_view = migration_paths[1].read_text(encoding="utf-8")
+        assert migrated_view.index(touchgui_input) < migrated_view.index(help_order_marker) < migrated_view.index("Up to 33 characters. Callsign not needed.")
+        assert "Favorites editor field labels v1.29." in migration_paths[6].read_text(encoding="utf-8")
+        migrated_v128 = {path: path.read_bytes() for path in migration_paths}
+        subprocess.run(migration_command, check=True)
+        assert migrated_v128 == {path: path.read_bytes() for path in migration_paths}, "v1.28 Favorites editor migration was not idempotent"
 
         old_help_style = '''/* AllScan Mods: Favorites editor helper text v1.23. */
 .favEditPanel .favoriteEditHelp {
@@ -143,7 +172,7 @@ function openFavoriteEditor() {}
 }'''
         main_css.write_text(old_help_style + "\n", encoding="utf-8")
         subprocess.run(command, check=True)
-        assert main_css.read_text(encoding="utf-8") == new_help_style + "\n"
+        assert main_css.read_text(encoding="utf-8") == new_help_style + "\n\n/* AllScan Mods: Favorites editor field labels v1.29. */\n.favEditPanel label {\n\tfont-weight:bold;\n}\n"
         migrated_css = main_css.read_bytes()
         subprocess.run(command, check=True)
         assert main_css.read_bytes() == migrated_css, "v1.23 editor guidance CSS migration was not idempotent"
