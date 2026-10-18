@@ -14,8 +14,8 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.36" in text, installer
-        assert "Responsive TouchGUI label auto-fit v1.35" in text, installer
+        assert "TouchGUI activity colors mod version: v1.37" in text, installer
+        assert "Responsive TouchGUI label auto-fit v1.37" in text, installer
         assert "window.matchMedia && window.matchMedia('(orientation: portrait)').matches" in text, installer
         assert "apply_touchgui_activity_live" in text, installer
         assert "TOUCHGUI_ACTIVITY_PATCH" in text, installer
@@ -25,7 +25,7 @@ def main():
         assert "font-size:12px;" in text, installer
         assert "grep -A7 -F '.channel-stats {'" in text, installer
         assert "channel-side" in text, installer
-        assert "function fitChannelLabel(button)" in text, installer
+        assert "function fitChannelLabel(button)" in text and "TouchGUI horizontal title fit v1.37" in text, installer
         assert "function fitTouchguiCardText()" in text, installer
         assert "var scaleFactor = isPortrait ? 0.90 : 0.96;" in text, installer
         assert "@media (orientation: portrait)" in text and "left:-1.5ch;" in text, installer
@@ -67,7 +67,8 @@ def main():
         assert "var scaleFactor = isPortrait ? 0.90 : 0.96;" in patched_js
         assert "meta.style.transform = 'scaleX('" in patched_js
         assert "function fitChannelLabel(button)" in patched_js
-        assert "var minFontSize = Math.min(12, fontSize);" in patched_js
+        assert "var minFontSize = Math.min(10, fontSize);" in patched_js
+        assert "TouchGUI horizontal title fit v1.37" in patched_js
         assert "function fitTouchguiCardText()" in patched_js
         assert "fitChannelLabel(btn);" in patched_js
         assert patched_js.count("function fitChannelMeta(button)") == 1
@@ -85,7 +86,9 @@ def main():
         assert "padding:1px 4px;\nborder-radius:8px;" in patched_css
         assert "min-height:86px;\npadding:8px;" in patched_css
         assert "TouchGUI centered card text v1.17" in patched_css
-        assert "Responsive TouchGUI label auto-fit v1.35" in patched_css
+        assert "Responsive TouchGUI label auto-fit v1.37" in patched_css
+        assert "TouchGUI single-line label fit v1.37" in patched_css
+        assert "white-space:nowrap;" in patched_css and "overflow-wrap:normal;" in patched_css
         assert "@media (orientation: portrait) {\n.channel-meta { display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-1.5ch; overflow:visible; }\n}" in patched_css
         assert "font-size:18px;\nline-height:1.12;" in patched_css
         assert "font-size:14px;\nline-height:1.1;" in patched_css
@@ -155,8 +158,8 @@ cardLabel = channelLabel({node: '512511', call: 'GB3CR', label: 'GB3CR 512511', 
 if(cardLabel !== 'Backup Repeater')
 	throw new Error('TouchGUI did not fall back to description after removing a callsign-only label: ' + cardLabel);
 cardLabel = channelLabel({node: '512511', call: 'GB3CR', label: 'GB3CR 12345678901234567890123456789012345 512511'});
-if(cardLabel.length > 33 || cardLabel.charAt(cardLabel.length - 1) !== '…')
-	throw new Error('TouchGUI card title did not fit within 33 characters: ' + cardLabel);
+if(cardLabel !== '12345678901234567890123456789012345')
+	throw new Error('TouchGUI clipped a long card title instead of preserving it for fitting: ' + cardLabel);
 var fittedMeta = {clientWidth: 90, scrollWidth: 100, style: {fontSize: '', transform: ''}};
 window.matchMedia = function() { return {matches: false}; };
 window.getComputedStyle = function(element) {
@@ -172,18 +175,14 @@ window.matchMedia = function(query) { return {matches: query === '(orientation: 
 fitChannelMeta({querySelector: function() { return portraitMeta; }});
 if(parseFloat(portraitMeta.style.fontSize) !== 10 || portraitMeta.style.transform !== 'scaleX(0.45)')
 	throw new Error('Portrait metadata did not use its 10px minimum: ' + portraitMeta.style.fontSize);
-var shortTitle = {clientWidth: 120, style: {fontSize: '', display: '', webkitLineClamp: '3'}, scrollHeight: 60};
+var shortTitle = {clientWidth: 120, scrollWidth: 100, style: {fontSize: '', transform: ''}};
 fitChannelLabel({querySelector: function() { return shortTitle; }});
-if(shortTitle.style.fontSize !== '' || shortTitle.style.display !== '' || shortTitle.style.webkitLineClamp !== '3')
-	throw new Error('Short TouchGUI title was resized or its layout styles were not restored');
-var longTitle = {clientWidth: 120, style: {fontSize: '', display: '', webkitLineClamp: '3'}};
-Object.defineProperty(longTitle, 'scrollHeight', {get: function() {
-	var size = parseFloat(this.style.fontSize) || 18;
-	return size > 14 ? size * 1.12 * 4 : size * 1.12 * 3;
-}});
+if(shortTitle.style.fontSize !== '' || shortTitle.style.transform !== '')
+	throw new Error('Short TouchGUI title was unnecessarily resized');
+var longTitle = {clientWidth: 100, scrollWidth: 200, style: {fontSize: '', transform: ''}};
 fitChannelLabel({querySelector: function() { return longTitle; }});
-if(longTitle.style.fontSize !== '14px' || longTitle.style.display !== '' || longTitle.style.webkitLineClamp !== '3')
-	throw new Error('Long TouchGUI title did not shrink only enough to fit within three lines: ' + longTitle.style.fontSize);
+if(longTitle.style.fontSize !== '10px' || longTitle.style.transform !== 'scaleX(0.48)')
+	throw new Error('Long TouchGUI title did not shrink/scale to fit one line: ' + longTitle.style.fontSize + ', ' + longTitle.style.transform);
 simple.channels = [
 	{node: '30000'}, {node: '2000'}, {node: '30000'},
 	{node: '1999'}, {node: '3000000'}, {node: '2001'}
@@ -272,7 +271,7 @@ overflow:hidden;
 text-overflow:clip;
 }
 '''
-        new_responsive_css = '''/* AllScan Mods: Responsive TouchGUI label auto-fit v1.35. */
+        new_responsive_css = '''/* AllScan Mods: Responsive TouchGUI label auto-fit v1.37. */
 .channel-btn {
 column-gap:4px;
 }
@@ -413,7 +412,7 @@ function fitTouchguiCardMeta() {
 window.addEventListener('resize', fitTouchguiCardMeta);'''
         v127_js.write_text(js_text.replace("function formatTouchguiStatusMessage(msg)", legacy_v127_fit + "\nfunction formatTouchguiStatusMessage(msg)"), encoding="utf-8")
         subprocess.run(["python3", str(PATCHER), str(v127_js), str(v127_css)], check=True)
-        assert "Responsive TouchGUI label auto-fit v1.35" in v127_css.read_text(encoding="utf-8")
+        assert "Responsive TouchGUI label auto-fit v1.37" in v127_css.read_text(encoding="utf-8")
         assert "function fitChannelLabel(button)" in v127_js.read_text(encoding="utf-8")
         assert v127_js.read_text(encoding="utf-8").count("requestAnimationFrame(function()") == 1
 
@@ -422,7 +421,7 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         portrait_rule = "@media (orientation: portrait) {\n.channel-meta { display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-1.5ch; overflow:visible; }\n}\n"
 
         v134_css = temp / "v134.css"
-        v134_css.write_text(patched_css.replace(new_responsive_css, new_responsive_css.replace("v1.35", "v1.34", 1).replace(" overflow:visible;", ""), 1), encoding="utf-8")
+        v134_css.write_text(patched_css.replace(new_responsive_css, new_responsive_css.replace("v1.37", "v1.34", 1).replace(" overflow:visible;", ""), 1), encoding="utf-8")
         v134_js = temp / "v134.js"
         v134_js.write_text(patched_js, encoding="utf-8")
         subprocess.run(["python3", str(PATCHER), str(v134_js), str(v134_css)], check=True)
@@ -432,7 +431,7 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         assert migrated_v134 == (v134_js.read_bytes(), v134_css.read_bytes()), "v1.34 migration was not idempotent"
 
         v133_css = temp / "v133.css"
-        v133_css.write_text(patched_css.replace(new_responsive_css, new_responsive_css.replace("v1.35", "v1.33", 1).replace(" overflow:visible;", "").replace("max-width:none; ", ""), 1), encoding="utf-8")
+        v133_css.write_text(patched_css.replace(new_responsive_css, new_responsive_css.replace("v1.37", "v1.33", 1).replace(" overflow:visible;", "").replace("max-width:none; ", ""), 1), encoding="utf-8")
         v133_js = temp / "v133.js"
         v133_js.write_text(patched_js, encoding="utf-8")
         subprocess.run(["python3", str(PATCHER), str(v133_js), str(v133_css)], check=True)
@@ -442,7 +441,7 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         assert migrated_v133 == (v133_js.read_bytes(), v133_css.read_bytes()), "v1.33 migration was not idempotent"
 
         v132_css = temp / "v132.css"
-        v132_css.write_text(patched_css.replace(new_responsive_css, new_responsive_css.replace("v1.35", "v1.32", 1).replace(" overflow:visible;", "").replace("max-width:none; ", "").replace("width:calc(100% + 1.5ch); ", "width:100%; "), 1), encoding="utf-8")
+        v132_css.write_text(patched_css.replace(new_responsive_css, new_responsive_css.replace("v1.37", "v1.32", 1).replace(" overflow:visible;", "").replace("max-width:none; ", "").replace("width:calc(100% + 1.5ch); ", "width:100%; "), 1), encoding="utf-8")
         v132_js = temp / "v132.js"
         v132_js.write_text(patched_js, encoding="utf-8")
         subprocess.run(["python3", str(PATCHER), str(v132_js), str(v132_css)], check=True)
@@ -452,7 +451,7 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         assert migrated_v132 == (v132_js.read_bytes(), v132_css.read_bytes()), "v1.32 migration was not idempotent"
 
         v131_css = temp / "v131.css"
-        v131_css.write_text(patched_css.replace(new_responsive_css, new_responsive_css.replace("v1.35", "v1.31", 1).replace("display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; ", "").replace(" overflow:visible;", ""), 1), encoding="utf-8")
+        v131_css.write_text(patched_css.replace(new_responsive_css, new_responsive_css.replace("v1.37", "v1.31", 1).replace("display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; ", "").replace(" overflow:visible;", ""), 1), encoding="utf-8")
         v131_js = temp / "v131.js"
         v131_js.write_text(patched_js, encoding="utf-8")
         subprocess.run(["python3", str(PATCHER), str(v131_js), str(v131_css)], check=True)
@@ -464,7 +463,7 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         v130_js = temp / "v130.js"
         v130_css = temp / "v130.css"
         v130_js.write_text(patched_js, encoding="utf-8")
-        v130_css.write_text(patched_css.replace(new_responsive_css, new_responsive_css.replace("v1.35", "v1.30", 1).replace(portrait_rule, ""), 1), encoding="utf-8")
+        v130_css.write_text(patched_css.replace(new_responsive_css, new_responsive_css.replace("v1.37", "v1.30", 1).replace(portrait_rule, ""), 1), encoding="utf-8")
         subprocess.run(["python3", str(PATCHER), str(v130_js), str(v130_css)], check=True)
         assert "left:-1.5ch;" in v130_css.read_text(encoding="utf-8")
         migrated_v130 = (v130_js.read_bytes(), v130_css.read_bytes())
@@ -474,7 +473,7 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         v129_js = temp / "v129.js"
         v129_css = temp / "v129.css"
         v129_js.write_text(patched_js.replace(old_scale_block, prior_scale_line, 1), encoding="utf-8")
-        v129_css.write_text(patched_css.replace(new_responsive_css, new_responsive_css.replace("v1.35", "v1.29", 1).replace(portrait_rule, ""), 1), encoding="utf-8")
+        v129_css.write_text(patched_css.replace(new_responsive_css, new_responsive_css.replace("v1.37", "v1.29", 1).replace(portrait_rule, ""), 1), encoding="utf-8")
         subprocess.run(["python3", str(PATCHER), str(v129_js), str(v129_css)], check=True)
         assert "left:-1.5ch;" in v129_css.read_text(encoding="utf-8")
         migrated_v129 = (v129_js.read_bytes(), v129_css.read_bytes())
@@ -482,13 +481,13 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         assert migrated_v129 == (v129_js.read_bytes(), v129_css.read_bytes()), "v1.29 migration was not idempotent"
 
         v128_css = temp / "v128.css"
-        v128_css.write_text(patched_css.replace(new_responsive_css, new_responsive_css.replace("v1.35", "v1.28", 1).replace(portrait_rule, ""), 1), encoding="utf-8")
+        v128_css.write_text(patched_css.replace(new_responsive_css, new_responsive_css.replace("v1.37", "v1.28", 1).replace(portrait_rule, ""), 1), encoding="utf-8")
         v128_js = temp / "v128.js"
         old_meta_fit = "\t\tvar isPortrait = window.matchMedia && window.matchMedia('(orientation: portrait)').matches;\n\t\tvar minFontSize = isPortrait ? 10 : Math.max(12, fontSize * 0.9);"
         v128_js.write_text(patched_js.replace(old_scale_block, prior_scale_line, 1).replace(old_meta_fit, "\t\tvar minFontSize = Math.max(12, fontSize * 0.9);", 1), encoding="utf-8")
         subprocess.run(["python3", str(PATCHER), str(v128_js), str(v128_css)], check=True)
         assert "var minFontSize = isPortrait ? 10 : Math.max(12, fontSize * 0.9);" in v128_js.read_text(encoding="utf-8")
-        assert "Responsive TouchGUI label auto-fit v1.35" in v128_css.read_text(encoding="utf-8")
+        assert "Responsive TouchGUI label auto-fit v1.37" in v128_css.read_text(encoding="utf-8")
         migrated_v128 = (v128_js.read_bytes(), v128_css.read_bytes())
         subprocess.run(["python3", str(PATCHER), str(v128_js), str(v128_css)], check=True)
         assert migrated_v128 == (v128_js.read_bytes(), v128_css.read_bytes()), "v1.28 migration was not idempotent"
@@ -640,6 +639,17 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         assert "grid-template-rows:auto auto auto" not in current_style
         assert "@media (max-width:700px)" in current_style
         assert "@media (max-height:430px)" in current_style
+        legacy_136_css = temp / "v1.36.css"
+        current_style_without_single_line = current_style.replace("\n/* AllScan Mods: TouchGUI single-line label fit v1.37. */\n.channel-content { overflow:visible; }\n.channel-label {\n display:block;\n white-space:nowrap;\n overflow:visible;\n overflow-wrap:normal;\n text-overflow:clip;\n transform-origin:center;\n}\n", "\n")
+        current_style_without_single_line = current_style_without_single_line.replace("Responsive TouchGUI label auto-fit v1.37", "Responsive TouchGUI label auto-fit v1.35", 1)
+        legacy_136_css.write_text(current_style_without_single_line, encoding="utf-8")
+        legacy_136_js = temp / "v1.36.js"
+        legacy_136_js.write_text(current_source, encoding="utf-8")
+        subprocess.run(["python3", str(PATCHER), str(legacy_136_js), str(legacy_136_css)], check=True)
+        assert "TouchGUI horizontal title fit v1.37" in legacy_136_js.read_text(encoding="utf-8")
+        assert "TouchGUI single-line label fit v1.37" in legacy_136_css.read_text(encoding="utf-8")
+        assert "Responsive TouchGUI label auto-fit v1.37" in legacy_136_css.read_text(encoding="utf-8")
+
         current = (current_js.read_bytes(), current_css.read_bytes())
         subprocess.run(["python3", str(PATCHER), str(current_js), str(current_css)], check=True)
         assert current == (current_js.read_bytes(), current_css.read_bytes()), "stats patch was not idempotent"

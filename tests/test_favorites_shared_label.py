@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Ensure the v1.04 shared Favorites label remains unmodified by Mods."""
+"""Ensure v1.37 edits one shared call-sign-free Favorites label."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -7,36 +7,39 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def main() -> None:
     forbidden = (
-        "favorite-editor-label.py",
-        "touchgui-favorite-labels.py",
         "FAVORITE_LABEL_PATCH",
         "TOUCHGUI_FAVORITE_LABEL_PATCH",
-        "apply_favorite_label_live",
-        "apply_touchgui_favorite_labels_live",
         "touchtguilabel",
     )
     for filename in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         source = (ROOT / filename).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.36" in source
+        assert "TouchGUI activity colors mod version: v1.37" in source
+        assert "apply_favorite_editor_label_live" in source
+        assert "favorite-editor-label.py" in source
         for marker in forbidden:
             assert marker not in source, f"{filename} still contains {marker}"
         assert "sortFavStats(5)" in source
         assert "sortFavStats(6)" in source
         assert "function openFavoriteEditor(" in source
-        assert source.count("favoriteEditTouchguiLabel") == 1
-        assert source.index("favoriteEditTouchguiLabel") < source.index("touchgui_activity_present()")
 
     activity = (ROOT / "lib/touchgui-activity.py").read_text(encoding="utf-8")
     assert "TouchGUI matching callsign removal v1.18" in activity
     assert "touchguiLabel" not in activity
-    assert "label.slice(0, 32)" in activity
+    assert "label.length > 33" not in activity
+    assert "TouchGUI horizontal title fit v1.37" in activity
+    assert "TouchGUI single-line label fit v1.37" in activity
 
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    assert "one shared Friendly Name/Label field" in readme
+    assert "single shared Friendly Name/Label field" in readme
+    assert "call-sign-free view of that same field with a 33-character limit" in readme
     assert "optional TouchGUI card label overrides" not in readme
 
-    print("PASS: v1.04 keeps the standard single-field Favorites editor.")
-    print("PASS: TouchGUI card title cleanup and text-fit behavior remain in the activity feature.")
+    helper = (ROOT / "lib/favorite-editor-label.py").read_text(encoding="utf-8")
+    assert 'maxlength="33"' in helper
+    assert "substr($name, 0, 33)" in helper
+    assert "newLabel.length > 33" in helper
+    print("PASS: v1.04 keeps one shared, call-sign-free, 33-character Favorites label.")
+    print("PASS: TouchGUI title fitting preserves long text on one line without ellipsis.")
     print("PASS: Rx%/LCnt sorting and PR #37 editor detection remain in both installers.")
 
 

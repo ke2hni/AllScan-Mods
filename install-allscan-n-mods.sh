@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.36
+# TouchGUI activity colors mod version: v1.37
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -238,6 +238,7 @@ esac
 # A match is read-only and must not create backups or rewrite upstream files.
 MODS_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 TOUCHGUI_ACTIVITY_PATCH=$MODS_DIR/lib/touchgui-activity.py
+FAVORITE_EDITOR_PATCH=$MODS_DIR/lib/favorite-editor-label.py
 
 previous_favorite_label_mod_present() {
     local file
@@ -254,6 +255,60 @@ if previous_favorite_label_mod_present; then
     echo "ERROR: This installation contains the earlier Mods-only Favorites label edits. Reinstall the unmodified AllScan v1.04 files, then rerun AllScan Mods v1.36. No files changed." >&2
     exit 1
 fi
+
+
+favorite_editor_label_present() {
+    grep -Fq 'AllScan Mods: 33-character call-sign-free Favorites editor label v1.37.' "$VIEW_FILE" &&
+    grep -Fq 'Call-sign-free Favorites editor value v1.37.' "$FAVS_UTILS_FILE" &&
+    grep -Fq 'maxlength="33"' "$VIEW_FILE" &&
+    grep -Fq 'no more than 33 plain-text characters' "$INDEX_FILE" &&
+    grep -Fq 'newLabel.length > 33' "$JS_FILE"
+}
+
+apply_favorite_editor_label_live() {
+    if favorite_editor_label_present; then
+        echo "Favorites editor already uses the shared call-sign-free 33-character label. No changes made."
+        return 0
+    fi
+    local work_dir timestamp i
+    local -a originals staged backups
+    work_dir=$(mktemp -d /tmp/allscan-favorite-editor.XXXXXX)
+    staged=("$work_dir/index.php" "$work_dir/viewUtils.php" "$work_dir/main.js" "$work_dir/favsUtils.php")
+    originals=("$INDEX_FILE" "$VIEW_FILE" "$JS_FILE" "$FAVS_UTILS_FILE")
+    for i in "${!originals[@]}"; do cp -- "${originals[$i]}" "${staged[$i]}"; done
+    python3 "$FAVORITE_EDITOR_PATCH" "${staged[0]}" "${staged[1]}" "${staged[2]}" "${staged[3]}"
+    if command -v node >/dev/null 2>&1; then node --check "${staged[2]}"; fi
+    if command -v php >/dev/null 2>&1; then
+        php -l "${staged[0]}" >/dev/null
+        php -l "${staged[1]}" >/dev/null
+        php -l "${staged[3]}" >/dev/null
+    fi
+    local unchanged=true
+    for i in "${!originals[@]}"; do
+        if ! cmp -s "${originals[$i]}" "${staged[$i]}"; then unchanged=false; fi
+    done
+    if [[ $unchanged == true ]]; then
+        rm -rf -- "$work_dir"
+        echo "Favorites editor label changes already installed. No changes made."
+        return 0
+    fi
+    timestamp=$(date +%Y%m%d-%H%M%S)
+    for i in "${!originals[@]}"; do
+        backups[$i]=${originals[$i]}.before-favorite-editor-label-$timestamp
+        [[ ! -e ${backups[$i]} ]] || { rm -rf -- "$work_dir"; echo "ERROR: Favorites editor backup path already exists; no files changed." >&2; return 1; }
+    done
+    for i in "${!originals[@]}"; do cp -a -- "${originals[$i]}" "${backups[$i]}"; done
+    for i in "${!originals[@]}"; do
+        if ! cp -- "${staged[$i]}" "${originals[$i]}"; then
+            for i in "${!originals[@]}"; do cp -a -- "${backups[$i]}" "${originals[$i]}"; done
+            rm -rf -- "$work_dir"
+            echo "ERROR: Favorites editor patch failed; original files were restored." >&2
+            return 1
+        fi
+    done
+    rm -rf -- "$work_dir"
+    echo "Favorites editor label installed. Backups: ${backups[*]}"
+}
 
 touchgui_activity_present() {
     grep -Fq 'AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.18.' "$SIMPLE_JS_FILE" &&
@@ -276,6 +331,7 @@ touchgui_activity_present() {
     grep -Fq 'channel-content' "$SIMPLE_JS_FILE" &&
     grep -Fq 'function fitChannelMeta(button)' "$SIMPLE_JS_FILE" &&
     grep -Fq 'function fitChannelLabel(button)' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'TouchGUI horizontal title fit v1.37' "$SIMPLE_JS_FILE" &&
     grep -Fq 'function fitTouchguiCardText()' "$SIMPLE_JS_FILE" &&
     grep -Fq 'number < 3000000' "$SIMPLE_JS_FILE" &&
     grep -Fq 'simple.txTim[node] = now' "$SIMPLE_JS_FILE" &&
@@ -286,7 +342,8 @@ touchgui_activity_present() {
     grep -Fq '.channel-side' "$SIMPLE_CSS_FILE" &&
     grep -Fq '.channel-content' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'TouchGUI centered card text v1.17' "$SIMPLE_CSS_FILE" &&
-    grep -Fq 'Responsive TouchGUI label auto-fit v1.35' "$SIMPLE_CSS_FILE" &&
+    grep -Fq 'Responsive TouchGUI label auto-fit v1.37' "$SIMPLE_CSS_FILE" &&
+    grep -Fq 'TouchGUI single-line label fit v1.37' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0;' "$SIMPLE_CSS_FILE" &&
     grep -Fq '@media (orientation: portrait)' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'width:calc(100% + 1.5ch);' "$SIMPLE_CSS_FILE" &&
@@ -370,7 +427,8 @@ if [[ $allscan_version == v1.04 ]] && ! upstream_features_present; then
     exit 1
 fi
 if upstream_features_present; then
-    echo "AllScan already includes the integrated enhancements (PR #37). Applying/checking the independent TouchGUI activity and text-layout feature."
+    echo "AllScan already includes the integrated enhancements (PR #37). Applying/checking the shared Favorites editor label and independent TouchGUI activity/text-layout features."
+    apply_favorite_editor_label_live
     apply_touchgui_activity_live
     exit 0
 fi

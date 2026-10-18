@@ -55,7 +55,9 @@ def main():
             and "@media (max-width:380px)" in css
             and "white-space:normal; overflow:visible; overflow-wrap:anywhere; min-width:0;" in css
             and "TouchGUI centered card text v1.17" in css
-            and "Responsive TouchGUI label auto-fit v1.35" in css
+            and "Responsive TouchGUI label auto-fit v1.37" in css
+            and "TouchGUI single-line label fit v1.37" in css
+            and "TouchGUI horizontal title fit v1.37" in js
             and "@media (orientation: portrait)" in css
             and "display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-1.5ch; overflow:visible;" in css
             and "left:-1.5ch;" in css
@@ -285,8 +287,6 @@ function channelLabel(channel) {
 		label = cleanLabel(channel.desc);
 	if(!label)
 		label = cleanLabel(channel.loc);
-	if(label.length > 33)
-		label = label.slice(0, 32).replace(/[\s,;:.()]+$/g, '') + '…';
 	return label || channel.node || '';
 }'''
     matches = list(channel_label_pattern.finditer(js))
@@ -318,25 +318,22 @@ function channelLabel(channel) {
 		}
 	}
 }
+// AllScan Mods: TouchGUI horizontal title fit v1.37.
 function fitChannelLabel(button) {
 	var label = button.querySelector('.channel-label');
 	if(!label || !label.clientWidth)
 		return;
 	label.style.fontSize = '';
-	var fontSize = parseFloat(window.getComputedStyle(label).fontSize);
-	var minFontSize = Math.min(12, fontSize);
-	var display = label.style.display;
-	var lineClamp = label.style.webkitLineClamp;
-	label.style.display = 'block';
-	label.style.webkitLineClamp = 'unset';
-	var lineHeight = parseFloat(window.getComputedStyle(label).lineHeight) || fontSize * 1.12;
-	while(label.scrollHeight > lineHeight * 3 + 1 && fontSize > minFontSize) {
-		fontSize = Math.max(minFontSize, fontSize - 1);
-		label.style.fontSize = fontSize + 'px';
-		lineHeight = parseFloat(window.getComputedStyle(label).lineHeight) || fontSize * 1.12;
+	label.style.transform = '';
+	var textWidth = label.scrollWidth;
+	if(textWidth > label.clientWidth) {
+		var fontSize = parseFloat(window.getComputedStyle(label).fontSize);
+		var minFontSize = Math.min(10, fontSize);
+		label.style.fontSize = Math.max(minFontSize, fontSize * label.clientWidth / textWidth) + 'px';
+		textWidth = label.scrollWidth;
+		if(textWidth > label.clientWidth)
+			label.style.transform = 'scaleX(' + (label.clientWidth / textWidth * 0.96) + ')';
 	}
-	label.style.display = display;
-	label.style.webkitLineClamp = lineClamp;
 }
 function fitTouchguiCardText() {
 	document.querySelectorAll('.channel-btn').forEach(function(button) {
@@ -361,6 +358,17 @@ window.addEventListener('resize', fitTouchguiCardText);'''
         js = old_text_fit_pattern.sub(lambda _: card_text_fit_funcs, js, count=1)
     elif js.count("function fitChannelLabel(button)") != 1 or "function fitTouchguiCardText()" not in js:
         raise SystemExit("ERROR: TouchGUI card title sizing helper is ambiguous; no files changed.")
+    if "TouchGUI horizontal title fit v1.37" not in js:
+        title_fit_pattern = re.compile(r"(?ms)^function fitChannelLabel\(button\) \{.*?^}")
+        title_fits = list(title_fit_pattern.finditer(js))
+        if len(title_fits) != 1:
+            raise SystemExit("ERROR: Existing TouchGUI title fitting function is ambiguous; no files changed.")
+        title_function = "function fitChannelLabel(button)" + card_text_fit_funcs.split("function fitChannelLabel(button)", 1)[1].split("function fitTouchguiCardText()", 1)[0]
+        js = title_fit_pattern.sub(
+            lambda _: "// AllScan Mods: TouchGUI horizontal title fit v1.37.\n" + title_function,
+            js,
+            count=1,
+        )
 
     if "var scaleFactor = isPortrait ? 0.90 : 0.96;" not in js:
         fit_pattern = re.compile(r"(?ms)^function fitChannelMeta\(button\) \{.*?^}")
@@ -665,6 +673,20 @@ overflow-wrap:anywhere;
     if "TouchGUI centered card text v1.17" not in css:
         css = css.rstrip() + "\n" + card_text_css
 
+    single_line_css = '''/* AllScan Mods: TouchGUI single-line label fit v1.37. */
+.channel-content { overflow:visible; }
+.channel-label {
+ display:block;
+ white-space:nowrap;
+ overflow:visible;
+ overflow-wrap:normal;
+ text-overflow:clip;
+ transform-origin:center;
+}
+'''
+    if "TouchGUI single-line label fit v1.37" not in css:
+        css = css.rstrip() + "\n" + single_line_css
+
     footer_css = '''.simple-footer { height:auto; min-height:30px; flex:0 0 auto; overflow:visible; }
 .simple-footer #scanmsg,
 .simple-footer #statmsg { white-space:normal; overflow:visible; overflow-wrap:anywhere; min-width:0; }
@@ -698,7 +720,7 @@ overflow-wrap:anywhere;
     if ".simple-footer #statmsg { grid-column:1 / -1; text-align:center; }" not in css:
         css = css.rstrip() + "\n" + center_footer_css
 
-    responsive_card_css = '''/* AllScan Mods: Responsive TouchGUI label auto-fit v1.35. */
+    responsive_card_css = '''/* AllScan Mods: Responsive TouchGUI label auto-fit v1.37. */
 .channel-btn {
 column-gap:4px;
 }
@@ -831,7 +853,9 @@ overflow:hidden;
 text-overflow:clip;
 }
 '''
-    if "Responsive TouchGUI label auto-fit v1.35" not in css:
+    if "Responsive TouchGUI label auto-fit v1.35" in css:
+        css = css.replace("Responsive TouchGUI label auto-fit v1.35", "Responsive TouchGUI label auto-fit v1.37", 1)
+    if "Responsive TouchGUI label auto-fit v1.37" not in css:
         if css.count(old_responsive_card_css_v134) == 1:
             css = css.replace(old_responsive_card_css_v134, responsive_card_css, 1)
         elif css.count(old_responsive_card_css_v133) == 1:
@@ -870,7 +894,9 @@ text-overflow:clip;
             or "channel-side" not in js
             or ".channel-side" not in css
             or "TouchGUI centered card text v1.17" not in css
-            or "Responsive TouchGUI label auto-fit v1.35" not in css
+            or "Responsive TouchGUI label auto-fit v1.37" not in css
+            or "TouchGUI single-line label fit v1.37" not in css
+            or "TouchGUI horizontal title fit v1.37" not in js
             or "@media (orientation: portrait)" not in css
             or "display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-1.5ch; overflow:visible;" not in css
             or "left:-1.5ch;" not in css):
