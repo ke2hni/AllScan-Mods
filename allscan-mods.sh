@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.27
+# TouchGUI activity colors mod version: v1.28
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -90,6 +90,9 @@ touchgui_activity_present() {
     [[ $(grep -Fc 'border-radius:8px;' "$SIMPLE_CSS_FILE") -ge 2 ]] &&
     grep -Fq 'channel-side' "$SIMPLE_JS_FILE" &&
     grep -Fq 'channel-content' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'function fitChannelMeta(button)' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'function fitChannelLabel(button)' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'function fitTouchguiCardText()' "$SIMPLE_JS_FILE" &&
     grep -Fq 'number < 3000000' "$SIMPLE_JS_FILE" &&
     grep -Fq 'simple.txTim[node] = now' "$SIMPLE_JS_FILE" &&
     grep -Fq 'responseData.retcode == 429' "$SIMPLE_JS_FILE" &&
@@ -99,7 +102,7 @@ touchgui_activity_present() {
     grep -Fq '.channel-side' "$SIMPLE_CSS_FILE" &&
     grep -Fq '.channel-content' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'TouchGUI centered card text v1.17' "$SIMPLE_CSS_FILE" &&
-    grep -Fq 'Responsive TouchGUI metadata readability v1.27' "$SIMPLE_CSS_FILE" &&
+    grep -Fq 'Responsive TouchGUI label auto-fit v1.28' "$SIMPLE_CSS_FILE" &&
     ! grep -Fq '.channel-btn[data-activity="active"]' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'height:100dvh' "$SIMPLE_CSS_FILE" &&
     grep -Fq '.simple-footer { display:grid; }' "$SIMPLE_CSS_FILE" &&

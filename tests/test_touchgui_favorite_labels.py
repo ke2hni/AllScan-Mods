@@ -19,7 +19,7 @@ def write(path: Path, value: str) -> None:
 def main() -> None:
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.27" in text
+        assert "TouchGUI activity colors mod version: v1.28" in text
         assert "apply_touchgui_favorite_labels_live" in text
         assert "TOUCHGUI_FAVORITE_LABEL_PATCH" in text
         assert 'Favorites editor helper text v1.25.' in text

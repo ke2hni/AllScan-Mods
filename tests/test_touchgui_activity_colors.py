@@ -14,8 +14,8 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.27" in text, installer
-        assert "Responsive TouchGUI metadata readability v1.27" in text, installer
+        assert "TouchGUI activity colors mod version: v1.28" in text, installer
+        assert "Responsive TouchGUI label auto-fit v1.28" in text, installer
         assert "apply_touchgui_activity_live" in text, installer
         assert "TOUCHGUI_ACTIVITY_PATCH" in text, installer
         assert "activity.rxPct" in text and "activity.linkCnt" in text, installer
@@ -24,6 +24,8 @@ def main():
         assert "font-size:12px;" in text, installer
         assert "grep -A7 -F '.channel-stats {'" in text, installer
         assert "channel-side" in text, installer
+        assert "function fitChannelLabel(button)" in text, installer
+        assert "function fitTouchguiCardText()" in text, installer
         assert "simple.txTim[node] = now" in text, installer
         assert "responseData.retcode == 429" in text, installer
         assert "convertActivityRange(2 * rxPct, 10, 30)" in text, installer
@@ -57,10 +59,14 @@ def main():
         assert "number < 3000000" in patched_js
         assert "function fitChannelMeta(button)" in patched_js
         assert "meta.scrollWidth" in patched_js and "meta.clientWidth" in patched_js
-        assert "var minFontSize = Math.max(10, fontSize * 0.9);" in patched_js
+        assert "var minFontSize = Math.max(12, fontSize * 0.9);" in patched_js
         assert "meta.style.transform = 'scaleX('" in patched_js
-        assert "requestAnimationFrame(function() { fitChannelMeta(btn); });" in patched_js
+        assert "function fitChannelLabel(button)" in patched_js
+        assert "var minFontSize = Math.min(12, fontSize);" in patched_js
+        assert "function fitTouchguiCardText()" in patched_js
+        assert "fitChannelLabel(btn);" in patched_js
         assert patched_js.count("function fitChannelMeta(button)") == 1
+        assert patched_js.count("function fitChannelLabel(button)") == 1
         assert "simple.txTim[node] = now" in patched_js
         assert "convertActivityRange(2 * rxPct, 10, 30)" in patched_js
         assert "convertActivityRange(3 * linkCount, 15, 30)" in patched_js
@@ -74,8 +80,11 @@ def main():
         assert "padding:1px 4px;\nborder-radius:8px;" in patched_css
         assert "min-height:86px;\npadding:8px;" in patched_css
         assert "TouchGUI centered card text v1.17" in patched_css
-        assert "Responsive TouchGUI metadata readability v1.27" in patched_css
-        assert "font-size:clamp(10px, 10cqi, 12px);" in patched_css
+        assert "Responsive TouchGUI label auto-fit v1.28" in patched_css
+        assert "font-size:18px;\nline-height:1.12;" in patched_css
+        assert "font-size:14px;\nline-height:1.1;" in patched_css
+        assert "@media (max-width:700px) {\n.channel-label { font-size:16px; }\n}" in patched_css
+        assert "@media (max-height:430px) {\n.channel-label { font-size:15px; }\n.channel-meta { font-size:12px; }\n}" in patched_css
         assert "transform-origin:center;" in patched_css
         assert "column-gap:4px;" in patched_css
         assert "min-width:48px;" in patched_css
@@ -139,11 +148,27 @@ if(cardLabel !== 'Backup Repeater')
 cardLabel = channelLabel({node: '512511', call: 'GB3CR', label: 'GB3CR 12345678901234567890123456789012345 512511'});
 if(cardLabel.length > 33 || cardLabel.charAt(cardLabel.length - 1) !== '…')
 	throw new Error('TouchGUI card title did not fit within 33 characters: ' + cardLabel);
-window.getComputedStyle = function() { return {fontSize: '12px'}; };
 var fittedMeta = {clientWidth: 90, scrollWidth: 100, style: {fontSize: '', transform: ''}};
+window.getComputedStyle = function(element) {
+	var isTitle = element.style.webkitLineClamp !== undefined;
+	var size = parseFloat(element.style.fontSize) || (isTitle ? 18 : 14);
+	return {fontSize: size + 'px', lineHeight: (size * (isTitle ? 1.12 : 1.1)) + 'px'};
+};
 fitChannelMeta({querySelector: function() { return fittedMeta; }});
-if(parseFloat(fittedMeta.style.fontSize) < 10.7 || fittedMeta.style.transform !== 'scaleX(0.864)')
-	throw new Error('TouchGUI metadata size/readability fallback was incorrect: ' + fittedMeta.style.fontSize + ', ' + fittedMeta.style.transform);
+if(parseFloat(fittedMeta.style.fontSize) !== 12.6 || fittedMeta.style.transform !== 'scaleX(0.864)')
+	throw new Error('TouchGUI metadata did not retain a 14px base and bounded fit: ' + fittedMeta.style.fontSize + ', ' + fittedMeta.style.transform);
+var shortTitle = {clientWidth: 120, style: {fontSize: '', display: '', webkitLineClamp: '3'}, scrollHeight: 60};
+fitChannelLabel({querySelector: function() { return shortTitle; }});
+if(shortTitle.style.fontSize !== '' || shortTitle.style.display !== '' || shortTitle.style.webkitLineClamp !== '3')
+	throw new Error('Short TouchGUI title was resized or its layout styles were not restored');
+var longTitle = {clientWidth: 120, style: {fontSize: '', display: '', webkitLineClamp: '3'}};
+Object.defineProperty(longTitle, 'scrollHeight', {get: function() {
+	var size = parseFloat(this.style.fontSize) || 18;
+	return size > 14 ? size * 1.12 * 4 : size * 1.12 * 3;
+}});
+fitChannelLabel({querySelector: function() { return longTitle; }});
+if(longTitle.style.fontSize !== '14px' || longTitle.style.display !== '' || longTitle.style.webkitLineClamp !== '3')
+	throw new Error('Long TouchGUI title did not shrink only enough to fit within three lines: ' + longTitle.style.fontSize);
 simple.channels = [
 	{node: '30000'}, {node: '2000'}, {node: '30000'},
 	{node: '1999'}, {node: '3000000'}, {node: '2001'}
@@ -232,7 +257,7 @@ overflow:hidden;
 text-overflow:clip;
 }
 '''
-        new_responsive_css = '''/* AllScan Mods: Responsive TouchGUI metadata readability v1.27. */
+        new_responsive_css = '''/* AllScan Mods: Responsive TouchGUI label auto-fit v1.28. */
 .channel-btn {
 column-gap:4px;
 }
@@ -240,30 +265,38 @@ column-gap:4px;
 container-type:inline-size;
 }
 .channel-label {
-font-size:clamp(12px, 12cqi, 16px);
+font-size:18px;
+line-height:1.12;
 }
 .channel-meta {
-font-size:clamp(10px, 10cqi, 12px);
+font-size:14px;
 line-height:1.1;
 white-space:nowrap;
 overflow:hidden;
 text-overflow:clip;
 transform-origin:center;
 }
+@media (max-width:700px) {
+.channel-label { font-size:16px; }
+}
+@media (max-height:430px) {
+.channel-label { font-size:15px; }
+.channel-meta { font-size:12px; }
+}
 '''
         current_css = css.read_text(encoding="utf-8")
         assert current_css.count(new_responsive_css) == 1
         css.write_text(current_css.replace(new_responsive_css, old_responsive_css, 1), encoding="utf-8")
         js_text = js.read_text(encoding="utf-8")
-        js_text = re.sub(r"(?ms)^function fitChannelMeta\(button\) \{.*?^window\.addEventListener\('resize', fitTouchguiCardMeta\);\n?", "", js_text, count=1)
-        js_text = js_text.replace("\t\trequestAnimationFrame(function() { fitChannelMeta(btn); });\n", "")
+        js_text = re.sub(r"(?ms)^function fitChannelMeta\(button\) \{.*?^window\.addEventListener\('resize', fitTouchguiCardText\);\n?", "", js_text, count=1)
+        js_text = js_text.replace("\t\trequestAnimationFrame(function() {\n\t\t\tfitChannelMeta(btn);\n\t\t\tfitChannelLabel(btn);\n\t\t});\n", "")
         assert "function fitChannelMeta(button)" not in js_text
         js.write_text(js_text, encoding="utf-8")
         subprocess.run(["python3", str(PATCHER), str(js), str(css)], check=True)
         upgraded_js = js.read_text(encoding="utf-8")
         upgraded_css = css.read_text(encoding="utf-8")
         assert upgraded_js.count("function fitChannelMeta(button)") == 1
-        assert "requestAnimationFrame(function() { fitChannelMeta(btn); });" in upgraded_js
+        assert "requestAnimationFrame(function() {\n\t\t\tfitChannelMeta(btn);\n\t\t\tfitChannelLabel(btn);\n\t\t});" in upgraded_js
         assert upgraded_css.count(new_responsive_css) == 1
         assert "Responsive TouchGUI card labels and fitted one-line metadata v1.24" not in upgraded_css
         assert "Responsive TouchGUI card spacing v1.25" not in upgraded_css
@@ -317,6 +350,54 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         assert migrated_css.count(new_responsive_css) == 1
         assert "Responsive TouchGUI card spacing v1.25" not in migrated_css
         assert "Math.max(minFontSize" in migrated_js
+
+        v127_css = temp / "v127.css"
+        v127_responsive_css = '''/* AllScan Mods: Responsive TouchGUI metadata readability v1.27. */
+.channel-btn {
+column-gap:4px;
+}
+.channel-content {
+container-type:inline-size;
+}
+.channel-label {
+font-size:clamp(12px, 12cqi, 16px);
+}
+.channel-meta {
+font-size:clamp(10px, 10cqi, 12px);
+line-height:1.1;
+white-space:nowrap;
+overflow:hidden;
+text-overflow:clip;
+transform-origin:center;
+}
+'''
+        v127_css.write_text(current_css.replace(new_responsive_css, v127_responsive_css, 1), encoding="utf-8")
+        v127_js = temp / "v127.js"
+        legacy_v127_fit = r'''function fitChannelMeta(button) {
+	var meta = button.querySelector('.channel-meta');
+	if(!meta || !meta.clientWidth)
+		return;
+	meta.style.fontSize = '';
+	meta.style.transform = '';
+	var textWidth = meta.scrollWidth;
+	if(textWidth > meta.clientWidth) {
+		var fontSize = parseFloat(window.getComputedStyle(meta).fontSize);
+		var minFontSize = Math.max(10, fontSize * 0.9);
+		meta.style.fontSize = Math.max(minFontSize, fontSize * meta.clientWidth / textWidth) + 'px';
+		textWidth = meta.scrollWidth;
+		if(textWidth > meta.clientWidth)
+			meta.style.transform = 'scaleX(' + (meta.clientWidth / textWidth * 0.96) + ')';
+	}
+}
+function fitTouchguiCardMeta() {
+	document.querySelectorAll('.channel-btn').forEach(fitChannelMeta);
+}
+window.addEventListener('resize', fitTouchguiCardMeta);'''
+        v127_js.write_text(js_text.replace("function formatTouchguiStatusMessage(msg)", legacy_v127_fit + "\nfunction formatTouchguiStatusMessage(msg)"), encoding="utf-8")
+        subprocess.run(["python3", str(PATCHER), str(v127_js), str(v127_css)], check=True)
+        assert "Responsive TouchGUI label auto-fit v1.28" in v127_css.read_text(encoding="utf-8")
+        assert "function fitChannelLabel(button)" in v127_js.read_text(encoding="utf-8")
+        assert v127_js.read_text(encoding="utf-8").count("requestAnimationFrame(function()") == 1
 
         prior_markers = (
             "TouchGUI activity colors, Rx%/LCnt, and centered status footer v1.11.",
