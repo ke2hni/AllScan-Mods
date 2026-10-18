@@ -14,8 +14,8 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.29" in text, installer
-        assert "Responsive TouchGUI label auto-fit v1.29" in text, installer
+        assert "TouchGUI activity colors mod version: v1.30" in text, installer
+        assert "Responsive TouchGUI label auto-fit v1.30" in text, installer
         assert "window.matchMedia && window.matchMedia('(orientation: portrait)').matches" in text, installer
         assert "apply_touchgui_activity_live" in text, installer
         assert "TOUCHGUI_ACTIVITY_PATCH" in text, installer
@@ -27,6 +27,7 @@ def main():
         assert "channel-side" in text, installer
         assert "function fitChannelLabel(button)" in text, installer
         assert "function fitTouchguiCardText()" in text, installer
+        assert "var scaleFactor = isPortrait ? 0.90 : 0.96;" in text, installer
         assert "simple.txTim[node] = now" in text, installer
         assert "responseData.retcode == 429" in text, installer
         assert "convertActivityRange(2 * rxPct, 10, 30)" in text, installer
@@ -61,6 +62,7 @@ def main():
         assert "function fitChannelMeta(button)" in patched_js
         assert "meta.scrollWidth" in patched_js and "meta.clientWidth" in patched_js
         assert "var minFontSize = isPortrait ? 10 : Math.max(12, fontSize * 0.9);" in patched_js
+        assert "var scaleFactor = isPortrait ? 0.90 : 0.96;" in patched_js
         assert "meta.style.transform = 'scaleX('" in patched_js
         assert "function fitChannelLabel(button)" in patched_js
         assert "var minFontSize = Math.min(12, fontSize);" in patched_js
@@ -81,7 +83,7 @@ def main():
         assert "padding:1px 4px;\nborder-radius:8px;" in patched_css
         assert "min-height:86px;\npadding:8px;" in patched_css
         assert "TouchGUI centered card text v1.17" in patched_css
-        assert "Responsive TouchGUI label auto-fit v1.29" in patched_css
+        assert "Responsive TouchGUI label auto-fit v1.30" in patched_css
         assert "font-size:18px;\nline-height:1.12;" in patched_css
         assert "font-size:14px;\nline-height:1.1;" in patched_css
         assert "@media (max-width:700px) {\n.channel-label { font-size:16px; }\n}" in patched_css
@@ -162,7 +164,7 @@ if(parseFloat(fittedMeta.style.fontSize) !== 12.6 || fittedMeta.style.transform 
 var portraitMeta = {clientWidth: 50, scrollWidth: 100, style: {fontSize: '', transform: ''}};
 window.matchMedia = function(query) { return {matches: query === '(orientation: portrait)'}; };
 fitChannelMeta({querySelector: function() { return portraitMeta; }});
-if(parseFloat(portraitMeta.style.fontSize) !== 10)
+if(parseFloat(portraitMeta.style.fontSize) !== 10 || portraitMeta.style.transform !== 'scaleX(0.45)')
 	throw new Error('Portrait metadata did not use its 10px minimum: ' + portraitMeta.style.fontSize);
 var shortTitle = {clientWidth: 120, style: {fontSize: '', display: '', webkitLineClamp: '3'}, scrollHeight: 60};
 fitChannelLabel({querySelector: function() { return shortTitle; }});
@@ -264,7 +266,7 @@ overflow:hidden;
 text-overflow:clip;
 }
 '''
-        new_responsive_css = '''/* AllScan Mods: Responsive TouchGUI label auto-fit v1.29. */
+        new_responsive_css = '''/* AllScan Mods: Responsive TouchGUI label auto-fit v1.30. */
 .channel-btn {
 column-gap:4px;
 }
@@ -402,18 +404,32 @@ function fitTouchguiCardMeta() {
 window.addEventListener('resize', fitTouchguiCardMeta);'''
         v127_js.write_text(js_text.replace("function formatTouchguiStatusMessage(msg)", legacy_v127_fit + "\nfunction formatTouchguiStatusMessage(msg)"), encoding="utf-8")
         subprocess.run(["python3", str(PATCHER), str(v127_js), str(v127_css)], check=True)
-        assert "Responsive TouchGUI label auto-fit v1.29" in v127_css.read_text(encoding="utf-8")
+        assert "Responsive TouchGUI label auto-fit v1.30" in v127_css.read_text(encoding="utf-8")
         assert "function fitChannelLabel(button)" in v127_js.read_text(encoding="utf-8")
         assert v127_js.read_text(encoding="utf-8").count("requestAnimationFrame(function()") == 1
 
+        v129_js = temp / "v129.js"
+        v129_css = temp / "v129.css"
+        old_scale_block = "\t\tif(textWidth > meta.clientWidth) {\n\t\t\tvar scaleFactor = isPortrait ? 0.90 : 0.96;\n\t\t\tmeta.style.transform = 'scaleX(' + (meta.clientWidth / textWidth * scaleFactor) + ')';\n\t\t}"
+        prior_scale_line = "\t\tif(textWidth > meta.clientWidth)\n\t\t\tmeta.style.transform = 'scaleX(' + (meta.clientWidth / textWidth * 0.96) + ')';"
+        v129_js.write_text(patched_js.replace(old_scale_block, prior_scale_line, 1), encoding="utf-8")
+        v129_css.write_text(patched_css.replace(new_responsive_css, new_responsive_css.replace("v1.30", "v1.29", 1), 1), encoding="utf-8")
+        subprocess.run(["python3", str(PATCHER), str(v129_js), str(v129_css)], check=True)
+        migrated_js = v129_js.read_text(encoding="utf-8")
+        assert "var scaleFactor = isPortrait ? 0.90 : 0.96;" in migrated_js
+        assert "Responsive TouchGUI label auto-fit v1.30" in v129_css.read_text(encoding="utf-8")
+        migrated_v129 = (v129_js.read_bytes(), v129_css.read_bytes())
+        subprocess.run(["python3", str(PATCHER), str(v129_js), str(v129_css)], check=True)
+        assert migrated_v129 == (v129_js.read_bytes(), v129_css.read_bytes()), "v1.29 migration was not idempotent"
+
         v128_css = temp / "v128.css"
-        v128_css.write_text(patched_css.replace(new_responsive_css, new_responsive_css.replace("v1.29", "v1.28", 1), 1), encoding="utf-8")
+        v128_css.write_text(patched_css.replace(new_responsive_css, new_responsive_css.replace("v1.30", "v1.28", 1), 1), encoding="utf-8")
         v128_js = temp / "v128.js"
         old_meta_fit = "\t\tvar isPortrait = window.matchMedia && window.matchMedia('(orientation: portrait)').matches;\n\t\tvar minFontSize = isPortrait ? 10 : Math.max(12, fontSize * 0.9);"
         v128_js.write_text(patched_js.replace(old_meta_fit, "\t\tvar minFontSize = Math.max(12, fontSize * 0.9);", 1), encoding="utf-8")
         subprocess.run(["python3", str(PATCHER), str(v128_js), str(v128_css)], check=True)
         assert "var minFontSize = isPortrait ? 10 : Math.max(12, fontSize * 0.9);" in v128_js.read_text(encoding="utf-8")
-        assert "Responsive TouchGUI label auto-fit v1.29" in v128_css.read_text(encoding="utf-8")
+        assert "Responsive TouchGUI label auto-fit v1.30" in v128_css.read_text(encoding="utf-8")
         migrated_v128 = (v128_js.read_bytes(), v128_css.read_bytes())
         subprocess.run(["python3", str(PATCHER), str(v128_js), str(v128_css)], check=True)
         assert migrated_v128 == (v128_js.read_bytes(), v128_css.read_bytes()), "v1.28 migration was not idempotent"

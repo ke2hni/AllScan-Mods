@@ -55,11 +55,12 @@ def main():
             and "@media (max-width:380px)" in css
             and "white-space:normal; overflow:visible; overflow-wrap:anywhere; min-width:0;" in css
             and "TouchGUI centered card text v1.17" in css
-            and "Responsive TouchGUI label auto-fit v1.29" in css
+            and "Responsive TouchGUI label auto-fit v1.30" in css
             and "function fitChannelMeta(button)" in js
             and "function fitChannelLabel(button)" in js
             and "function fitTouchguiCardText()" in js
             and "window.matchMedia('(orientation: portrait)')" in js
+            and "var scaleFactor = isPortrait ? 0.90 : 0.96;" in js
             and "TouchGUI matching callsign removal v1.18" in js):
         print("TouchGUI activity, statistics, and card layout are already applied.")
         return
@@ -311,8 +312,10 @@ function channelLabel(channel) {
 		var minFontSize = isPortrait ? 10 : Math.max(12, fontSize * 0.9);
 		meta.style.fontSize = Math.max(minFontSize, fontSize * meta.clientWidth / textWidth) + 'px';
 		textWidth = meta.scrollWidth;
-		if(textWidth > meta.clientWidth)
-			meta.style.transform = 'scaleX(' + (meta.clientWidth / textWidth * 0.96) + ')';
+		if(textWidth > meta.clientWidth) {
+			var scaleFactor = isPortrait ? 0.90 : 0.96;
+			meta.style.transform = 'scaleX(' + (meta.clientWidth / textWidth * scaleFactor) + ')';
+		}
 	}
 }
 function fitChannelLabel(button) {
@@ -359,13 +362,13 @@ window.addEventListener('resize', fitTouchguiCardText);'''
     elif js.count("function fitChannelLabel(button)") != 1 or "function fitTouchguiCardText()" not in js:
         raise SystemExit("ERROR: TouchGUI card title sizing helper is ambiguous; no files changed.")
 
-    portrait_check = "window.matchMedia && window.matchMedia('(orientation: portrait)').matches"
-    if portrait_check not in js:
-        fit_pattern = re.compile(r"(?ms)^function fitChannelMeta\(button\) \{.*?^\}")
+    if "var scaleFactor = isPortrait ? 0.90 : 0.96;" not in js:
+        fit_pattern = re.compile(r"(?ms)^function fitChannelMeta\(button\) \{.*?^}")
         fits = list(fit_pattern.finditer(js))
         if (len(fits) != 1 or "meta.scrollWidth" not in fits[0].group(0)
                 or "meta.clientWidth" not in fits[0].group(0)
                 or not any(item in fits[0].group(0) for item in (
+                    "var minFontSize = isPortrait ? 10 : Math.max(12, fontSize * 0.9);",
                     "var minFontSize = Math.max(12, fontSize * 0.9);",
                     "var minFontSize = Math.max(10, fontSize * 0.9);",
                 ))):
@@ -695,7 +698,7 @@ overflow-wrap:anywhere;
     if ".simple-footer #statmsg { grid-column:1 / -1; text-align:center; }" not in css:
         css = css.rstrip() + "\n" + center_footer_css
 
-    responsive_card_css = '''/* AllScan Mods: Responsive TouchGUI label auto-fit v1.29. */
+    responsive_card_css = '''/* AllScan Mods: Responsive TouchGUI label auto-fit v1.30. */
 .channel-btn {
 column-gap:4px;
 }
@@ -722,6 +725,7 @@ transform-origin:center;
 .channel-meta { font-size:12px; }
 }
 '''
+    old_responsive_card_css_v129 = responsive_card_css.replace('v1.30', 'v1.29', 1)
     old_responsive_card_css_v128 = '''/* AllScan Mods: Responsive TouchGUI label auto-fit v1.28. */
 .channel-btn {
 column-gap:4px;
@@ -819,8 +823,10 @@ overflow:hidden;
 text-overflow:clip;
 }
 '''
-    if "Responsive TouchGUI label auto-fit v1.29" not in css:
-        if css.count(old_responsive_card_css_v128) == 1:
+    if "Responsive TouchGUI label auto-fit v1.30" not in css:
+        if css.count(old_responsive_card_css_v129) == 1:
+            css = css.replace(old_responsive_card_css_v129, responsive_card_css, 1)
+        elif css.count(old_responsive_card_css_v128) == 1:
             css = css.replace(old_responsive_card_css_v128, responsive_card_css, 1)
         elif css.count(old_responsive_card_css_v127) == 1:
             css = css.replace(old_responsive_card_css_v127, responsive_card_css, 1)
@@ -846,7 +852,7 @@ text-overflow:clip;
             or "channel-side" not in js
             or ".channel-side" not in css
             or "TouchGUI centered card text v1.17" not in css
-            or "Responsive TouchGUI label auto-fit v1.29" not in css):
+            or "Responsive TouchGUI label auto-fit v1.30" not in css):
         raise SystemExit("ERROR: TouchGUI activity patch validation failed; no files changed.")
     js_path.write_text(js, encoding="utf-8")
     css_path.write_text(css, encoding="utf-8")
