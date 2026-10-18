@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.37
+# TouchGUI activity colors mod version: v1.38
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -86,8 +86,8 @@ fi
 
 
 favorite_editor_label_present() {
-    grep -Fq 'AllScan Mods: 33-character call-sign-free Favorites editor label v1.37.' "$VIEW_FILE" &&
-    grep -Fq 'Call-sign-free Favorites editor value v1.37.' "$FAVS_UTILS_FILE" &&
+    grep -Fq '<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.38. -->' "$VIEW_FILE" &&
+    grep -Fq 'Call-sign-free Favorites editor value v1.38.' "$FAVS_UTILS_FILE" &&
     grep -Fq 'maxlength="33"' "$VIEW_FILE" &&
     grep -Fq 'no more than 33 plain-text characters' "$INDEX_FILE" &&
     grep -Fq 'newLabel.length > 33' "$JS_FILE"

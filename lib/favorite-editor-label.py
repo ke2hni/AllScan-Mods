@@ -25,13 +25,22 @@ def main() -> None:
     js = js_path.read_text(encoding="utf-8")
     favs = favs_path.read_text(encoding="utf-8")
 
-    marker = "// AllScan Mods: 33-character call-sign-free Favorites editor label v1.37."
-    fav_marker = "// AllScan Mods: Call-sign-free Favorites editor value v1.37."
+    marker = "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.38. -->"
+    old_marker = "// AllScan Mods: 33-character call-sign-free Favorites editor label v1.37."
+    fav_marker = "// AllScan Mods: Call-sign-free Favorites editor value v1.38."
+    old_fav_marker = "// AllScan Mods: Call-sign-free Favorites editor value v1.37."
     if marker in view and fav_marker in favs:
         print("Favorites editor label changes are already applied.")
         return
-    if marker in view or fav_marker in favs:
-        raise SystemExit("ERROR: Existing Favorites editor label patch is incomplete; no files changed.")
+    if old_marker in view and old_fav_marker in favs:
+        view = view.replace(old_marker, marker, 1)
+        favs = favs.replace(old_fav_marker, fav_marker, 1)
+        view_path.write_text(view, encoding="utf-8")
+        favs_path.write_text(favs, encoding="utf-8")
+        print("Favorites editor marker updated without changing the label behavior.")
+        return
+    if marker in view or fav_marker in favs or old_marker in view or old_fav_marker in favs:
+        raise SystemExit("ERROR: Existing Favorites editor label patch is incomplete; no files were written.")
 
     # The editor gets the cleaned favorite text before AllScan adds the callsign
     # for the main-table display and before its 33-character table truncation.
@@ -41,7 +50,7 @@ def main() -> None:
     favs = favs.replace(
         insertion,
         insertion
-        + "\t\t// AllScan Mods: Call-sign-free Favorites editor value v1.37.\n"
+        + "\t\t// AllScan Mods: Call-sign-free Favorites editor value v1.38.\n"
         + "\t\t$editName = substr($name, 0, 33);\n",
         1,
     )

@@ -46,7 +46,7 @@ function buildFavList($favs) {
 
 
 def main() -> None:
-    with tempfile.TemporaryDirectory(prefix="favorite-editor-v137-") as folder:
+    with tempfile.TemporaryDirectory(prefix="favorite-editor-v138-") as folder:
         temp = Path(folder)
         files = {
             "index.php": INDEX,
@@ -72,9 +72,35 @@ def main() -> None:
         assert "$editName = substr($name, 0, 33);" in favs
         assert "$favList[] = [$n, $f->node, $name, $desc, $loc, NBSP, NBSP, $editName];" in favs
         assert "&hellip;" not in after_first["viewUtils.php"].decode()
-    print("PASS: editor patch uses one shared, callsign-free label capped at 33 characters.")
+        assert "// AllScan Mods: 33-character" not in view
+        assert "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.38. -->" in view
+
+        # Simulate an installed v1.37 editor where the marker was rendered as dialog text.
+        old_view = view.replace(
+            "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.38. -->",
+            "// AllScan Mods: 33-character call-sign-free Favorites editor label v1.37.",
+            1,
+        )
+        old_favs = favs.replace(
+            "Call-sign-free Favorites editor value v1.38.",
+            "Call-sign-free Favorites editor value v1.37.",
+            1,
+        )
+        (temp / "viewUtils.php").write_text(old_view, encoding="utf-8")
+        (temp / "favsUtils.php").write_text(old_favs, encoding="utf-8")
+        index_before = (temp / "index.php").read_bytes()
+        js_before = (temp / "main.js").read_bytes()
+        subprocess.run(["python3", str(PATCHER), *args], check=True)
+        migrated_view = (temp / "viewUtils.php").read_text(encoding="utf-8")
+        migrated_favs = (temp / "favsUtils.php").read_text(encoding="utf-8")
+        assert "// AllScan Mods: 33-character" not in migrated_view
+        assert "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.38. -->" in migrated_view
+        assert "Call-sign-free Favorites editor value v1.38." in migrated_favs
+        assert (temp / "index.php").read_bytes() == index_before
+        assert (temp / "main.js").read_bytes() == js_before
+    print("PASS: editor patch uses one shared, call-sign-free label capped at 33 characters.")
     print("PASS: empty labels remain valid for callsign-only favorites; server and browser enforce the same maximum.")
-    print("PASS: helper is idempotent and preserves the existing main-table name field.")
+    print("PASS: dialog marker is hidden, and installed v1.37 markers migrate without changing label behavior.")
 
 
 if __name__ == "__main__":
