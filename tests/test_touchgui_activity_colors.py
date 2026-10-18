@@ -14,8 +14,8 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.25" in text, installer
-        assert "Responsive TouchGUI card spacing v1.25" in text, installer
+        assert "TouchGUI activity colors mod version: v1.26" in text, installer
+        assert "Responsive TouchGUI metadata readability v1.26" in text, installer
         assert "apply_touchgui_activity_live" in text, installer
         assert "TOUCHGUI_ACTIVITY_PATCH" in text, installer
         assert "activity.rxPct" in text and "activity.linkCnt" in text, installer
@@ -57,6 +57,8 @@ def main():
         assert "number < 3000000" in patched_js
         assert "function fitChannelMeta(button)" in patched_js
         assert "meta.scrollWidth" in patched_js and "meta.clientWidth" in patched_js
+        assert "var minFontSize = Math.max(10, fontSize * 0.9);" in patched_js
+        assert "meta.style.transform = 'scaleX('" in patched_js
         assert "requestAnimationFrame(function() { fitChannelMeta(btn); });" in patched_js
         assert patched_js.count("function fitChannelMeta(button)") == 1
         assert "simple.txTim[node] = now" in patched_js
@@ -72,8 +74,9 @@ def main():
         assert "padding:1px 4px;\nborder-radius:8px;" in patched_css
         assert "min-height:86px;\npadding:8px;" in patched_css
         assert "TouchGUI centered card text v1.17" in patched_css
-        assert "Responsive TouchGUI card spacing v1.25" in patched_css
-        assert "font-size:clamp(8px, 8cqi, 12px);" in patched_css
+        assert "Responsive TouchGUI metadata readability v1.26" in patched_css
+        assert "font-size:clamp(10px, 10cqi, 12px);" in patched_css
+        assert "transform-origin:center;" in patched_css
         assert "column-gap:4px;" in patched_css
         assert "min-width:48px;" in patched_css
         assert "white-space:nowrap;\noverflow:hidden;\ntext-overflow:clip;" in patched_css
@@ -137,10 +140,10 @@ cardLabel = channelLabel({node: '512511', call: 'GB3CR', label: 'GB3CR 123456789
 if(cardLabel.length > 33 || cardLabel.charAt(cardLabel.length - 1) !== '…')
 	throw new Error('TouchGUI card title did not fit within 33 characters: ' + cardLabel);
 window.getComputedStyle = function() { return {fontSize: '12px'}; };
-var fittedMeta = {clientWidth: 90, scrollWidth: 100, style: {fontSize: ''}};
+var fittedMeta = {clientWidth: 90, scrollWidth: 100, style: {fontSize: '', transform: ''}};
 fitChannelMeta({querySelector: function() { return fittedMeta; }});
-if(parseFloat(fittedMeta.style.fontSize) > 10.3 || parseFloat(fittedMeta.style.fontSize) < 10)
-	throw new Error('TouchGUI metadata did not shrink to fit its actual text width: ' + fittedMeta.style.fontSize);
+if(parseFloat(fittedMeta.style.fontSize) < 10.7 || fittedMeta.style.transform !== 'scaleX(0.864)')
+	throw new Error('TouchGUI metadata size/readability fallback was incorrect: ' + fittedMeta.style.fontSize + ', ' + fittedMeta.style.transform);
 simple.channels = [
 	{node: '30000'}, {node: '2000'}, {node: '30000'},
 	{node: '1999'}, {node: '3000000'}, {node: '2001'}
@@ -229,7 +232,48 @@ overflow:hidden;
 text-overflow:clip;
 }
 '''
-        new_responsive_css = '''/* AllScan Mods: Responsive TouchGUI card spacing v1.25. */
+        new_responsive_css = '''/* AllScan Mods: Responsive TouchGUI metadata readability v1.26. */
+.channel-btn {
+column-gap:4px;
+}
+.channel-content {
+container-type:inline-size;
+}
+.channel-label {
+font-size:clamp(12px, 12cqi, 16px);
+}
+.channel-meta {
+font-size:clamp(10px, 10cqi, 12px);
+line-height:1.1;
+white-space:nowrap;
+overflow:hidden;
+text-overflow:clip;
+transform-origin:center;
+}
+'''
+        current_css = css.read_text(encoding="utf-8")
+        assert current_css.count(new_responsive_css) == 1
+        css.write_text(current_css.replace(new_responsive_css, old_responsive_css, 1), encoding="utf-8")
+        js_text = js.read_text(encoding="utf-8")
+        js_text = re.sub(r"(?ms)^function fitChannelMeta\(button\) \{.*?^window\.addEventListener\('resize', fitTouchguiCardMeta\);\n?", "", js_text, count=1)
+        js_text = js_text.replace("\t\trequestAnimationFrame(function() { fitChannelMeta(btn); });\n", "")
+        assert "function fitChannelMeta(button)" not in js_text
+        js.write_text(js_text, encoding="utf-8")
+        subprocess.run(["python3", str(PATCHER), str(js), str(css)], check=True)
+        upgraded_js = js.read_text(encoding="utf-8")
+        upgraded_css = css.read_text(encoding="utf-8")
+        assert upgraded_js.count("function fitChannelMeta(button)") == 1
+        assert "requestAnimationFrame(function() { fitChannelMeta(btn); });" in upgraded_js
+        assert upgraded_css.count(new_responsive_css) == 1
+        assert "Responsive TouchGUI card labels and fitted one-line metadata v1.24" not in upgraded_css
+        assert "Responsive TouchGUI card spacing v1.25" not in upgraded_css
+        assert "white-space:nowrap;\noverflow:hidden;\ntext-overflow:clip;" in upgraded_css
+        upgraded = (js.read_bytes(), css.read_bytes())
+        subprocess.run(["python3", str(PATCHER), str(js), str(css)], check=True)
+        assert upgraded == (js.read_bytes(), css.read_bytes()), "v1.23 CSS upgrade was not idempotent"
+
+        v125_css = temp / "v125.css"
+        v125_css.write_text(current_css.replace(old_responsive_css, '''/* AllScan Mods: Responsive TouchGUI card spacing v1.25. */
 .channel-btn {
 column-gap:4px;
 }
@@ -249,26 +293,15 @@ white-space:nowrap;
 overflow:hidden;
 text-overflow:clip;
 }
-'''
-        current_css = css.read_text(encoding="utf-8")
-        assert current_css.count(new_responsive_css) == 1
-        css.write_text(current_css.replace(new_responsive_css, old_responsive_css, 1), encoding="utf-8")
-        js_text = js.read_text(encoding="utf-8")
-        js_text = re.sub(r"(?ms)^function fitChannelMeta\(button\) \{.*?^window\.addEventListener\('resize', fitTouchguiCardMeta\);\n?", "", js_text, count=1)
-        js_text = js_text.replace("\t\trequestAnimationFrame(function() { fitChannelMeta(btn); });\n", "")
-        assert "function fitChannelMeta(button)" not in js_text
-        js.write_text(js_text, encoding="utf-8")
-        subprocess.run(["python3", str(PATCHER), str(js), str(css)], check=True)
-        upgraded_js = js.read_text(encoding="utf-8")
-        upgraded_css = css.read_text(encoding="utf-8")
-        assert upgraded_js.count("function fitChannelMeta(button)") == 1
-        assert "requestAnimationFrame(function() { fitChannelMeta(btn); });" in upgraded_js
-        assert upgraded_css.count(new_responsive_css) == 1
-        assert "Responsive TouchGUI card labels and fitted one-line metadata v1.24" not in upgraded_css
-        assert "white-space:nowrap;\noverflow:hidden;\ntext-overflow:clip;" in upgraded_css
-        upgraded = (js.read_bytes(), css.read_bytes())
-        subprocess.run(["python3", str(PATCHER), str(js), str(css)], check=True)
-        assert upgraded == (js.read_bytes(), css.read_bytes()), "v1.23 CSS upgrade was not idempotent"
+''', 1), encoding="utf-8")
+        v125_js = temp / "v125.js"
+        v125_js.write_text(js_text, encoding="utf-8")
+        subprocess.run(["python3", str(PATCHER), str(v125_js), str(v125_css)], check=True)
+        migrated_css = v125_css.read_text(encoding="utf-8")
+        migrated_js = v125_js.read_text(encoding="utf-8")
+        assert migrated_css.count(new_responsive_css) == 1
+        assert "Responsive TouchGUI card spacing v1.25" not in migrated_css
+        assert "Math.max(minFontSize" in migrated_js
 
         prior_markers = (
             "TouchGUI activity colors, Rx%/LCnt, and centered status footer v1.11.",

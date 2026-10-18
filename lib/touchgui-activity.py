@@ -55,8 +55,9 @@ def main():
             and "@media (max-width:380px)" in css
             and "white-space:normal; overflow:visible; overflow-wrap:anywhere; min-width:0;" in css
             and "TouchGUI centered card text v1.17" in css
-            and "Responsive TouchGUI card spacing v1.25" in css
+            and "Responsive TouchGUI metadata readability v1.26" in css
             and "function fitChannelMeta(button)" in js
+            and "var minFontSize = Math.max(10, fontSize * 0.9);" in js
             and "TouchGUI matching callsign removal v1.18" in js):
         print("TouchGUI activity, statistics, and card layout are already applied.")
         return
@@ -291,10 +292,15 @@ function channelLabel(channel) {
 	if(!meta || !meta.clientWidth)
 		return;
 	meta.style.fontSize = '';
+	meta.style.transform = '';
 	var textWidth = meta.scrollWidth;
 	if(textWidth > meta.clientWidth) {
 		var fontSize = parseFloat(window.getComputedStyle(meta).fontSize);
-		meta.style.fontSize = (fontSize * meta.clientWidth / textWidth * 0.95) + 'px';
+		var minFontSize = Math.max(10, fontSize * 0.9);
+		meta.style.fontSize = Math.max(minFontSize, fontSize * meta.clientWidth / textWidth) + 'px';
+		textWidth = meta.scrollWidth;
+		if(textWidth > meta.clientWidth)
+			meta.style.transform = 'scaleX(' + (meta.clientWidth / textWidth * 0.96) + ')';
 	}
 }
 function fitTouchguiCardMeta() {
@@ -305,6 +311,28 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         js = channel_label_pattern.sub(lambda match: match.group(0) + "\n" + meta_fit_func, js, count=1)
     elif js.count("function fitChannelMeta(button)") != 1:
         raise SystemExit("ERROR: TouchGUI metadata sizing helper is ambiguous; no files changed.")
+    elif "var minFontSize = Math.max(10, fontSize * 0.9);" not in js:
+        old_meta_fit_func = r'''function fitChannelMeta(button) {
+	var meta = button.querySelector('.channel-meta');
+	if(!meta || !meta.clientWidth)
+		return;
+	meta.style.fontSize = '';
+	var textWidth = meta.scrollWidth;
+	if(textWidth > meta.clientWidth) {
+		var fontSize = parseFloat(window.getComputedStyle(meta).fontSize);
+		meta.style.fontSize = Math.max(10, fontSize * 0.9) + 'px';
+		textWidth = meta.scrollWidth;
+		if(textWidth > meta.clientWidth)
+			meta.style.transform = 'scaleX(' + (meta.clientWidth / textWidth * 0.96) + ')';
+	}
+}
+function fitTouchguiCardMeta() {
+	document.querySelectorAll('.channel-btn').forEach(fitChannelMeta);
+}
+window.addEventListener('resize', fitTouchguiCardMeta);'''
+        if js.count(old_meta_fit_func) != 1:
+            raise SystemExit("ERROR: Existing TouchGUI metadata sizing helper is unexpected; no files changed.")
+        js = js.replace(old_meta_fit_func, meta_fit_func, 1)
 
     formatter = r'''function formatTouchguiStatusMessage(msg) {
 	if(typeof msg !== 'string' || msg.indexOf('ASL Ver:') !== 0)
@@ -628,7 +656,26 @@ overflow-wrap:anywhere;
     if ".simple-footer #statmsg { grid-column:1 / -1; text-align:center; }" not in css:
         css = css.rstrip() + "\n" + center_footer_css
 
-    responsive_card_css = '''/* AllScan Mods: Responsive TouchGUI card spacing v1.25. */
+    responsive_card_css = '''/* AllScan Mods: Responsive TouchGUI metadata readability v1.26. */
+.channel-btn {
+column-gap:4px;
+}
+.channel-content {
+container-type:inline-size;
+}
+.channel-label {
+font-size:clamp(12px, 12cqi, 16px);
+}
+.channel-meta {
+font-size:clamp(10px, 10cqi, 12px);
+line-height:1.1;
+white-space:nowrap;
+overflow:hidden;
+text-overflow:clip;
+transform-origin:center;
+}
+'''
+    old_responsive_card_css_v125 = '''/* AllScan Mods: Responsive TouchGUI card spacing v1.25. */
 .channel-btn {
 column-gap:4px;
 }
@@ -679,8 +726,10 @@ overflow:hidden;
 text-overflow:clip;
 }
 '''
-    if "Responsive TouchGUI card spacing v1.25" not in css:
-        if css.count(old_responsive_card_css_v124) == 1:
+    if "Responsive TouchGUI metadata readability v1.26" not in css:
+        if css.count(old_responsive_card_css_v125) == 1:
+            css = css.replace(old_responsive_card_css_v125, responsive_card_css, 1)
+        elif css.count(old_responsive_card_css_v124) == 1:
             css = css.replace(old_responsive_card_css_v124, responsive_card_css, 1)
         elif css.count(old_responsive_card_css) == 1:
             css = css.replace(old_responsive_card_css, responsive_card_css, 1)
@@ -700,7 +749,7 @@ text-overflow:clip;
             or "channel-side" not in js
             or ".channel-side" not in css
             or "TouchGUI centered card text v1.17" not in css
-            or "Responsive TouchGUI card spacing v1.25" not in css):
+            or "Responsive TouchGUI metadata readability v1.26" not in css):
         raise SystemExit("ERROR: TouchGUI activity patch validation failed; no files changed.")
     js_path.write_text(js, encoding="utf-8")
     css_path.write_text(css, encoding="utf-8")
