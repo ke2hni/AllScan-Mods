@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.30
+# TouchGUI activity colors mod version: v1.31
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -274,7 +274,9 @@ touchgui_activity_present() {
     grep -Fq '.channel-side' "$SIMPLE_CSS_FILE" &&
     grep -Fq '.channel-content' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'TouchGUI centered card text v1.17' "$SIMPLE_CSS_FILE" &&
-    grep -Fq 'Responsive TouchGUI label auto-fit v1.30' "$SIMPLE_CSS_FILE" &&
+    grep -Fq 'Responsive TouchGUI label auto-fit v1.31' "$SIMPLE_CSS_FILE" &&
+    grep -Fq '@media (orientation: portrait)' "$SIMPLE_CSS_FILE" &&
+    grep -Fq 'left:-1.5ch;' "$SIMPLE_CSS_FILE" &&
     grep -Fq "window.matchMedia && window.matchMedia('(orientation: portrait)').matches" "$SIMPLE_JS_FILE" &&
     grep -Fq 'var scaleFactor = isPortrait ? 0.90 : 0.96;' "$SIMPLE_JS_FILE" &&
     ! grep -Fq '.channel-btn[data-activity="active"]' "$SIMPLE_CSS_FILE" &&
