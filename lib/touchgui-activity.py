@@ -55,7 +55,7 @@ def main():
             and "@media (max-width:380px)" in css
             and "white-space:normal; overflow:visible; overflow-wrap:anywhere; min-width:0;" in css
             and "TouchGUI centered card text v1.17" in css
-            and "Responsive TouchGUI metadata readability v1.26" in css
+            and "Responsive TouchGUI metadata readability v1.27" in css
             and "function fitChannelMeta(button)" in js
             and "var minFontSize = Math.max(10, fontSize * 0.9);" in js
             and "TouchGUI matching callsign removal v1.18" in js):
@@ -312,27 +312,18 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
     elif js.count("function fitChannelMeta(button)") != 1:
         raise SystemExit("ERROR: TouchGUI metadata sizing helper is ambiguous; no files changed.")
     elif "var minFontSize = Math.max(10, fontSize * 0.9);" not in js:
-        old_meta_fit_func = r'''function fitChannelMeta(button) {
-	var meta = button.querySelector('.channel-meta');
-	if(!meta || !meta.clientWidth)
-		return;
-	meta.style.fontSize = '';
-	var textWidth = meta.scrollWidth;
-	if(textWidth > meta.clientWidth) {
-		var fontSize = parseFloat(window.getComputedStyle(meta).fontSize);
-		meta.style.fontSize = Math.max(10, fontSize * 0.9) + 'px';
-		textWidth = meta.scrollWidth;
-		if(textWidth > meta.clientWidth)
-			meta.style.transform = 'scaleX(' + (meta.clientWidth / textWidth * 0.96) + ')';
-	}
-}
-function fitTouchguiCardMeta() {
-	document.querySelectorAll('.channel-btn').forEach(fitChannelMeta);
-}
-window.addEventListener('resize', fitTouchguiCardMeta);'''
-        if js.count(old_meta_fit_func) != 1:
+        old_meta_fit_pattern = re.compile(
+            r"(?s)function fitChannelMeta\(button\) \{.*?"
+            r"function fitTouchguiCardMeta\(\) \{.*?"
+            r"window\.addEventListener\('resize', fitTouchguiCardMeta\);"
+        )
+        old_meta_fit_matches = list(old_meta_fit_pattern.finditer(js))
+        if (len(old_meta_fit_matches) != 1
+                or "meta.scrollWidth" not in old_meta_fit_matches[0].group(0)
+                or "meta.clientWidth" not in old_meta_fit_matches[0].group(0)
+                or "meta.style.fontSize" not in old_meta_fit_matches[0].group(0)):
             raise SystemExit("ERROR: Existing TouchGUI metadata sizing helper is unexpected; no files changed.")
-        js = js.replace(old_meta_fit_func, meta_fit_func, 1)
+        js = old_meta_fit_pattern.sub(lambda _: meta_fit_func, js, count=1)
 
     formatter = r'''function formatTouchguiStatusMessage(msg) {
 	if(typeof msg !== 'string' || msg.indexOf('ASL Ver:') !== 0)
@@ -656,7 +647,7 @@ overflow-wrap:anywhere;
     if ".simple-footer #statmsg { grid-column:1 / -1; text-align:center; }" not in css:
         css = css.rstrip() + "\n" + center_footer_css
 
-    responsive_card_css = '''/* AllScan Mods: Responsive TouchGUI metadata readability v1.26. */
+    responsive_card_css = '''/* AllScan Mods: Responsive TouchGUI metadata readability v1.27. */
 .channel-btn {
 column-gap:4px;
 }
@@ -726,7 +717,7 @@ overflow:hidden;
 text-overflow:clip;
 }
 '''
-    if "Responsive TouchGUI metadata readability v1.26" not in css:
+    if "Responsive TouchGUI metadata readability v1.27" not in css:
         if css.count(old_responsive_card_css_v125) == 1:
             css = css.replace(old_responsive_card_css_v125, responsive_card_css, 1)
         elif css.count(old_responsive_card_css_v124) == 1:
@@ -749,7 +740,7 @@ text-overflow:clip;
             or "channel-side" not in js
             or ".channel-side" not in css
             or "TouchGUI centered card text v1.17" not in css
-            or "Responsive TouchGUI metadata readability v1.26" not in css):
+            or "Responsive TouchGUI metadata readability v1.27" not in css):
         raise SystemExit("ERROR: TouchGUI activity patch validation failed; no files changed.")
     js_path.write_text(js, encoding="utf-8")
     css_path.write_text(css, encoding="utf-8")

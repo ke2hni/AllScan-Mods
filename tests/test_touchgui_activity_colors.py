@@ -14,8 +14,8 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.26" in text, installer
-        assert "Responsive TouchGUI metadata readability v1.26" in text, installer
+        assert "TouchGUI activity colors mod version: v1.27" in text, installer
+        assert "Responsive TouchGUI metadata readability v1.27" in text, installer
         assert "apply_touchgui_activity_live" in text, installer
         assert "TOUCHGUI_ACTIVITY_PATCH" in text, installer
         assert "activity.rxPct" in text and "activity.linkCnt" in text, installer
@@ -74,7 +74,7 @@ def main():
         assert "padding:1px 4px;\nborder-radius:8px;" in patched_css
         assert "min-height:86px;\npadding:8px;" in patched_css
         assert "TouchGUI centered card text v1.17" in patched_css
-        assert "Responsive TouchGUI metadata readability v1.26" in patched_css
+        assert "Responsive TouchGUI metadata readability v1.27" in patched_css
         assert "font-size:clamp(10px, 10cqi, 12px);" in patched_css
         assert "transform-origin:center;" in patched_css
         assert "column-gap:4px;" in patched_css
@@ -232,7 +232,7 @@ overflow:hidden;
 text-overflow:clip;
 }
 '''
-        new_responsive_css = '''/* AllScan Mods: Responsive TouchGUI metadata readability v1.26. */
+        new_responsive_css = '''/* AllScan Mods: Responsive TouchGUI metadata readability v1.27. */
 .channel-btn {
 column-gap:4px;
 }
@@ -295,7 +295,22 @@ text-overflow:clip;
 }
 ''', 1), encoding="utf-8")
         v125_js = temp / "v125.js"
-        v125_js.write_text(js_text, encoding="utf-8")
+        legacy_meta_fit = r'''function fitChannelMeta(button) {
+	var meta = button.querySelector('.channel-meta');
+	if(!meta || !meta.clientWidth)
+		return;
+	meta.style.fontSize = '';
+	var textWidth = meta.scrollWidth;
+	if(textWidth > meta.clientWidth) {
+		var fontSize = parseFloat(window.getComputedStyle(meta).fontSize);
+		meta.style.fontSize = (fontSize * meta.clientWidth / textWidth * 0.95) + 'px';
+	}
+}
+function fitTouchguiCardMeta() {
+	document.querySelectorAll('.channel-btn').forEach(fitChannelMeta);
+}
+window.addEventListener('resize', fitTouchguiCardMeta);'''
+        v125_js.write_text(js_text.replace("function formatTouchguiStatusMessage(msg)", legacy_meta_fit + "\nfunction formatTouchguiStatusMessage(msg)"), encoding="utf-8")
         subprocess.run(["python3", str(PATCHER), str(v125_js), str(v125_css)], check=True)
         migrated_css = v125_css.read_text(encoding="utf-8")
         migrated_js = v125_js.read_text(encoding="utf-8")

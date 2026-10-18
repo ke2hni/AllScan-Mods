@@ -67,7 +67,7 @@ AllScan's Description and Location columns remain sourced from the AllStarLink d
 - Preserves the existing TouchGUI connection border and footer layout. Other status messages remain unchanged.
 - The TouchGUI card title removes the AllScan-reported callsign only when it appears as a matching whole token in the favorite label, then displays the remaining text up to 33 characters. If that leaves no title, the card uses the node description/location, then the node number. The main Favorites table is unchanged.
 - An optional TouchGUI card label overrides the automatic card title for that favorite only. An empty label retains the existing automatic title.
-- The AllScan JavaScript retains the `v1.18` callsign-removal marker, and TouchGUI CSS carries the responsive card layout marker. Both shell installers show a standalone `v1.26` tag near the top. The editor uses AllScan's node-cleaned name before the table shortens it, strips a previously saved literal `&hellip;`, and leaves the table display unchanged. This prevents the editor from resaving the appended node number repeatedly. The installer upgrades known Mods TouchGUI versions v1.05-v1.18 with timestamped backups and migrates the v1.19-v1.25 favorite-editor states and v1.19-v1.25 TouchGUI layouts in place.
+- The AllScan JavaScript retains the `v1.18` callsign-removal marker, and TouchGUI CSS carries the responsive card layout marker. Both shell installers show a standalone `v1.27` tag near the top. The editor uses AllScan's node-cleaned name before the table shortens it, strips a previously saved literal `&hellip;`, and leaves the table display unchanged. This prevents the editor from resaving the appended node number repeatedly. The installer upgrades known Mods TouchGUI versions v1.05-v1.18 with timestamped backups and migrates the v1.19-v1.25 favorite-editor states and v1.19-v1.25 TouchGUI layouts in place.
 - TouchGUI card labels and their node/callsign metadata use responsive text sizing. The metadata stays on one line and keeps at least 90% of its responsive font size; centered horizontal fitting handles any remaining overflow. This prevents different callsign glyphs from clipping or increasing card height. The maximum 33-character card title scales with the available card text width while preserving word wrapping.
 - Favorite-editor guidance is separated from the field labels and shown in a compact, higher-contrast text style.
 - Applies to TouchGUI on AllScan v1.02, v1.03, and v1.04. AllScan v1.01 has no TouchGUI.
@@ -350,7 +350,8 @@ The selected entry is not a standard adjacent `label[]` and `cmd[] = "rpt cmd %n
 | AllScan Mods v1.23 | Superseded before node testing; not installed |
 | AllScan Mods v1.24 | User visual review approved the card text sizing; reported card-column gap and editor-help sizing issues |
 | AllScan Mods v1.25 | Tighter TouchGUI card column spacing and smaller Favorites editor guidance; user reported node/callsign metadata became too small |
-| AllScan Mods v1.26 | Restore readable node/callsign sizing, shrink by at most 10%, then use centered horizontal fitting if needed; `pi4test` visual review pending |
+| AllScan Mods v1.26 | User test found the v1.25 metadata helper did not match the migration pattern; installer stopped safely without changes |
+| AllScan Mods v1.27 | Restore readable node/callsign sizing and migrate recognized prior helper structures; `pi4test` visual review pending |
 
 The editor, layout, Save & Close workflow, validation, backups, Add/Delete controls, connection controls, Rx%/LCnt sorting, and Disconnect before Monitor behavior were browser-tested before consolidation.
 
