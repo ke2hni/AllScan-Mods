@@ -44,7 +44,7 @@ Never restore an older `.before-allscan-mods-*` backup onto a newer upstream ins
 - Validates the edited INI and restores its backup automatically if validation fails.
 - Rejects zero, non-numeric, and out-of-range order values; no favorite is discarded when positions conflict.
 
-AllScan's Description and Location columns remain sourced from the AllStarLink database. The editor changes only the favorite's node number and friendly label. Its prefilled label uses the complete main-page Name value before the table shortens long text; the table display stays unchanged and `&hellip;` is never added to the editable value.
+AllScan's Description and Location columns remain sourced from the AllStarLink database. The editor changes only the favorite's node number and friendly label. Its prefilled label comes directly from the favorite file, preserving the exact full label; the table display stays unchanged and `&hellip;` is never added to the editable value.
 
 ### Disconnect before Monitor
 
@@ -63,7 +63,7 @@ AllScan's Description and Location columns remain sourced from the AllStarLink d
 - Places the favorite number at the upper left, with the Rx% and LCnt values stacked below it without labels to save card space. Rx values include the `%` sign. All three color fields have rounded corners. The Rx% and LCnt value text and badges are slightly larger, with compact line spacing. Card labels and metadata share a constrained, centered text column; long labels wrap within the existing three-line limit, and metadata keeps its existing one-line ellipsis. Laptop labels use the same 16px size as phone labels. Card sizing rules and the favorite-number badge size remain unchanged. Each item in that left strip uses the same color and threshold as its matching Favorites-table column: `#` for Tx/active state, green for Rx%, and blue for LCnt. Stats no longer recolor the full card; existing TouchGUI selected/connection styling remains.
 - Preserves the existing TouchGUI connection border and footer layout. Other status messages remain unchanged.
 - The TouchGUI card title removes the AllScan-reported callsign only when it appears as a matching whole token in the favorite label, then displays the remaining text up to 33 characters. If that leaves no title, the card uses the node description/location, then the node number. The main Favorites table is unchanged.
-- The AllScan JavaScript carries the `v1.18` callsign-removal marker; the CSS retains the `v1.17` layout marker. Both shell installers show a standalone `v1.19` tag near the top. They preserve the unshortened main-page Name for the editor while leaving the table display unchanged, and upgrade known Mods TouchGUI versions v1.05-v1.17 with timestamped backups.
+- The AllScan JavaScript carries the `v1.18` callsign-removal marker; the CSS retains the `v1.17` layout marker. Both shell installers show a standalone `v1.20` tag near the top. The editor receives the original favorite-file label while the table display remains unchanged. The installer upgrades known Mods TouchGUI versions v1.05-v1.17 with timestamped backups and migrates the v1.19 favorite-editor patch in place.
 - Applies to TouchGUI on AllScan v1.02, v1.03, and v1.04. AllScan v1.01 has no TouchGUI.
 - On the integrated v1.03/v1.04 path, the installer creates dedicated timestamped TouchGUI backups; the legacy v1.02/pre-integration v1.03 path uses the installer's existing full-file backups.
 
@@ -331,7 +331,8 @@ The selected entry is not a standard adjacent `label[]` and `cmd[] = "rpt cmd %n
 | TouchGUI v1.16 | Workspace regression tests passed; test-node testing pending |
 | TouchGUI v1.17 | Workspace regression tests passed; test-node testing pending |
 | TouchGUI v1.18 | Workspace regression tests passed; test-node testing pending |
-| AllScan Mods v1.19 | Local regression tests and simulated v1.04 install/idempotence passed; `pi4test` pending |
+| AllScan Mods v1.19 | Installed on `pi4test`; editor still showed `&hellip;`, prompting the v1.20 fix |
+| AllScan Mods v1.20 | Local regression tests and simulated v1.04 install/idempotence passed; `pi4test` testing pending |
 
 The editor, layout, Save & Close workflow, validation, backups, Add/Delete controls, connection controls, Rx%/LCnt sorting, and Disconnect before Monitor behavior were browser-tested before consolidation.
 
