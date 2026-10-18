@@ -62,7 +62,8 @@ AllScan's Description and Location columns remain sourced from the AllStarLink d
 - Polls unique public favorites one at a time in the displayed Favorites order. The existing 2-second minimum between requests and 30-second minimum refresh interval per node are retained, limiting one TouchGUI page to at most 30 statistics requests per minute. A JSON-level 429 response retries the same node after 15 seconds.
 - Places the favorite number at the upper left, with the Rx% and LCnt values stacked below it without labels to save card space. Rx values include the `%` sign. All three color fields have rounded corners. The Rx% and LCnt value text and badges are slightly larger, with compact line spacing. Card labels and metadata share a constrained, centered text column; long labels wrap within the existing three-line limit, and metadata keeps its existing one-line ellipsis. Laptop labels use the same 16px size as phone labels. Card sizing rules and the favorite-number badge size remain unchanged. Each item in that left strip uses the same color and threshold as its matching Favorites-table column: `#` for Tx/active state, green for Rx%, and blue for LCnt. Stats no longer recolor the full card; existing TouchGUI selected/connection styling remains.
 - Preserves the existing TouchGUI connection border and footer layout. Other status messages remain unchanged.
-- The AllScan JavaScript and CSS carry `v1.17` feature markers. Both shell installers show a standalone `v1.17` tag near the top and upgrade known Mods TouchGUI versions v1.05-v1.16 with timestamped backups.
+- The TouchGUI card title removes the AllScan-reported callsign only when it appears as a matching whole token in the favorite label, then displays the remaining text up to 33 characters. If that leaves no title, the card uses the node description/location, then the node number. The main Favorites table is unchanged.
+- The AllScan JavaScript carries the `v1.18` callsign-removal marker; the CSS retains the `v1.17` layout marker. Both shell installers show a standalone `v1.18` tag near the top and upgrade known Mods TouchGUI versions v1.05-v1.17 with timestamped backups.
 - Applies to TouchGUI on AllScan v1.02, v1.03, and v1.04. AllScan v1.01 has no TouchGUI.
 - On the integrated v1.03/v1.04 path, the installer creates dedicated timestamped TouchGUI backups; the legacy v1.02/pre-integration v1.03 path uses the installer's existing full-file backups.
 
@@ -327,6 +328,7 @@ The selected entry is not a standard adjacent `label[]` and `cmd[] = "rpt cmd %n
 | TouchGUI v1.15 | Workspace regression tests passed; test-node testing pending |
 | TouchGUI v1.16 | Workspace regression tests passed; test-node testing pending |
 | TouchGUI v1.17 | Workspace regression tests passed; test-node testing pending |
+| TouchGUI v1.18 | Workspace regression tests passed; test-node testing pending |
 
 The editor, layout, Save & Close workflow, validation, backups, Add/Delete controls, connection controls, Rx%/LCnt sorting, and Disconnect before Monitor behavior were browser-tested before consolidation.
 

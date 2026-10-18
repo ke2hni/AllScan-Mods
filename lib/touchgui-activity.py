@@ -13,8 +13,9 @@ def main():
     js = js_path.read_text(encoding="utf-8")
     css = css_path.read_text(encoding="utf-8")
 
-    marker = "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.17."
+    marker = "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.18."
     previous_markers = (
+        "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.17.",
         "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.16.",
         "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.15.",
         "// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and value-only statistics v1.14.",
@@ -53,7 +54,8 @@ def main():
             and "@media (max-width:430px)" in css
             and "@media (max-width:380px)" in css
             and "white-space:normal; overflow:visible; overflow-wrap:anywhere; min-width:0;" in css
-            and "TouchGUI centered card text v1.17" in css):
+            and "TouchGUI centered card text v1.17" in css
+            and "TouchGUI matching callsign removal v1.18" in js):
         print("TouchGUI activity, statistics, and card layout are already applied.")
         return
 
@@ -104,7 +106,7 @@ def main():
         js = js.replace(unload_marker, unload_marker + "\n\twindow.addEventListener('beforeunload', closeChannelStats);", 1)
 
     handler_marker = "function handleConnectionEvent(event) {"
-    handler = r'''// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.17.
+    handler = r'''// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.18.
 function getChannelStatsNodes() {
 	var nodes = [];
 	simple.channels.forEach(function(channel) {
@@ -238,6 +240,45 @@ function convertActivityRange(value, min, max) {
         if js.count(handler_marker) != 1:
             raise SystemExit("ERROR: Expected TouchGUI event-handler marker exactly once; no files changed.")
         js = js.replace(handler_marker, handler + handler_marker, 1)
+
+    channel_label_pattern = re.compile(r"(?m)^function channelLabel\(channel\) \{.*?^\}", re.DOTALL)
+    channel_label = r'''// AllScan Mods: TouchGUI matching callsign removal v1.18.
+function channelLabel(channel) {
+	var callsign = channel.call ? String(channel.call).trim() : '';
+	function cleanLabel(text) {
+		text = String(text || '');
+		if(channel.node) {
+			var nodePat = new RegExp('(^|[\\s,;:-]+)' + escapeRegExp(channel.node) + '([\\s,;:-]*$|(?=[\\s,;:-]+))', 'g');
+			text = text.replace(nodePat, function(match, prefix) {
+				return prefix && prefix.trim() ? prefix : '';
+			});
+		}
+		if(callsign) {
+			var callPat = new RegExp('(^|[\\s,;:.()]+)' + escapeRegExp(callsign) + '(?=$|[\\s,;:.()]+)', 'gi');
+			text = text.replace(callPat, function(match, prefix) {
+				return prefix && prefix.trim() ? prefix : '';
+			});
+		}
+		return text.replace(/\s{2,}/g, ' ').replace(/^[\s,;:.()]+|[\s,;:.()]+$/g, '').trim();
+	}
+	var label = cleanLabel(channel.label || channel.name || '');
+	if(!label)
+		label = cleanLabel(channel.desc);
+	if(!label)
+		label = cleanLabel(channel.loc);
+	if(label.length > 33)
+		label = label.slice(0, 32).replace(/[\s,;:.()]+$/g, '') + '…';
+	return label || channel.node || '';
+}'''
+    matches = list(channel_label_pattern.finditer(js))
+    if len(matches) == 1:
+        js = channel_label_pattern.sub(lambda _: channel_label, js, count=1)
+    elif not matches:
+        if js.count(handler_marker) != 1:
+            raise SystemExit("ERROR: Expected one TouchGUI channel-label insertion point; no files changed.")
+        js = js.replace(handler_marker, channel_label + "\n\n" + handler_marker, 1)
+    else:
+        raise SystemExit("ERROR: Expected the TouchGUI channel-label function exactly once; no files changed.")
 
     formatter = r'''function formatTouchguiStatusMessage(msg) {
 	if(typeof msg !== 'string' || msg.indexOf('ASL Ver:') !== 0)
@@ -450,6 +491,8 @@ grid-row:1 / span 3;
     )
     if previous_block:
         css = css.replace(previous_block, stats_css, 1)
+    elif stats_css in css:
+        pass
     elif v116_stats_css in css:
         css = css.replace(v116_stats_css, stats_css, 1)
     elif v115_stats_css in css:
@@ -565,6 +608,7 @@ overflow-wrap:anywhere;
             or "getChannelStatsNodes()" not in js
             or "button.style.backgroundColor = '';" not in js
             or "main-table color mapping and rounded value badges v1.17" not in css
+            or "TouchGUI matching callsign removal v1.18" not in js
             or '.channel-btn[data-activity="active"]' in css
             or "channel-side" not in js
             or ".channel-side" not in css

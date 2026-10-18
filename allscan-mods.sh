@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.17
+# TouchGUI activity colors mod version: v1.18
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -68,7 +68,8 @@ MODS_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 TOUCHGUI_ACTIVITY_PATCH=$MODS_DIR/lib/touchgui-activity.py
 
 touchgui_activity_present() {
-    grep -Fq 'AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.17.' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.18.' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'TouchGUI matching callsign removal v1.18' "$SIMPLE_JS_FILE" &&
     grep -Fq 'AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.17.' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'function formatTouchguiStatusMessage(msg)' "$SIMPLE_JS_FILE" &&
     grep -Fq 'function getChannelStats()' "$SIMPLE_JS_FILE" &&

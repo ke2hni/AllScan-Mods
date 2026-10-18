@@ -13,7 +13,7 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.17" in text, installer
+        assert "TouchGUI activity colors mod version: v1.18" in text, installer
         assert "apply_touchgui_activity_live" in text, installer
         assert "TOUCHGUI_ACTIVITY_PATCH" in text, installer
         assert "activity.rxPct" in text and "activity.linkCnt" in text, installer
@@ -40,7 +40,8 @@ def main():
         patched_js = js.read_text(encoding="utf-8")
         patched_css = css.read_text(encoding="utf-8")
         assert "getChannelStats()" in patched_js
-        assert "TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.17." in patched_js
+        assert "TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.18." in patched_js
+        assert "TouchGUI matching callsign removal v1.18" in patched_js
         assert "updateChannelActivity(stats)" in patched_js
         assert "function closeChannelStats()" in patched_js
         assert "function formatTouchguiStatusMessage(msg)" in patched_js
@@ -87,6 +88,9 @@ def main():
         assert "simple.txTim[node] = now" in patched_js
         runtime_js = temp / "runtime.js"
         runtime_js.write_text(patched_js + r'''
+function escapeRegExp(txt) {
+	return String(txt).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 var nowSeconds = 100;
 Date.now = function() { return nowSeconds * 1000; };
 var index = {style: {}};
@@ -102,6 +106,24 @@ var button = {
 		return null;
 	}
 };
+var cardLabel = channelLabel({node: '512511', call: 'GB3CR', label: 'GB3CR North Wales UK 512511', name: 'GB3CR'});
+if(cardLabel !== 'North Wales UK')
+	throw new Error('TouchGUI did not remove the exact ASTDB callsign from the card title: ' + cardLabel);
+cardLabel = channelLabel({node: '512511', call: 'GB3CR', label: 'GB3CR North Wales GB3CR UK 512511'});
+if(cardLabel !== 'North Wales UK')
+	throw new Error('TouchGUI did not remove each exact callsign token: ' + cardLabel);
+cardLabel = channelLabel({node: '512511', call: 'GB3CR', label: 'XGB3CR North Wales 512511'});
+if(cardLabel !== 'XGB3CR North Wales')
+	throw new Error('TouchGUI removed a callsign embedded in a different token: ' + cardLabel);
+cardLabel = channelLabel({node: '512511', call: 'GB3CR', label: 'GB3XX North Wales 512511'});
+if(cardLabel !== 'GB3XX North Wales')
+	throw new Error('TouchGUI removed a callsign that did not match AllScan data: ' + cardLabel);
+cardLabel = channelLabel({node: '512511', call: 'GB3CR', label: 'GB3CR 512511', desc: 'GB3CR Backup Repeater'});
+if(cardLabel !== 'Backup Repeater')
+	throw new Error('TouchGUI did not fall back to description after removing a callsign-only label: ' + cardLabel);
+cardLabel = channelLabel({node: '512511', call: 'GB3CR', label: 'GB3CR 12345678901234567890123456789012345 512511'});
+if(cardLabel.length > 33 || cardLabel.charAt(cardLabel.length - 1) !== '…')
+	throw new Error('TouchGUI card title did not fit within 33 characters: ' + cardLabel);
 simple.channels = [
 	{node: '30000'}, {node: '2000'}, {node: '30000'},
 	{node: '1999'}, {node: '3000000'}, {node: '2001'}
@@ -196,7 +218,7 @@ if(formatTouchguiStatusMessage('TouchGUI connected') !== 'TouchGUI connected')
             subprocess.run(["node", "--check", str(older_js)], check=True)
             upgraded_js = older_js.read_text(encoding="utf-8")
             upgraded_css = older_css.read_text(encoding="utf-8")
-            assert "rounded value badges v1.17" in upgraded_js
+            assert "rounded value badges v1.18" in upgraded_js
             assert "simple.txTim[node] = now" in upgraded_js
             assert "channel-side" in upgraded_js and ".channel-side" in upgraded_css
             assert '.channel-btn[data-activity="active"]' not in upgraded_css
@@ -214,7 +236,7 @@ if(formatTouchguiStatusMessage('TouchGUI connected') !== 'TouchGUI connected')
         subprocess.run(["node", "--check", str(v112_js)], check=True)
         upgraded_js = v112_js.read_text(encoding="utf-8")
         upgraded_css = v112_css.read_text(encoding="utf-8")
-        assert "rounded value badges v1.17" in upgraded_js
+        assert "rounded value badges v1.18" in upgraded_js
         assert "button.style.backgroundColor = '';" in upgraded_js
         assert '.channel-btn[data-activity="active"]' not in upgraded_css
         v112_upgraded = (v112_js.read_bytes(), v112_css.read_bytes())
@@ -229,7 +251,7 @@ if(formatTouchguiStatusMessage('TouchGUI connected') !== 'TouchGUI connected')
         subprocess.run(["node", "--check", str(v113_js)], check=True)
         upgraded_js = v113_js.read_text(encoding="utf-8")
         upgraded_css = v113_css.read_text(encoding="utf-8")
-        assert "rounded value badges v1.17" in upgraded_js
+        assert "rounded value badges v1.18" in upgraded_js
         assert "rounded value badges v1.17" in upgraded_css
         assert "Rx% —" not in upgraded_js and "LCnt —" not in upgraded_js
         assert "rx.textContent = hasRx ? String(activity.rxPct) + '%' : '—';" in upgraded_js
@@ -246,7 +268,7 @@ if(formatTouchguiStatusMessage('TouchGUI connected') !== 'TouchGUI connected')
         subprocess.run(["node", "--check", str(v114_js)], check=True)
         upgraded_js = v114_js.read_text(encoding="utf-8")
         upgraded_css = v114_css.read_text(encoding="utf-8")
-        assert "rounded value badges v1.17" in upgraded_js
+        assert "rounded value badges v1.18" in upgraded_js
         assert "rounded value badges v1.17" in upgraded_css
         assert "String(activity.rxPct) + '%'" in upgraded_js
         assert "border-radius:8px;" in upgraded_css
@@ -264,7 +286,7 @@ if(formatTouchguiStatusMessage('TouchGUI connected') !== 'TouchGUI connected')
         subprocess.run(["node", "--check", str(v116_js)], check=True)
         upgraded_js = v116_js.read_text(encoding="utf-8")
         upgraded_css = v116_css.read_text(encoding="utf-8")
-        assert "rounded value badges v1.17" in upgraded_js and "rounded value badges v1.17" in upgraded_css
+        assert "rounded value badges v1.18" in upgraded_js and "rounded value badges v1.17" in upgraded_css
         assert "TouchGUI centered card text v1.17" in upgraded_css
         assert "min-height:86px;\npadding:8px;" in upgraded_css
         assert ".channel-btn { min-height:82px; padding:7px; }" in upgraded_css
@@ -280,7 +302,7 @@ if(formatTouchguiStatusMessage('TouchGUI connected') !== 'TouchGUI connected')
         subprocess.run(["node", "--check", str(v115_js)], check=True)
         upgraded_js = v115_js.read_text(encoding="utf-8")
         upgraded_css = v115_css.read_text(encoding="utf-8")
-        assert "rounded value badges v1.17" in upgraded_js and "rounded value badges v1.17" in upgraded_css
+        assert "rounded value badges v1.18" in upgraded_js and "rounded value badges v1.17" in upgraded_css
         assert "font-size:12px;\nfont-weight:normal;\nline-height:1;" in upgraded_css
         assert "padding:1px 4px;\nborder-radius:8px;" in upgraded_css
         assert ".channel-stats { font-size:11px; }" in upgraded_css
@@ -313,7 +335,8 @@ if(formatTouchguiStatusMessage('TouchGUI connected') !== 'TouchGUI connected')
         current_source = current_js.read_text(encoding="utf-8")
         current_style = current_css.read_text(encoding="utf-8")
         assert 'class="channel-rx">—</span>' in current_source and 'class="channel-lcnt">—</span>' in current_source
-        assert "rounded value badges v1.17" in current_source
+        assert "rounded value badges v1.18" in current_source
+        assert "TouchGUI matching callsign removal v1.18" in current_source
         assert "border-radius:8px;" in current_style
         assert "activity.rxPct" in current_source and "activity.linkCnt" in current_source
         assert "grid-template-rows:auto;" in current_style
@@ -323,6 +346,19 @@ if(formatTouchguiStatusMessage('TouchGUI connected') !== 'TouchGUI connected')
         current = (current_js.read_bytes(), current_css.read_bytes())
         subprocess.run(["python3", str(PATCHER), str(current_js), str(current_css)], check=True)
         assert current == (current_js.read_bytes(), current_css.read_bytes()), "stats patch was not idempotent"
+
+        v117_js = temp / "v1.17.js"
+        v117_css = temp / "v1.17.css"
+        shutil.copy2(FIXTURES / "touchgui-installed-v1.17.js", v117_js)
+        shutil.copy2(FIXTURES / "touchgui-installed-v1.17.css", v117_css)
+        subprocess.run(["python3", str(PATCHER), str(v117_js), str(v117_css)], check=True)
+        subprocess.run(["node", "--check", str(v117_js)], check=True)
+        upgraded_v117 = (v117_js.read_bytes(), v117_css.read_bytes())
+        upgraded_v117_js = v117_js.read_text(encoding="utf-8")
+        assert "rounded value badges v1.18" in upgraded_v117_js
+        assert "TouchGUI matching callsign removal v1.18" in upgraded_v117_js
+        subprocess.run(["python3", str(PATCHER), str(v117_js), str(v117_css)], check=True)
+        assert upgraded_v117 == (v117_js.read_bytes(), v117_css.read_bytes()), "v1.17 upgrade was not idempotent"
 
     print("PASS: installers include the TouchGUI activity patch path.")
     print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, footer, compatibility upgrades, syntax, and repeat application.")
