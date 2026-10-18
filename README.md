@@ -67,7 +67,7 @@ AllScan's Description and Location columns remain sourced from the AllStarLink d
 - Preserves the existing TouchGUI connection border and footer layout. Other status messages remain unchanged.
 - The TouchGUI card title removes the AllScan-reported callsign only when it appears as a matching whole token in the favorite label, then displays the remaining text up to 33 characters. If that leaves no title, the card uses the node description/location, then the node number. The main Favorites table is unchanged.
 - An optional TouchGUI card label overrides the automatic card title for that favorite only. An empty label retains the existing automatic title.
-- The AllScan JavaScript retains the `v1.18` callsign-removal marker, and TouchGUI CSS carries the responsive card layout marker. Both shell installers show a standalone `v1.32` tag near the top. The editor uses AllScan's node-cleaned name before the table shortens it, strips a previously saved literal `&hellip;`, and leaves the table display unchanged. This prevents the editor from resaving the appended node number repeatedly. The installer upgrades known Mods TouchGUI versions v1.05-v1.18 with timestamped backups and migrates v1.19-v1.29 favorite-editor states and v1.19-v1.31 TouchGUI layouts in place.
+- The AllScan JavaScript retains the `v1.18` callsign-removal marker, and TouchGUI CSS carries the responsive card layout marker. Both shell installers show a standalone `v1.33` tag near the top. The editor uses AllScan's node-cleaned name before the table shortens it, strips a previously saved literal `&hellip;`, and leaves the table display unchanged. This prevents the editor from resaving the appended node number repeatedly. The installer upgrades known Mods TouchGUI versions v1.05-v1.18 with timestamped backups and migrates v1.19-v1.29 favorite-editor states and v1.19-v1.32 TouchGUI layouts in place.
 - TouchGUI card labels and their node/callsign metadata use responsive text sizing. The maximum 33-character card title fits within three lines without changing card dimensions. In portrait orientation only, the node/callsign metadata may shrink to 10px to fit its single line; the existing landscape sizing remains unchanged.
 - Favorite-editor guidance remains compact. The 33-character reminder appears below its input, and all four field titles are bold.
 - Applies to TouchGUI on AllScan v1.02, v1.03, and v1.04. AllScan v1.01 has no TouchGUI.
@@ -357,6 +357,7 @@ The selected entry is not a standard adjacent `label[]` and `cmd[] = "rpt cmd %n
 | AllScan Mods v1.30 | Added a portrait-only horizontal fitting margin; landscape fit is unchanged |
 | AllScan Mods v1.31 | Shifts the node/callsign line left by 1.5ch in portrait mode only |
 | AllScan Mods v1.32 | Makes the portrait node/callsign line measurable so the existing fit routine can prevent clipping |
+| AllScan Mods v1.33 | Adds portrait-only width compensation so shifting the node/callsign line left does not reduce space at its right edge |
 
 The editor, layout, Save & Close workflow, validation, backups, Add/Delete controls, connection controls, Rx%/LCnt sorting, and Disconnect before Monitor behavior were browser-tested before consolidation.
 

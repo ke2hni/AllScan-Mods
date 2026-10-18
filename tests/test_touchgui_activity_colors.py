@@ -14,8 +14,8 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.32" in text, installer
-        assert "Responsive TouchGUI label auto-fit v1.32" in text, installer
+        assert "TouchGUI activity colors mod version: v1.33" in text, installer
+        assert "Responsive TouchGUI label auto-fit v1.33" in text, installer
         assert "window.matchMedia && window.matchMedia('(orientation: portrait)').matches" in text, installer
         assert "apply_touchgui_activity_live" in text, installer
         assert "TOUCHGUI_ACTIVITY_PATCH" in text, installer
@@ -29,7 +29,7 @@ def main():
         assert "function fitTouchguiCardText()" in text, installer
         assert "var scaleFactor = isPortrait ? 0.90 : 0.96;" in text, installer
         assert "@media (orientation: portrait)" in text and "left:-1.5ch;" in text, installer
-        assert "display:block; width:100%; min-width:0;" in text, installer
+        assert "width:calc(100% + 1.5ch);" in text, installer
         assert "simple.txTim[node] = now" in text, installer
         assert "responseData.retcode == 429" in text, installer
         assert "convertActivityRange(2 * rxPct, 10, 30)" in text, installer
@@ -85,8 +85,8 @@ def main():
         assert "padding:1px 4px;\nborder-radius:8px;" in patched_css
         assert "min-height:86px;\npadding:8px;" in patched_css
         assert "TouchGUI centered card text v1.17" in patched_css
-        assert "Responsive TouchGUI label auto-fit v1.32" in patched_css
-        assert "@media (orientation: portrait) {\n.channel-meta { display:block; width:100%; min-width:0; position:relative; left:-1.5ch; }\n}" in patched_css
+        assert "Responsive TouchGUI label auto-fit v1.33" in patched_css
+        assert "@media (orientation: portrait) {\n.channel-meta { display:block; width:calc(100% + 1.5ch); min-width:0; position:relative; left:-1.5ch; }\n}" in patched_css
         assert "font-size:18px;\nline-height:1.12;" in patched_css
         assert "font-size:14px;\nline-height:1.1;" in patched_css
         assert "@media (max-width:700px) {\n.channel-label { font-size:16px; }\n}" in patched_css
@@ -269,7 +269,7 @@ overflow:hidden;
 text-overflow:clip;
 }
 '''
-        new_responsive_css = '''/* AllScan Mods: Responsive TouchGUI label auto-fit v1.32. */
+        new_responsive_css = '''/* AllScan Mods: Responsive TouchGUI label auto-fit v1.33. */
 .channel-btn {
 column-gap:4px;
 }
@@ -296,7 +296,7 @@ transform-origin:center;
 .channel-meta { font-size:12px; }
 }
 @media (orientation: portrait) {
-.channel-meta { display:block; width:100%; min-width:0; position:relative; left:-1.5ch; }
+.channel-meta { display:block; width:calc(100% + 1.5ch); min-width:0; position:relative; left:-1.5ch; }
 }
 '''
         current_css = css.read_text(encoding="utf-8")
@@ -410,20 +410,30 @@ function fitTouchguiCardMeta() {
 window.addEventListener('resize', fitTouchguiCardMeta);'''
         v127_js.write_text(js_text.replace("function formatTouchguiStatusMessage(msg)", legacy_v127_fit + "\nfunction formatTouchguiStatusMessage(msg)"), encoding="utf-8")
         subprocess.run(["python3", str(PATCHER), str(v127_js), str(v127_css)], check=True)
-        assert "Responsive TouchGUI label auto-fit v1.32" in v127_css.read_text(encoding="utf-8")
+        assert "Responsive TouchGUI label auto-fit v1.33" in v127_css.read_text(encoding="utf-8")
         assert "function fitChannelLabel(button)" in v127_js.read_text(encoding="utf-8")
         assert v127_js.read_text(encoding="utf-8").count("requestAnimationFrame(function()") == 1
 
         old_scale_block = "\t\tif(textWidth > meta.clientWidth) {\n\t\t\tvar scaleFactor = isPortrait ? 0.90 : 0.96;\n\t\t\tmeta.style.transform = 'scaleX(' + (meta.clientWidth / textWidth * scaleFactor) + ')';\n\t\t}"
         prior_scale_line = "\t\tif(textWidth > meta.clientWidth)\n\t\t\tmeta.style.transform = 'scaleX(' + (meta.clientWidth / textWidth * 0.96) + ')';"
-        portrait_rule = "@media (orientation: portrait) {\n.channel-meta { display:block; width:100%; min-width:0; position:relative; left:-1.5ch; }\n}\n"
+        portrait_rule = "@media (orientation: portrait) {\n.channel-meta { display:block; width:calc(100% + 1.5ch); min-width:0; position:relative; left:-1.5ch; }\n}\n"
+
+        v132_css = temp / "v132.css"
+        v132_css.write_text(patched_css.replace(new_responsive_css, new_responsive_css.replace("v1.33", "v1.32", 1).replace("width:calc(100% + 1.5ch); ", "width:100%; "), 1), encoding="utf-8")
+        v132_js = temp / "v132.js"
+        v132_js.write_text(patched_js, encoding="utf-8")
+        subprocess.run(["python3", str(PATCHER), str(v132_js), str(v132_css)], check=True)
+        assert "width:calc(100% + 1.5ch);" in v132_css.read_text(encoding="utf-8")
+        migrated_v132 = (v132_js.read_bytes(), v132_css.read_bytes())
+        subprocess.run(["python3", str(PATCHER), str(v132_js), str(v132_css)], check=True)
+        assert migrated_v132 == (v132_js.read_bytes(), v132_css.read_bytes()), "v1.32 migration was not idempotent"
 
         v131_css = temp / "v131.css"
-        v131_css.write_text(patched_css.replace(new_responsive_css, new_responsive_css.replace("v1.32", "v1.31", 1).replace("display:block; width:100%; min-width:0; ", ""), 1), encoding="utf-8")
+        v131_css.write_text(patched_css.replace(new_responsive_css, new_responsive_css.replace("v1.33", "v1.31", 1).replace("display:block; width:calc(100% + 1.5ch); min-width:0; ", ""), 1), encoding="utf-8")
         v131_js = temp / "v131.js"
         v131_js.write_text(patched_js, encoding="utf-8")
         subprocess.run(["python3", str(PATCHER), str(v131_js), str(v131_css)], check=True)
-        assert "display:block; width:100%; min-width:0;" in v131_css.read_text(encoding="utf-8")
+        assert "width:calc(100% + 1.5ch);" in v131_css.read_text(encoding="utf-8")
         migrated_v131 = (v131_js.read_bytes(), v131_css.read_bytes())
         subprocess.run(["python3", str(PATCHER), str(v131_js), str(v131_css)], check=True)
         assert migrated_v131 == (v131_js.read_bytes(), v131_css.read_bytes()), "v1.31 migration was not idempotent"
@@ -431,7 +441,7 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         v130_js = temp / "v130.js"
         v130_css = temp / "v130.css"
         v130_js.write_text(patched_js, encoding="utf-8")
-        v130_css.write_text(patched_css.replace(new_responsive_css, new_responsive_css.replace("v1.32", "v1.30", 1).replace(portrait_rule, ""), 1), encoding="utf-8")
+        v130_css.write_text(patched_css.replace(new_responsive_css, new_responsive_css.replace("v1.33", "v1.30", 1).replace(portrait_rule, ""), 1), encoding="utf-8")
         subprocess.run(["python3", str(PATCHER), str(v130_js), str(v130_css)], check=True)
         assert "left:-1.5ch;" in v130_css.read_text(encoding="utf-8")
         migrated_v130 = (v130_js.read_bytes(), v130_css.read_bytes())
@@ -441,7 +451,7 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         v129_js = temp / "v129.js"
         v129_css = temp / "v129.css"
         v129_js.write_text(patched_js.replace(old_scale_block, prior_scale_line, 1), encoding="utf-8")
-        v129_css.write_text(patched_css.replace(new_responsive_css, new_responsive_css.replace("v1.32", "v1.29", 1).replace(portrait_rule, ""), 1), encoding="utf-8")
+        v129_css.write_text(patched_css.replace(new_responsive_css, new_responsive_css.replace("v1.33", "v1.29", 1).replace(portrait_rule, ""), 1), encoding="utf-8")
         subprocess.run(["python3", str(PATCHER), str(v129_js), str(v129_css)], check=True)
         assert "left:-1.5ch;" in v129_css.read_text(encoding="utf-8")
         migrated_v129 = (v129_js.read_bytes(), v129_css.read_bytes())
@@ -449,13 +459,13 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         assert migrated_v129 == (v129_js.read_bytes(), v129_css.read_bytes()), "v1.29 migration was not idempotent"
 
         v128_css = temp / "v128.css"
-        v128_css.write_text(patched_css.replace(new_responsive_css, new_responsive_css.replace("v1.32", "v1.28", 1).replace(portrait_rule, ""), 1), encoding="utf-8")
+        v128_css.write_text(patched_css.replace(new_responsive_css, new_responsive_css.replace("v1.33", "v1.28", 1).replace(portrait_rule, ""), 1), encoding="utf-8")
         v128_js = temp / "v128.js"
         old_meta_fit = "\t\tvar isPortrait = window.matchMedia && window.matchMedia('(orientation: portrait)').matches;\n\t\tvar minFontSize = isPortrait ? 10 : Math.max(12, fontSize * 0.9);"
         v128_js.write_text(patched_js.replace(old_scale_block, prior_scale_line, 1).replace(old_meta_fit, "\t\tvar minFontSize = Math.max(12, fontSize * 0.9);", 1), encoding="utf-8")
         subprocess.run(["python3", str(PATCHER), str(v128_js), str(v128_css)], check=True)
         assert "var minFontSize = isPortrait ? 10 : Math.max(12, fontSize * 0.9);" in v128_js.read_text(encoding="utf-8")
-        assert "Responsive TouchGUI label auto-fit v1.32" in v128_css.read_text(encoding="utf-8")
+        assert "Responsive TouchGUI label auto-fit v1.33" in v128_css.read_text(encoding="utf-8")
         migrated_v128 = (v128_js.read_bytes(), v128_css.read_bytes())
         subprocess.run(["python3", str(PATCHER), str(v128_js), str(v128_css)], check=True)
         assert migrated_v128 == (v128_js.read_bytes(), v128_css.read_bytes()), "v1.28 migration was not idempotent"
