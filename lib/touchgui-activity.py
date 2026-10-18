@@ -55,9 +55,9 @@ def main():
             and "@media (max-width:380px)" in css
             and "white-space:normal; overflow:visible; overflow-wrap:anywhere; min-width:0;" in css
             and "TouchGUI centered card text v1.17" in css
-            and "Responsive TouchGUI label auto-fit v1.33" in css
+            and "Responsive TouchGUI label auto-fit v1.34" in css
             and "@media (orientation: portrait)" in css
-            and "display:block; width:calc(100% + 1.5ch); min-width:0;" in css
+            and "display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0;" in css
             and "left:-1.5ch;" in css
             and "function fitChannelMeta(button)" in js
             and "function fitChannelLabel(button)" in js
@@ -701,7 +701,7 @@ overflow-wrap:anywhere;
     if ".simple-footer #statmsg { grid-column:1 / -1; text-align:center; }" not in css:
         css = css.rstrip() + "\n" + center_footer_css
 
-    responsive_card_css = '''/* AllScan Mods: Responsive TouchGUI label auto-fit v1.33. */
+    responsive_card_css = '''/* AllScan Mods: Responsive TouchGUI label auto-fit v1.34. */
 .channel-btn {
 column-gap:4px;
 }
@@ -728,13 +728,14 @@ transform-origin:center;
 .channel-meta { font-size:12px; }
 }
 @media (orientation: portrait) {
-.channel-meta { display:block; width:calc(100% + 1.5ch); min-width:0; position:relative; left:-1.5ch; }
+.channel-meta { display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-1.5ch; }
 }
 '''
-    old_responsive_card_css_v132 = responsive_card_css.replace('v1.33', 'v1.32', 1).replace('width:calc(100% + 1.5ch); ', 'width:100%; ')
-    old_responsive_card_css_v131 = responsive_card_css.replace('v1.33', 'v1.31', 1).replace('display:block; width:calc(100% + 1.5ch); min-width:0; ', '')
-    old_responsive_card_css_v130 = responsive_card_css.replace('v1.33', 'v1.30', 1).replace('''@media (orientation: portrait) {\n.channel-meta { position:relative; left:-1.5ch; }\n}\n''', '')
-    old_responsive_card_css_v129 = responsive_card_css.replace('v1.33', 'v1.29', 1).replace('''@media (orientation: portrait) {\n.channel-meta { position:relative; left:-1.5ch; }\n}\n''', '')
+    old_responsive_card_css_v133 = responsive_card_css.replace('v1.34', 'v1.33', 1).replace('max-width:none; ', '')
+    old_responsive_card_css_v132 = responsive_card_css.replace('v1.34', 'v1.32', 1).replace('max-width:none; ', '').replace('width:calc(100% + 1.5ch); ', 'width:100%; ')
+    old_responsive_card_css_v131 = responsive_card_css.replace('v1.34', 'v1.31', 1).replace('display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; ', '')
+    old_responsive_card_css_v130 = responsive_card_css.replace('v1.34', 'v1.30', 1).replace('''@media (orientation: portrait) {\n.channel-meta { display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-1.5ch; }\n}\n''', '')
+    old_responsive_card_css_v129 = responsive_card_css.replace('v1.34', 'v1.29', 1).replace('''@media (orientation: portrait) {\n.channel-meta { display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-1.5ch; }\n}\n''', '')
     old_responsive_card_css_v128 = '''/* AllScan Mods: Responsive TouchGUI label auto-fit v1.28. */
 .channel-btn {
 column-gap:4px;
@@ -832,8 +833,10 @@ overflow:hidden;
 text-overflow:clip;
 }
 '''
-    if "Responsive TouchGUI label auto-fit v1.33" not in css:
-        if css.count(old_responsive_card_css_v132) == 1:
+    if "Responsive TouchGUI label auto-fit v1.34" not in css:
+        if css.count(old_responsive_card_css_v133) == 1:
+            css = css.replace(old_responsive_card_css_v133, responsive_card_css, 1)
+        elif css.count(old_responsive_card_css_v132) == 1:
             css = css.replace(old_responsive_card_css_v132, responsive_card_css, 1)
         elif css.count(old_responsive_card_css_v131) == 1:
             css = css.replace(old_responsive_card_css_v131, responsive_card_css, 1)
@@ -867,9 +870,9 @@ text-overflow:clip;
             or "channel-side" not in js
             or ".channel-side" not in css
             or "TouchGUI centered card text v1.17" not in css
-            or "Responsive TouchGUI label auto-fit v1.33" not in css
+            or "Responsive TouchGUI label auto-fit v1.34" not in css
             or "@media (orientation: portrait)" not in css
-            or "display:block; width:calc(100% + 1.5ch); min-width:0;" not in css
+            or "display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0;" not in css
             or "left:-1.5ch;" not in css):
         raise SystemExit("ERROR: TouchGUI activity patch validation failed; no files changed.")
     js_path.write_text(js, encoding="utf-8")
