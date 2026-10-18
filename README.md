@@ -2,14 +2,14 @@
 
 # AllScan Mods
 
-### Favorites editing, live Rx% / LCnt sorting, and safer monitoring for AllScan
+### TouchGUI activity and statistics, Rx% / LCnt sorting, and safer monitoring for AllScan
 
 ![Platform](https://img.shields.io/badge/Platform-AllStarLink%203-0b7285?style=for-the-badge)
 ![Debian](https://img.shields.io/badge/Debian-12%20%7C%2013-a81d33?style=for-the-badge&logo=debian&logoColor=white)
 ![AllScan](https://img.shields.io/badge/AllScan-v1.01%20%7C%20v1.02%20%7C%20v1.03%20%7C%20v1.04-2f9e44?style=for-the-badge)
 ![Installer](https://img.shields.io/badge/Installer-Idempotent-6741d9?style=for-the-badge)
 
-**AllScan Mods add a main-page Favorites editor, clickable sorting for the live `Rx%` and `LCnt` columns, and an independent Disconnect before Monitor option. Choose the Mods-only installer or the combined AllScan updater.**
+**AllScan Mods add TouchGUI activity colors and live `Rx%` / `LCnt` values, clickable sorting for those table columns on legacy releases, and an independent Disconnect before Monitor option. Choose the Mods-only installer or the combined AllScan updater.**
 
 </div>
 
@@ -20,11 +20,11 @@
 
 On October 14, 2026, David merged the dashboard and TouchGUI enhancements into the official [AllScan pull request #37](https://github.com/davidgsd/AllScan/pull/37). New AllScan installations containing these features **do not need the legacy Mods patch**.
 
-David released **AllScan v1.04 on 2026-10-14** with PR #37 integrated. Both installers recognize the integrated feature set and leave those changes intact. The TouchGUI remote-node activity colors are a separate AllScan Mods enhancement being tested against v1.04.
+David released **AllScan v1.04 on 2026-10-14** with PR #37 integrated. Both installers recognize the integrated feature set and leave the Favorites editor, table, and TouchGUI behavior from PR #37 intact. The TouchGUI activity colors and statistics display are separate AllScan Mods enhancements being tested against v1.04.
 
-The installers check the **full set of PR #37 features** on AllScan v1.03 or v1.04. When found, they skip the legacy dashboard modifications and check/apply the independent TouchGUI activity, statistics, and card-label enhancements. On v1.02 and pre-integration v1.03, the established legacy patch workflow remains in use and the TouchGUI enhancements are applied to staged files. AllScan v1.01 remains supported for existing Mods features but does not have TouchGUI, so it does not receive these enhancements. Unknown AllScan versions or unexpected v1.04 feature layouts are refused pending review.
+The installers check the **full set of PR #37 features** on AllScan v1.03 or v1.04. When found, they skip legacy dashboard modifications and check/apply the independent TouchGUI activity, statistics, and text-layout enhancements. The v1.04 Favorites editor remains the official single-field editor; the same AllScan name is used by the table and TouchGUI. On v1.02 and pre-integration v1.03, the established legacy compatibility patches remain in use. AllScan v1.01 remains supported for existing Mods features but does not have TouchGUI. Unknown AllScan versions or unexpected v1.04 feature layouts are refused pending review.
 
-Never restore an older `.before-allscan-mods-*` backup onto a newer upstream installation: those backups may remove David's integrated features or later fixes. Use the official AllScan updater to recover current upstream files.
+Never restore an older `.before-allscan-mods-*` backup onto a newer upstream installation: those backups may remove David's integrated features or later fixes. Use the official AllScan updater to recover current upstream files. If the earlier Mods-only TouchGUI Favorites-label experiment is still installed, restore/reinstall the matching official AllScan files before installing v1.36; the installer detects that state and stops without changing files.
 
 ## Features
 
@@ -35,10 +35,8 @@ Never restore an older `.before-allscan-mods-*` backup onto a newer upstream ins
 - Leaves **Local Mon** and **DTMF** available in their established positions.
 - Keeps **Permanent**, **Disconnect before Connect**, and **Disconnect before Monitor** together on one line.
 - Click a favorite's node number, then click **Edit Favorite**.
-- Edit the node number, AllScan friendly name, TouchGUI card label, and favorite order in one dialog.
-- Existing favorites prefill the AllScan name and the title currently shown on its TouchGUI card. Newly added favorites start with both name fields blank.
-- The AllScan name can stay blank when adding a favorite; AllScan then uses its existing AllStar database default. The optional TouchGUI label can be left blank to keep the automatic card title.
-- TouchGUI labels are limited to 33 plain-text characters and are saved with the favorite by node number, so inserting, deleting, reordering, or changing a node number keeps the label attached to the right favorite.
+- On AllScan v1.04, use David’s standard editor with one shared Friendly Name/Label field and the favorite order field.
+- Existing favorites prefill the shared name; newly added favorites use David’s standard default behavior. The TouchGUI card removes a matching callsign from that shared label and fits the displayed text to the card.
 - Edit the **favorite's order number** from the same dialog; moving a favorite inserts it at that position and shifts the other favorites automatically.
 - Use **Save & Close** to apply the edit or **Cancel** to leave the file unchanged.
 - Click outside the dialog or press Escape to close it.
@@ -47,7 +45,7 @@ Never restore an older `.before-allscan-mods-*` backup onto a newer upstream ins
 - Validates the edited INI and restores its backup automatically if validation fails.
 - Rejects zero, non-numeric, and out-of-range order values; no favorite is discarded when positions conflict.
 
-AllScan's Description and Location columns remain sourced from the AllStarLink database. The AllScan friendly name remains separate from the TouchGUI card label. The editor preserves the complete saved AllScan label; the table display stays unchanged and `&hellip;` is never added to the editable value.
+AllScan’s Description and Location columns remain sourced from the AllStarLink database. The Favorites name field is shared by both views; TouchGUI removes a matching callsign from its displayed copy and fits the card title to the available space.
 
 ### Disconnect before Monitor
 
@@ -66,10 +64,8 @@ AllScan's Description and Location columns remain sourced from the AllStarLink d
 - Places the favorite number at the upper left, with the Rx% and LCnt values stacked below it without labels to save card space. Rx values include the `%` sign. All three color fields have rounded corners. The Rx% and LCnt value text and badges are slightly larger, with compact line spacing. Card labels and metadata share a constrained, centered text column; long labels wrap within the existing three-line limit, and metadata keeps its existing one-line ellipsis. Laptop labels use the same 16px size as phone labels. Card sizing rules and the favorite-number badge size remain unchanged. Each item in that left strip uses the same color and threshold as its matching Favorites-table column: `#` for Tx/active state, green for Rx%, and blue for LCnt. Stats no longer recolor the full card; existing TouchGUI selected/connection styling remains.
 - Preserves the existing TouchGUI connection border and footer layout. Other status messages remain unchanged.
 - The TouchGUI card title removes the AllScan-reported callsign only when it appears as a matching whole token in the favorite label, then displays the remaining text up to 33 characters. If that leaves no title, the card uses the node description/location, then the node number. The main Favorites table is unchanged.
-- An optional TouchGUI card label overrides the automatic card title for that favorite only. An empty label retains the existing automatic title.
-- The AllScan JavaScript retains the `v1.18` callsign-removal marker, and TouchGUI CSS carries the responsive card layout marker. Both shell installers show a standalone `v1.35` tag near the top. The editor uses AllScan's node-cleaned name before the table shortens it, strips a previously saved literal `&hellip;`, and leaves the table display unchanged. This prevents the editor from resaving the appended node number repeatedly. The installer upgrades known Mods TouchGUI versions v1.05-v1.18 with timestamped backups and migrates v1.19-v1.29 favorite-editor states and v1.19-v1.34 TouchGUI layouts in place.
+- The AllScan JavaScript keeps the matching-callsign cleanup and responsive card text fitting. Both shell installers show a standalone `v1.36` tag near the top. The TouchGUI auto-fit behavior fits long card labels and metadata within the existing card dimensions; the portrait-only metadata adjustment preserves landscape sizing.
 - TouchGUI card labels and their node/callsign metadata use responsive text sizing. The maximum 33-character card title fits within three lines without changing card dimensions. In portrait orientation only, the node/callsign metadata may shrink to 10px to fit its single line; the existing landscape sizing remains unchanged.
-- Favorite-editor guidance remains compact. The 33-character reminder appears below its input, and all four field titles are bold.
 - Applies to TouchGUI on AllScan v1.02, v1.03, and v1.04. AllScan v1.01 has no TouchGUI.
 - On the integrated v1.03/v1.04 path, the installer creates dedicated timestamped TouchGUI backups; the legacy v1.02/pre-integration v1.03 path uses the installer's existing full-file backups.
 
@@ -140,12 +136,11 @@ cd /home/asl/AllScan-Mods && sudo ./allscan-mods.sh --allscan-dir /srv/http/alls
 The installer:
 
 - Supports AllScan v1.01 through v1.04. TouchGUI activity colors apply to v1.02-v1.04; v1.01 has no TouchGUI.
-- Adds editable TouchGUI card labels on AllScan v1.02-v1.04; v1.01 has no TouchGUI and retains its existing Favorites editor behavior.
 - Applies the legacy Mods to clean v1.01-v1.03 layouts; v1.04 uses PR #37 feature detection and the independent TouchGUI enhancement.
 - Upgrades an installation containing only the earlier Rx%/LCnt sorting modification.
 - Upgrades the previous combined Favorites editor/sorting package.
 - Recognizes installations containing the separately tested Disconnect before Monitor patch.
-- Detects when the legacy Mods and TouchGUI activity colors are already applied and avoids unnecessary changes or backups.
+- Detects when the legacy Mods and TouchGUI activity, statistics, and text layout are already applied and avoids unnecessary changes or backups.
 - Stages and validates changes before touching live files, then creates timestamped backups before applying them.
 - Stops if required upstream structures are missing or ambiguous.
 - Runs PHP syntax validation when PHP is installed.
@@ -159,10 +154,8 @@ The installer:
 - Automatically restores the backed-up files if applying the Mods fails after backups are created.
 - On v1.02 and v1.03, also backs up and patches `include/favsUtils.php`, where upstream builds Favorites rows.
 - On v1.02 and v1.03, also patches `css/simple.css` so the AllScan link remains visible in TouchGUI portrait mode; v1.01 is unchanged.
-- On v1.02-v1.04, applies the independent TouchGUI activity-color enhancement without removing or replacing upstream functionality.
-- On v1.02-v1.04, backs up and updates the Favorites editor and TouchGUI label data path as a reversible feature patch. Labels are stored as comments in the selected `favorites*.ini`, so AllScan's own Favorites parser ignores them.
+- On v1.02-v1.04, applies the independent TouchGUI activity, statistics, and text-layout enhancement without changing the official Favorites editor.
 - The TouchGUI enhancement helper is included at `lib/touchgui-activity.py`; keep it beside the installer directory when running either script.
-- The TouchGUI favorite-label helper is included at `lib/touchgui-favorite-labels.py`; keep it beside the installer directory when running either script.
 - Preserves v1.03's TouchGUI selected-favorites-file link behavior and its duplicate-favorite handling in upstream code.
 - At phone widths, including portrait mode, stacks the TouchGUI status and extra-connection panels so text and controls do not overlap or overflow.
 - On v1.02 and v1.03, adds a TouchGUI Disconnect before Connect toggle synchronized with the regular-page checkbox. Its selection persists across reloads and tabs in the same browser, keyed to the local node; the configured AllScan default seeds first use. v1.01 has no TouchGUI and retains the regular-page behavior.
@@ -216,11 +209,11 @@ The main-page statistics polling is unchanged. TouchGUI requests one unique publ
 
 1. Click an existing favorite's node number.
 2. Click **Edit Favorite**.
-3. Confirm that Node Number, Order, and Friendly Name/Label appear together.
-4. Confirm the TouchGUI card label is prefilled with the current card title and limited to 33 characters.
-5. Change either name, the node number, and/or order, then click **Save & Close**.
-6. Confirm that the selected favorite moves to the requested position and its TouchGUI label remains attached to that favorite.
-7. Reopen the editor and confirm both values load. Add a new favorite and confirm both name fields start blank; leave them blank and confirm AllScan keeps its usual ASTDB label and TouchGUI keeps its automatic title.
+3. Confirm that Node Number, Order, and the single Friendly Name/Label field appear.
+4. Confirm there is no separate TouchGUI label field and the shared name still displays cleanly on the card.
+5. Change the shared name, node number, and/or order, then click **Save & Close**.
+6. Confirm that the selected favorite moves to the requested position and the TouchGUI card uses the shared name.
+7. Reopen the editor and confirm the shared name remains. Add a favorite and confirm David’s default add/edit behavior is unchanged.
 
 ### Rx% / LCnt sorting
 
@@ -275,8 +268,6 @@ sudo cp -a /var/www/html/allscan/simple/index.php.before-allscan-mods-YYYYMMDD-H
 sudo cp -a /var/www/html/allscan/js/simple.js.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/js/simple.js
 ```
 
-The favorite-editor name fix has its own backup: `index.php` on v1.01 and `include/favsUtils.php` on v1.02-v1.04. Restore only the matching file backup printed by the installer if you need to undo this fix. Do not restore it after an official update or after upstream includes the same behavior.
-
 For integrated AllScan v1.03 or v1.04, the TouchGUI enhancement has its own JavaScript and CSS backups. Restore the matching pair printed by the installer:
 
 ```bash
@@ -284,8 +275,6 @@ sudo cp -a /var/www/html/allscan/js/simple.js.before-touchgui-activity-YYYYMMDD-
 ```
 
 Only restore these backups while the same AllScan version and files are still installed. If an official AllScan update has replaced these files or integrated the feature, do not restore the older backups; that could remove upstream changes. Reinstall or update AllScan through David's official installer instead.
-
-For the TouchGUI card-label feature on v1.03/v1.04, the installer prints backups for `index.php`, `include/viewUtils.php`, `js/main.js`, `include/favsUtils.php`, `simple/index.php`, and `js/simple.js`, each ending in `.before-touchgui-labels-YYYYMMDD-HHMMSS`. v1.23 and later also back up `css/main.css` with the same suffix for the editor guidance style. Restore the matching files only while the same AllScan version and source files remain installed. Do not restore them after David's updater changes AllScan or if official AllScan includes TouchGUI card labels. The node-keyed label comments in `favorites*.ini` are ignored by AllScan and can remain if you revert the code.
 
 To reverse an individual Favorite edit, copy its matching `.before-edit-YYYYMMDD-HHMMSS` backup over the active `favorites*.ini` file.
 
@@ -297,9 +286,9 @@ David's official updater may replace locally modified files. Before an installed
 sudo mv /var/www/html/allscan /var/www/html/allscan.failed-YYYYMMDD-HHMMSS && sudo cp -a /var/www/html/allscan.before-update-v1.01-YYYYMMDD-HHMMSS /var/www/html/allscan
 ```
 
-After an update, press **Ctrl+F5** and check the editor, sorting, Monitor-disconnect option, and TouchGUI activity colors, statistics, and footer. Run `allscan-mods.sh` again if you separately ran David's updater and only want to reapply Mods.
+After an update, press **Ctrl+F5** and check the standard one-field Favorites editor, sorting, Monitor-disconnect option, and TouchGUI activity colors, statistics, text layout, and footer. Run `allscan-mods.sh` again if you separately ran David's updater and only want to reapply Mods.
 
-The installer safely reapplies the package on reviewed AllScan v1.01-v1.04 layouts. It recognizes the integrated PR #37 features on v1.03/v1.04, detects already-present TouchGUI activity and card-label features, and applies only missing independent enhancements. If the upstream version or required structure changes, it stops without modifying live files so compatibility can be reviewed first.
+The installer safely reapplies the package on reviewed AllScan v1.01-v1.04 layouts. It recognizes the integrated PR #37 features on v1.03/v1.04, detects already-present TouchGUI activity and statistics features, and applies only missing independent enhancements. If the upstream version or required structure changes, it stops without modifying live files so compatibility can be reviewed first.
 
 ## Troubleshooting
 
@@ -346,7 +335,7 @@ The selected entry is not a standard adjacent `label[]` and `cmd[] = "rpt cmd %n
 | AllScan Mods v1.19 | Installed on `pi4test`; editor still showed `&hellip;`, prompting the v1.20 fix |
 | AllScan Mods v1.20 | Local regression tests and simulated v1.04 install/idempotence passed; `pi4test` testing pending |
 | AllScan Mods v1.21 | Regression tests and simulated v1.20-to-v1.21 migration/idempotence passed; `pi4test` pending |
-| AllScan Mods v1.22 | Dual AllScan/TouchGUI Favorites labels; regression tests and simulated v1.04 install/idempotence plus v1.21 migration passed; PHP lint unavailable; `pi4test` install succeeded |
+| AllScan Mods v1.22 | Previous dual-label experiment; removed in v1.36 to restore the v1.04 single-field editor |
 | AllScan Mods v1.23 | Superseded before node testing; not installed |
 | AllScan Mods v1.24 | User visual review approved the card text sizing; reported card-column gap and editor-help sizing issues |
 | AllScan Mods v1.25 | Tighter TouchGUI card column spacing and smaller Favorites editor guidance; user reported node/callsign metadata became too small |
@@ -360,6 +349,7 @@ The selected entry is not a standard adjacent `label[]` and `cmd[] = "rpt cmd %n
 | AllScan Mods v1.33 | Adds portrait-only width compensation so shifting the node/callsign line left does not reduce space at its right edge; CSS max-width still capped the expansion |
 | AllScan Mods v1.34 | Removes the portrait-only max-width cap so the extra 1.5ch line width can take effect; the final glyph remained clipped |
 | AllScan Mods v1.35 | Allows portrait metadata glyphs to paint past their own text box while keeping the card boundary clipped |
+| AllScan Mods v1.36 | Removes the Mods-only TouchGUI Favorites field and editor-label changes; keeps TouchGUI statistics, color mapping, responsive text sizing, and the confirmed portrait clipping fix |
 
 The editor, layout, Save & Close workflow, validation, backups, Add/Delete controls, connection controls, Rx%/LCnt sorting, and Disconnect before Monitor behavior were browser-tested before consolidation.
 

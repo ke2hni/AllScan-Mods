@@ -14,7 +14,7 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.35" in text, installer
+        assert "TouchGUI activity colors mod version: v1.36" in text, installer
         assert "Responsive TouchGUI label auto-fit v1.35" in text, installer
         assert "window.matchMedia && window.matchMedia('(orientation: portrait)').matches" in text, installer
         assert "apply_touchgui_activity_live" in text, installer
@@ -50,7 +50,7 @@ def main():
         assert "getChannelStats()" in patched_js
         assert "TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.18." in patched_js
         assert "TouchGUI matching callsign removal v1.18" in patched_js
-        assert "TouchGUI card label override v1.22" in patched_js
+        assert "TouchGUI card label override v1.22" not in patched_js
         assert "updateChannelActivity(stats)" in patched_js
         assert "function closeChannelStats()" in patched_js
         assert "function formatTouchguiStatusMessage(msg)" in patched_js
@@ -139,6 +139,9 @@ var button = {
 var cardLabel = channelLabel({node: '512511', call: 'GB3CR', label: 'GB3CR North Wales UK 512511', name: 'GB3CR'});
 if(cardLabel !== 'North Wales UK')
 	throw new Error('TouchGUI did not remove the exact ASTDB callsign from the card title: ' + cardLabel);
+cardLabel = channelLabel({node: '512511', call: 'GB3CR', label: 'GB3CR North Wales UK 512511', touchguiLabel: 'Obsolete separate label'});
+if(cardLabel !== 'North Wales UK')
+	throw new Error('A legacy separate label overrode the shared AllScan name: ' + cardLabel);
 cardLabel = channelLabel({node: '512511', call: 'GB3CR', label: 'GB3CR North Wales GB3CR UK 512511'});
 if(cardLabel !== 'North Wales UK')
 	throw new Error('TouchGUI did not remove each exact callsign token: ' + cardLabel);
@@ -630,6 +633,7 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         assert 'class="channel-rx">—</span>' in current_source and 'class="channel-lcnt">—</span>' in current_source
         assert "rounded value badges v1.18" in current_source
         assert "TouchGUI matching callsign removal v1.18" in current_source
+        assert "TouchGUI card label override v1.22" not in current_source
         assert "border-radius:8px;" in current_style
         assert "activity.rxPct" in current_source and "activity.linkCnt" in current_source
         assert "grid-template-rows:auto;" in current_style
