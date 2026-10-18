@@ -244,6 +244,9 @@ function convertActivityRange(value, min, max) {
     channel_label_pattern = re.compile(r"(?m)^function channelLabel\(channel\) \{.*?^\}", re.DOTALL)
     channel_label = r'''// AllScan Mods: TouchGUI matching callsign removal v1.18.
 function channelLabel(channel) {
+	// AllScan Mods: TouchGUI card label override v1.22.
+	if(channel.touchguiLabel && String(channel.touchguiLabel).trim())
+		return String(channel.touchguiLabel).trim();
 	var callsign = channel.call ? String(channel.call).trim() : '';
 	function cleanLabel(text) {
 		text = String(text || '');

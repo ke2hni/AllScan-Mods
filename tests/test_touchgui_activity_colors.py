@@ -13,7 +13,7 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.21" in text, installer
+        assert "TouchGUI activity colors mod version: v1.22" in text, installer
         assert "apply_touchgui_activity_live" in text, installer
         assert "TOUCHGUI_ACTIVITY_PATCH" in text, installer
         assert "activity.rxPct" in text and "activity.linkCnt" in text, installer
@@ -42,6 +42,7 @@ def main():
         assert "getChannelStats()" in patched_js
         assert "TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.18." in patched_js
         assert "TouchGUI matching callsign removal v1.18" in patched_js
+        assert "TouchGUI card label override v1.22" in patched_js
         assert "updateChannelActivity(stats)" in patched_js
         assert "function closeChannelStats()" in patched_js
         assert "function formatTouchguiStatusMessage(msg)" in patched_js

@@ -1,0 +1,164 @@
+#!/usr/bin/env python3
+"""Regression checks for editable, node-associated TouchGUI card labels."""
+
+from pathlib import Path
+import subprocess
+import shutil
+import tempfile
+
+
+ROOT = Path(__file__).resolve().parents[1]
+PATCHER = ROOT / "lib" / "touchgui-favorite-labels.py"
+ACTIVITY_PATCHER = ROOT / "lib" / "touchgui-activity.py"
+
+
+def write(path: Path, value: str) -> None:
+    path.write_text(value, encoding="utf-8")
+
+
+def main() -> None:
+    for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
+        text = (ROOT / installer).read_text(encoding="utf-8")
+        assert "TouchGUI activity colors mod version: v1.22" in text
+        assert "apply_touchgui_favorite_labels_live" in text
+        assert "TOUCHGUI_FAVORITE_LABEL_PATCH" in text
+        assert "allscan-mods.sh" not in text or "before-touchgui-labels-" in text
+
+    with tempfile.TemporaryDirectory(prefix="touchgui-favorite-labels-") as temp:
+        root = Path(temp)
+        index = root / "index.php"
+        view = root / "viewUtils.php"
+        main_js = root / "main.js"
+        favs = root / "favsUtils.php"
+        simple_index = root / "simple-index.php"
+        simple_js = root / "simple.js"
+        simple_css = root / "simple.css"
+
+        write(index, '''<?php
+require_once('include/common.php');
+require_once('astapi/nodeInfo.php');
+foreach($favList as $f) {
+\t\t$favEditLabel = htmlspecialchars(array_pop($f), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+\t\t$nodeNumAttr = ['1' => 'class="nodeNum" data-fav-label="' . $favEditLabel
+\t\t\t. '" onClick="selectFavorite(this)" onDblClick="connectNode(\'connect\')"'];
+}
+function processForm($parms, &$msg) {
+\t\tcase "Add Favorite":
+\t\t\t$msg[] = "Add Node $node to Favorites requested";
+\t\t\tif(!validDbID($node)) break;
+\t\t\t$label = "label[] = \\"$call $desc, $loc $node\\"";
+\t\t\t$cmd = "cmd[] = \\"rpt cmd %node% ilink 3 $node\\"";
+\t\t\tarray_splice($favs, $insertLn, 0, [$label, $cmd, '']);
+\t\t\tbreak;
+\t\tcase "Edit Favorite":
+\t\t\t$originalNode = isset($parms['originalnode']) ? trim($parms['originalnode']) : '';
+\t\t\t$newLabel = isset($parms['editlabel']) ? trim($parms['editlabel']) : '';
+\t\t\t$newOrder = isset($parms['editorder']) ? trim($parms['editorder']) : '';
+\t\t\tif($newLabel === '' || strlen($newLabel) > 120 || !checkAscii($newLabel) ||
+\t\t\t\tstrpos($newLabel, '\"') !== false || strpos($newLabel, "\\r") !== false ||
+\t\t\t\tstrpos($newLabel, "\\n") !== false) {
+\t\t\t\t$msg[] = error("Friendly label must be 1 to 120 plain-text characters and cannot contain double quotes or line breaks.");
+\t\t\t\tbreak;
+\t\t\t}
+\t\t\t$favs[$labelLine] = 'label[] = "' . $newLabel . ' ' . $node . '"';
+\t\t\t$favs[$matchLine] = 'cmd[] = "rpt cmd %node% ilink 3 ' . $node . '"';
+\t\t\tif(!writeFileLines($favsFile, $favs, $msg)) { copy($backup, $favsFile); break; }
+\t\t\tbreak;
+\t\tcase "Delete Favorite":
+\t\t\tif(!writeFileLines($favsFile, $favs, $msg)) break;
+\t\t\tbreak;
+\t\tcase SET_NODE_INFO_CFGS:
+\t\t\tbreak;
+}
+''')
+        write(view, '''function showNodeCtrlForm() {
+<input type=hidden id="editlabel" name="editlabel" value="">
+<input type=hidden id="editorder" name="editorder" value="">
+<input type=submit name="Submit" value="Add Favorite" class="small">
+<div id="favoriteEditModal">
+<h3 id="favoriteEditTitle">Edit Favorite</h3>
+<label for="favoriteEditOrder">Order</label>
+<input type="number" min="1" step="1" id="favoriteEditOrder">
+<label for="favoriteEditLabel">Friendly Name/Label</label>
+<input type="text" id="favoriteEditLabel" maxlength="120">
+<button type="submit" name="Submit" value="Edit Favorite" class="small">Save &amp; Close</button>
+</div>
+''')
+        write(main_js, '''// Local modification: AllScan-styled Favorites editor with Node, Order, and Friendly Label fields.
+function openFavoriteEditor() {}
+''')
+        write(favs, '''<?php
+\t$favsIni = parse_ini_file($favsFile, true);
+\t$favs[$i] = (object)['node'=>$m[0], 'label'=>$label, 'cmd'=>$c];
+''')
+        write(simple_index, "\t\t'label' => $rawLabel,\n")
+        shutil.copy2(ROOT / "tests" / "fixtures" / "touchgui-installed-v1.17.js", simple_js)
+        shutil.copy2(ROOT / "tests" / "fixtures" / "touchgui-installed-v1.17.css", simple_css)
+
+        subprocess.run(["python3", str(ACTIVITY_PATCHER), str(simple_js), str(simple_css)], check=True)
+        args = [str(index), str(view), str(main_js), str(favs), str(simple_index), str(simple_js)]
+        command = ["python3", str(PATCHER), *args]
+        subprocess.run(command, check=True)
+        subprocess.run(["node", "--check", str(main_js)], check=True)
+        subprocess.run(["node", "--check", str(simple_js)], check=True)
+
+        result = index.read_text(encoding="utf-8")
+        assert "function allscanModsSetTouchguiLabel" in result
+        assert "allscanModsSetTouchguiLabel($favs, '', $node, $touchguiLabel)" in result
+        assert "allscanModsSetTouchguiLabel($favs, $originalNode, $node, $touchguiLabel)" in result
+        assert "allscanModsSetTouchguiLabel($favs, $node, '', '')" in result
+        assert "data-fav-touchgui-label" in result
+        assert "TouchGUI favorite labels v1.22" in view.read_text(encoding="utf-8")
+        assert "favoriteEditTouchguiLabel" in view.read_text(encoding="utf-8")
+        assert "maxlength=\"33\"" in view.read_text(encoding="utf-8")
+        assert "openNewFavoriteEditor()" in main_js.read_text(encoding="utf-8")
+        assert "touchguiLabel" in favs.read_text(encoding="utf-8")
+        assert "touchguiLabel" in simple_index.read_text(encoding="utf-8")
+
+        before = {path: path.read_bytes() for path in (index, view, main_js, favs, simple_index, simple_js)}
+        subprocess.run(command, check=True)
+        assert before == {path: path.read_bytes() for path in before}, "Reapplying changed the patched files."
+
+        editor_runtime = root / "editor-runtime.js"
+        editor_runtime.write_text(r'''
+var editorElements = {};
+['favoriteEditTitle', 'favoriteEditSave', 'favoriteEditOrderRow', 'favoriteEditNode',
+ 'favoriteEditLabel', 'favoriteEditTouchguiLabel', 'favoriteEditOrder', 'favoriteEditModal',
+ 'originalnode', 'editlabel', 'touchtguilabel', 'editorder'].forEach(function(id) {
+    editorElements[id] = {id:id, value:'', hidden:true, focus:function(){}, select:function(){}, click:function(){}};
+});
+var document = {
+    getElementById:function(id){ return editorElements[id]; },
+    querySelectorAll:function(){ return []; },
+    addEventListener:function(){}
+};
+''' + main_js.read_text(encoding="utf-8") + r'''
+var rnode = {value:'12345', dataset:{favoriteNode:'12345', favoriteLabel:'Existing AllScan name', favoriteTouchguiLabel:'Existing card name'}};
+openFavoriteEditor();
+if(editorElements.favoriteEditLabel.value !== 'Existing AllScan name') throw new Error('Existing AllScan label did not populate');
+if(editorElements.favoriteEditTouchguiLabel.value !== 'Existing card name') throw new Error('Existing TouchGUI label did not populate');
+openNewFavoriteEditor();
+if(editorElements.favoriteEditLabel.value !== '') throw new Error('New favorite AllScan label was not blank');
+if(editorElements.favoriteEditTouchguiLabel.value !== '') throw new Error('New favorite TouchGUI label was not blank');
+''', encoding="utf-8")
+        subprocess.run(["node", str(editor_runtime)], check=True)
+
+        runtime = root / "runtime.js"
+        runtime.write_text(simple_js.read_text(encoding="utf-8") + r'''
+function escapeRegExp(txt) {
+	return String(txt).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+var card = {node:'12345', call:'W1ABC', label:'W1ABC Default Name 12345', name:'W1ABC', desc:'Database description', loc:'Somewhere'};
+if(channelLabel(card) !== 'Default Name') throw new Error('Automatic title changed unexpectedly');
+card.touchguiLabel = 'My independent label';
+if(channelLabel(card) !== 'My independent label') throw new Error('Saved TouchGUI label did not override the automatic title');
+''', encoding="utf-8")
+        subprocess.run(["node", str(runtime)], check=True)
+
+    print("PASS: existing and new editor flows carry independent TouchGUI labels.")
+    print("PASS: node-keyed metadata survives add/edit/delete code paths and helper reruns cleanly.")
+    print("PASS: TouchGUI uses the saved label when present and keeps automatic naming otherwise.")
+
+
+if __name__ == "__main__":
+    main()
