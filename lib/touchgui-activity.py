@@ -55,6 +55,7 @@ def main():
             and "@media (max-width:380px)" in css
             and "white-space:normal; overflow:visible; overflow-wrap:anywhere; min-width:0;" in css
             and "TouchGUI centered card text v1.17" in css
+            and "Responsive TouchGUI card labels and metadata v1.23" in css
             and "TouchGUI matching callsign removal v1.18" in js):
         print("TouchGUI activity, statistics, and card layout are already applied.")
         return
@@ -605,6 +606,24 @@ overflow-wrap:anywhere;
     if ".simple-footer #statmsg { grid-column:1 / -1; text-align:center; }" not in css:
         css = css.rstrip() + "\n" + center_footer_css
 
+    responsive_card_css = '''/* AllScan Mods: Responsive TouchGUI card labels and metadata v1.23. */
+.channel-content {
+container-type:inline-size;
+}
+.channel-label {
+font-size:clamp(12px, 12cqi, 16px);
+}
+.channel-meta {
+font-size:clamp(10px, 10cqi, 12px);
+line-height:1.1;
+white-space:normal;
+overflow:visible;
+text-overflow:clip;
+}
+'''
+    if "Responsive TouchGUI card labels and metadata v1.23" not in css:
+        css = css.rstrip() + "\n" + responsive_card_css
+
     if ("simple.statsTmr = setTimeout(getChannelStats" not in js
             or "active-wt" not in js
             or "simple.txTim[node] = now" not in js
@@ -615,7 +634,8 @@ overflow-wrap:anywhere;
             or '.channel-btn[data-activity="active"]' in css
             or "channel-side" not in js
             or ".channel-side" not in css
-            or "TouchGUI centered card text v1.17" not in css):
+            or "TouchGUI centered card text v1.17" not in css
+            or "Responsive TouchGUI card labels and metadata v1.23" not in css):
         raise SystemExit("ERROR: TouchGUI activity patch validation failed; no files changed.")
     js_path.write_text(js, encoding="utf-8")
     css_path.write_text(css, encoding="utf-8")

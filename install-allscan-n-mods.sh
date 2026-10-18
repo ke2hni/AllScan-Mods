@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.22
+# TouchGUI activity colors mod version: v1.23
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -271,6 +271,7 @@ touchgui_activity_present() {
     grep -Fq '.channel-side' "$SIMPLE_CSS_FILE" &&
     grep -Fq '.channel-content' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'TouchGUI centered card text v1.17' "$SIMPLE_CSS_FILE" &&
+    grep -Fq 'Responsive TouchGUI card labels and metadata v1.23' "$SIMPLE_CSS_FILE" &&
     ! grep -Fq '.channel-btn[data-activity="active"]' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'height:100dvh' "$SIMPLE_CSS_FILE" &&
     grep -Fq '.simple-footer { display:grid; }' "$SIMPLE_CSS_FILE" &&
@@ -327,7 +328,8 @@ touchgui_favorite_labels_present() {
        grep -Fq 'TouchGUI favorite card label editor v1.22.' "$JS_FILE" &&
        grep -Fq 'Read TouchGUI favorite labels v1.22.' "$FAVS_UTILS_FILE" &&
        grep -Fq 'TouchGUI favorite card label JSON v1.22.' "$SIMPLE_INDEX_FILE" &&
-       grep -Fq 'TouchGUI card label override v1.22.' "$SIMPLE_JS_FILE"; then
+       grep -Fq 'TouchGUI card label override v1.22.' "$SIMPLE_JS_FILE" &&
+       grep -Fq 'Favorites editor helper text v1.23.' "$CSS_FILE"; then
         return 0
     fi
     # Recognize equivalent upstream support even when its comment markers differ.
@@ -335,7 +337,8 @@ touchgui_favorite_labels_present() {
     grep -Fq 'data-fav-touchgui-label' "$INDEX_FILE" &&
     grep -Fq 'touchguiLabel' "$SIMPLE_INDEX_FILE" &&
     grep -Fq 'touchguiLabel' "$SIMPLE_JS_FILE" &&
-    grep -Fq 'TouchGUI Card Label' "$VIEW_FILE"
+    grep -Fq 'TouchGUI Card Label' "$VIEW_FILE" &&
+    grep -Fq 'Favorites editor helper text v1.23.' "$CSS_FILE"
 }
 
 apply_touchgui_favorite_labels_live() {
@@ -343,8 +346,8 @@ apply_touchgui_favorite_labels_live() {
         echo "TouchGUI favorite card labels are already installed. No changes made."
         return 0
     fi
-    local work_dir stage_index stage_view stage_js stage_favs stage_simple_index stage_simple_js timestamp
-    local index_backup view_backup js_backup favs_backup simple_index_backup simple_js_backup backup
+    local work_dir stage_index stage_view stage_js stage_favs stage_simple_index stage_simple_js stage_main_css timestamp
+    local index_backup view_backup js_backup favs_backup simple_index_backup simple_js_backup main_css_backup backup
     work_dir=$(mktemp -d /tmp/allscan-touchgui-labels.XXXXXX)
     stage_index=$work_dir/index.php
     stage_view=$work_dir/viewUtils.php
@@ -352,18 +355,21 @@ apply_touchgui_favorite_labels_live() {
     stage_favs=$work_dir/favsUtils.php
     stage_simple_index=$work_dir/simple-index.php
     stage_simple_js=$work_dir/simple.js
+    stage_main_css=$work_dir/main.css
     cp -- "$INDEX_FILE" "$stage_index"
     cp -- "$VIEW_FILE" "$stage_view"
     cp -- "$JS_FILE" "$stage_js"
     cp -- "$FAVS_UTILS_FILE" "$stage_favs"
     cp -- "$SIMPLE_INDEX_FILE" "$stage_simple_index"
     cp -- "$SIMPLE_JS_FILE" "$stage_simple_js"
-    python3 "$TOUCHGUI_FAVORITE_LABEL_PATCH" "$stage_index" "$stage_view" "$stage_js" "$stage_favs" "$stage_simple_index" "$stage_simple_js"
+    cp -- "$CSS_FILE" "$stage_main_css"
+    python3 "$TOUCHGUI_FAVORITE_LABEL_PATCH" "$stage_index" "$stage_view" "$stage_js" "$stage_favs" "$stage_simple_index" "$stage_simple_js" "$stage_main_css"
     if command -v node >/dev/null 2>&1; then node --check "$stage_js"; node --check "$stage_simple_js"; fi
     if command -v php >/dev/null 2>&1; then php -l "$stage_index" >/dev/null; php -l "$stage_view" >/dev/null; php -l "$stage_favs" >/dev/null; php -l "$stage_simple_index" >/dev/null; fi
     if cmp -s "$INDEX_FILE" "$stage_index" && cmp -s "$VIEW_FILE" "$stage_view" && \
        cmp -s "$JS_FILE" "$stage_js" && cmp -s "$FAVS_UTILS_FILE" "$stage_favs" && \
-       cmp -s "$SIMPLE_INDEX_FILE" "$stage_simple_index" && cmp -s "$SIMPLE_JS_FILE" "$stage_simple_js"; then
+       cmp -s "$SIMPLE_INDEX_FILE" "$stage_simple_index" && cmp -s "$SIMPLE_JS_FILE" "$stage_simple_js" && \
+       cmp -s "$CSS_FILE" "$stage_main_css"; then
         rm -rf -- "$work_dir"
         echo "TouchGUI favorite card labels already installed. No changes made."
         return 0
@@ -375,7 +381,8 @@ apply_touchgui_favorite_labels_live() {
     favs_backup=$FAVS_UTILS_FILE.before-touchgui-labels-$timestamp
     simple_index_backup=$SIMPLE_INDEX_FILE.before-touchgui-labels-$timestamp
     simple_js_backup=$SIMPLE_JS_FILE.before-touchgui-labels-$timestamp
-    for backup in "$index_backup" "$view_backup" "$js_backup" "$favs_backup" "$simple_index_backup" "$simple_js_backup"; do
+    main_css_backup=$CSS_FILE.before-touchgui-labels-$timestamp
+    for backup in "$index_backup" "$view_backup" "$js_backup" "$favs_backup" "$simple_index_backup" "$simple_js_backup" "$main_css_backup"; do
         if [[ -e $backup ]]; then rm -rf -- "$work_dir"; echo "ERROR: TouchGUI label backup path already exists; no files changed." >&2; return 1; fi
     done
     cp -a -- "$INDEX_FILE" "$index_backup"
@@ -384,18 +391,21 @@ apply_touchgui_favorite_labels_live() {
     cp -a -- "$FAVS_UTILS_FILE" "$favs_backup"
     cp -a -- "$SIMPLE_INDEX_FILE" "$simple_index_backup"
     cp -a -- "$SIMPLE_JS_FILE" "$simple_js_backup"
+    cp -a -- "$CSS_FILE" "$main_css_backup"
     if ! cp -- "$stage_index" "$INDEX_FILE" || ! cp -- "$stage_view" "$VIEW_FILE" || \
        ! cp -- "$stage_js" "$JS_FILE" || ! cp -- "$stage_favs" "$FAVS_UTILS_FILE" || \
-       ! cp -- "$stage_simple_index" "$SIMPLE_INDEX_FILE" || ! cp -- "$stage_simple_js" "$SIMPLE_JS_FILE"; then
+       ! cp -- "$stage_simple_index" "$SIMPLE_INDEX_FILE" || ! cp -- "$stage_simple_js" "$SIMPLE_JS_FILE" || \
+       ! cp -- "$stage_main_css" "$CSS_FILE"; then
         cp -a -- "$index_backup" "$INDEX_FILE"; cp -a -- "$view_backup" "$VIEW_FILE"
         cp -a -- "$js_backup" "$JS_FILE"; cp -a -- "$favs_backup" "$FAVS_UTILS_FILE"
         cp -a -- "$simple_index_backup" "$SIMPLE_INDEX_FILE"; cp -a -- "$simple_js_backup" "$SIMPLE_JS_FILE"
+        cp -a -- "$main_css_backup" "$CSS_FILE"
         rm -rf -- "$work_dir"
         echo "ERROR: TouchGUI label installation failed; original files were restored." >&2
         return 1
     fi
     rm -rf -- "$work_dir"
-    echo "TouchGUI favorite card labels installed. Backups: $index_backup, $view_backup, $js_backup, $favs_backup, $simple_index_backup, $simple_js_backup"
+    echo "TouchGUI favorite card labels installed. Backups: $index_backup, $view_backup, $js_backup, $favs_backup, $simple_index_backup, $simple_js_backup, $main_css_backup"
 }
 
 apply_favorite_label_live() {
@@ -1227,7 +1237,7 @@ grep -Fq '$favList[] = [$n, $f->node, $name, $desc, $loc, NBSP, NBSP, $editName]
 
 if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then
     python3 "$TOUCHGUI_ACTIVITY_PATCH" "$stage_simple_js" "$stage_simple_css"
-    python3 "$TOUCHGUI_FAVORITE_LABEL_PATCH" "$stage_index" "$stage_view" "$stage_js" "$stage_favs_utils" "$stage_simple_index" "$stage_simple_js"
+    python3 "$TOUCHGUI_FAVORITE_LABEL_PATCH" "$stage_index" "$stage_view" "$stage_js" "$stage_favs_utils" "$stage_simple_index" "$stage_simple_js" "$stage_css"
 fi
 
 if cmp -s "$INDEX_FILE" "$stage_index" && cmp -s "$VIEW_FILE" "$stage_view" && \

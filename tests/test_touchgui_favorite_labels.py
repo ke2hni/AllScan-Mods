@@ -19,10 +19,11 @@ def write(path: Path, value: str) -> None:
 def main() -> None:
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.22" in text
+        assert "TouchGUI activity colors mod version: v1.23" in text
         assert "apply_touchgui_favorite_labels_live" in text
         assert "TOUCHGUI_FAVORITE_LABEL_PATCH" in text
-        assert "allscan-mods.sh" not in text or "before-touchgui-labels-" in text
+        assert 'Favorites editor helper text v1.23.' in text
+        assert "before-touchgui-labels-" in text
 
     with tempfile.TemporaryDirectory(prefix="touchgui-favorite-labels-") as temp:
         root = Path(temp)
@@ -33,6 +34,8 @@ def main() -> None:
         simple_index = root / "simple-index.php"
         simple_js = root / "simple.js"
         simple_css = root / "simple.css"
+        main_css = root / "main.css"
+        write(main_css, ".favEditPanel { width:min(420px,95vw); }\n")
 
         write(index, '''<?php
 require_once('include/common.php');
@@ -96,7 +99,7 @@ function openFavoriteEditor() {}
         shutil.copy2(ROOT / "tests" / "fixtures" / "touchgui-installed-v1.17.css", simple_css)
 
         subprocess.run(["python3", str(ACTIVITY_PATCHER), str(simple_js), str(simple_css)], check=True)
-        args = [str(index), str(view), str(main_js), str(favs), str(simple_index), str(simple_js)]
+        args = [str(index), str(view), str(main_js), str(favs), str(simple_index), str(simple_js), str(main_css)]
         command = ["python3", str(PATCHER), *args]
         subprocess.run(command, check=True)
         subprocess.run(["node", "--check", str(main_js)], check=True)
@@ -109,13 +112,17 @@ function openFavoriteEditor() {}
         assert "allscanModsSetTouchguiLabel($favs, $node, '', '')" in result
         assert "data-fav-touchgui-label" in result
         assert "TouchGUI favorite labels v1.22" in view.read_text(encoding="utf-8")
-        assert "favoriteEditTouchguiLabel" in view.read_text(encoding="utf-8")
+        view_text = view.read_text(encoding="utf-8")
+        assert "favoriteEditTouchguiLabel" in view_text
         assert "maxlength=\"33\"" in view.read_text(encoding="utf-8")
+        assert '<div class="favoriteEditHelp">AllScan adds the node callsign to this name.</div>' in view_text
+        assert '<div class="favoriteEditHelp">Up to 33 characters. Callsign not needed.</div>' in view_text
+        assert "Favorites editor helper text v1.23" in main_css.read_text(encoding="utf-8")
         assert "openNewFavoriteEditor()" in main_js.read_text(encoding="utf-8")
         assert "touchguiLabel" in favs.read_text(encoding="utf-8")
         assert "touchguiLabel" in simple_index.read_text(encoding="utf-8")
 
-        before = {path: path.read_bytes() for path in (index, view, main_js, favs, simple_index, simple_js)}
+        before = {path: path.read_bytes() for path in (index, view, main_js, favs, simple_index, simple_js, main_css)}
         subprocess.run(command, check=True)
         assert before == {path: path.read_bytes() for path in before}, "Reapplying changed the patched files."
 

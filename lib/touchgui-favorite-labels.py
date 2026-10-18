@@ -7,6 +7,7 @@ import sys
 
 
 MARKER = "TouchGUI favorite card label v1.22"
+HELP_STYLE_MARKER = "/* AllScan Mods: Favorites editor helper text v1.23. */"
 
 
 def replace_once(text: str, old: str, new: str, what: str) -> str:
@@ -210,6 +211,22 @@ def patch_view(path: Path) -> None:
         )
     if 'id="favoriteEditTitle">Edit Favorite' in source:
         source = source.replace('id="favoriteEditTitle">Edit Favorite', 'id="favoriteEditTitle">Edit Favorite', 1)
+    old_help = '<small>AllScan adds the node callsign to this name.</small>\n<label for="favoriteEditTouchguiLabel">TouchGUI Card Label <small>(up to 33 characters; callsign not needed)</small></label>'
+    new_help = '<div class="favoriteEditHelp">AllScan adds the node callsign to this name.</div>\n<label for="favoriteEditTouchguiLabel">TouchGUI Card Label</label>\n<div class="favoriteEditHelp">Up to 33 characters. Callsign not needed.</div>'
+    if new_help not in source:
+        source = replace_once(source, old_help, new_help, "Favorites editor helper text")
+    path.write_text(source, encoding="utf-8")
+
+
+def patch_main_css(path: Path) -> None:
+    source = path.read_text(encoding="utf-8")
+    if HELP_STYLE_MARKER not in source:
+        source = source.rstrip() + "\n\n" + HELP_STYLE_MARKER + "\n" + r'''.favEditPanel .favoriteEditHelp {
+	margin:0 0 8px;
+	color:#d7dfea;
+	font-size:13px;
+	line-height:1.35;
+}''' + "\n"
     path.write_text(source, encoding="utf-8")
 
 
@@ -412,10 +429,10 @@ def patch_index_row(path: Path) -> None:
 
 
 def main() -> None:
-    if len(sys.argv) != 7:
-        raise SystemExit("Usage: touchgui-favorite-labels.py INDEX.PHP VIEWUTILS.PHP MAIN.JS FAVSUTILS.PHP SIMPLE-INDEX.PHP SIMPLE.JS")
-    index, view, main_js, favs_utils, simple_index, simple_js = map(Path, sys.argv[1:])
-    original = {path: path.read_bytes() for path in (index, view, main_js, favs_utils, simple_index, simple_js)}
+    if len(sys.argv) != 8:
+        raise SystemExit("Usage: touchgui-favorite-labels.py INDEX.PHP VIEWUTILS.PHP MAIN.JS FAVSUTILS.PHP SIMPLE-INDEX.PHP SIMPLE.JS MAIN.CSS")
+    index, view, main_js, favs_utils, simple_index, simple_js, main_css = map(Path, sys.argv[1:])
+    original = {path: path.read_bytes() for path in (index, view, main_js, favs_utils, simple_index, simple_js, main_css)}
     try:
         patch_favs_utils(favs_utils)
         patch_index(index)
@@ -424,6 +441,7 @@ def main() -> None:
         patch_index_row(index)
         patch_simple_index(simple_index)
         patch_simple_js(simple_js)
+        patch_main_css(main_css)
     except Exception:
         for path, content in original.items():
             path.write_bytes(content)

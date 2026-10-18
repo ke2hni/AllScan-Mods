@@ -13,7 +13,8 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.22" in text, installer
+        assert "TouchGUI activity colors mod version: v1.23" in text, installer
+        assert "Responsive TouchGUI card labels and metadata v1.23" in text, installer
         assert "apply_touchgui_activity_live" in text, installer
         assert "TOUCHGUI_ACTIVITY_PATCH" in text, installer
         assert "activity.rxPct" in text and "activity.linkCnt" in text, installer
@@ -66,6 +67,9 @@ def main():
         assert "padding:1px 4px;\nborder-radius:8px;" in patched_css
         assert "min-height:86px;\npadding:8px;" in patched_css
         assert "TouchGUI centered card text v1.17" in patched_css
+        assert "Responsive TouchGUI card labels and metadata v1.23" in patched_css
+        assert "font-size:clamp(10px, 10cqi, 12px);" in patched_css
+        assert "white-space:normal;\noverflow:visible;\ntext-overflow:clip;" in patched_css
         assert ".channel-label, .channel-meta {\nwidth:100%;\nmin-width:0;" in patched_css
         assert ".channel-label {\nfont-size:16px;\noverflow-wrap:anywhere;" in patched_css
         assert ".channel-btn { min-height:82px; padding:7px; }" in patched_css
