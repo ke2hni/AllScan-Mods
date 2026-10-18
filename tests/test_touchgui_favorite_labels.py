@@ -19,10 +19,10 @@ def write(path: Path, value: str) -> None:
 def main() -> None:
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.23" in text
+        assert "TouchGUI activity colors mod version: v1.25" in text
         assert "apply_touchgui_favorite_labels_live" in text
         assert "TOUCHGUI_FAVORITE_LABEL_PATCH" in text
-        assert 'Favorites editor helper text v1.23.' in text
+        assert 'Favorites editor helper text v1.25.' in text
         assert "before-touchgui-labels-" in text
 
     with tempfile.TemporaryDirectory(prefix="touchgui-favorite-labels-") as temp:
@@ -117,7 +117,8 @@ function openFavoriteEditor() {}
         assert "maxlength=\"33\"" in view.read_text(encoding="utf-8")
         assert '<div class="favoriteEditHelp">AllScan adds the node callsign to this name.</div>' in view_text
         assert '<div class="favoriteEditHelp">Up to 33 characters. Callsign not needed.</div>' in view_text
-        assert "Favorites editor helper text v1.23" in main_css.read_text(encoding="utf-8")
+        assert "Favorites editor helper text v1.25" in main_css.read_text(encoding="utf-8")
+        assert "font-size:11px;" in main_css.read_text(encoding="utf-8")
         assert "openNewFavoriteEditor()" in main_js.read_text(encoding="utf-8")
         assert "touchguiLabel" in favs.read_text(encoding="utf-8")
         assert "touchguiLabel" in simple_index.read_text(encoding="utf-8")
@@ -125,6 +126,27 @@ function openFavoriteEditor() {}
         before = {path: path.read_bytes() for path in (index, view, main_js, favs, simple_index, simple_js, main_css)}
         subprocess.run(command, check=True)
         assert before == {path: path.read_bytes() for path in before}, "Reapplying changed the patched files."
+
+        old_help_style = '''/* AllScan Mods: Favorites editor helper text v1.23. */
+.favEditPanel .favoriteEditHelp {
+	margin:0 0 8px;
+	color:#d7dfea;
+	font-size:13px;
+	line-height:1.35;
+}'''
+        new_help_style = '''/* AllScan Mods: Favorites editor helper text v1.25. */
+.favEditPanel .favoriteEditHelp {
+	margin:0 0 6px;
+	color:#aebacc;
+	font-size:11px;
+	line-height:1.25;
+}'''
+        main_css.write_text(old_help_style + "\n", encoding="utf-8")
+        subprocess.run(command, check=True)
+        assert main_css.read_text(encoding="utf-8") == new_help_style + "\n"
+        migrated_css = main_css.read_bytes()
+        subprocess.run(command, check=True)
+        assert main_css.read_bytes() == migrated_css, "v1.23 editor guidance CSS migration was not idempotent"
 
         editor_runtime = root / "editor-runtime.js"
         editor_runtime.write_text(r'''
@@ -151,7 +173,7 @@ if(editorElements.favoriteEditTouchguiLabel.value !== '') throw new Error('New f
         subprocess.run(["node", str(editor_runtime)], check=True)
 
         runtime = root / "runtime.js"
-        runtime.write_text(simple_js.read_text(encoding="utf-8") + r'''
+        runtime.write_text("var window = {addEventListener:function(){}};\n" + simple_js.read_text(encoding="utf-8") + r'''
 function escapeRegExp(txt) {
 	return String(txt).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

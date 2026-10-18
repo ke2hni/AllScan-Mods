@@ -7,7 +7,21 @@ import sys
 
 
 MARKER = "TouchGUI favorite card label v1.22"
-HELP_STYLE_MARKER = "/* AllScan Mods: Favorites editor helper text v1.23. */"
+HELP_STYLE_MARKER = "/* AllScan Mods: Favorites editor helper text v1.25. */"
+OLD_HELP_STYLE = '''/* AllScan Mods: Favorites editor helper text v1.23. */
+.favEditPanel .favoriteEditHelp {
+	margin:0 0 8px;
+	color:#d7dfea;
+	font-size:13px;
+	line-height:1.35;
+}'''
+NEW_HELP_STYLE = '''/* AllScan Mods: Favorites editor helper text v1.25. */
+.favEditPanel .favoriteEditHelp {
+	margin:0 0 6px;
+	color:#aebacc;
+	font-size:11px;
+	line-height:1.25;
+}'''
 
 
 def replace_once(text: str, old: str, new: str, what: str) -> str:
@@ -221,12 +235,12 @@ def patch_view(path: Path) -> None:
 def patch_main_css(path: Path) -> None:
     source = path.read_text(encoding="utf-8")
     if HELP_STYLE_MARKER not in source:
-        source = source.rstrip() + "\n\n" + HELP_STYLE_MARKER + "\n" + r'''.favEditPanel .favoriteEditHelp {
-	margin:0 0 8px;
-	color:#d7dfea;
-	font-size:13px;
-	line-height:1.35;
-}''' + "\n"
+        if source.count(OLD_HELP_STYLE) == 1:
+            source = source.replace(OLD_HELP_STYLE, NEW_HELP_STYLE, 1)
+        elif "Favorites editor helper text v1.23." not in source:
+            source = source.rstrip() + "\n\n" + NEW_HELP_STYLE + "\n"
+        else:
+            raise SystemExit("ERROR: Existing Favorites editor guidance CSS is unexpected; files left unchanged.")
     path.write_text(source, encoding="utf-8")
 
 

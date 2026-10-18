@@ -67,8 +67,8 @@ AllScan's Description and Location columns remain sourced from the AllStarLink d
 - Preserves the existing TouchGUI connection border and footer layout. Other status messages remain unchanged.
 - The TouchGUI card title removes the AllScan-reported callsign only when it appears as a matching whole token in the favorite label, then displays the remaining text up to 33 characters. If that leaves no title, the card uses the node description/location, then the node number. The main Favorites table is unchanged.
 - An optional TouchGUI card label overrides the automatic card title for that favorite only. An empty label retains the existing automatic title.
-- The AllScan JavaScript retains the `v1.18` callsign-removal marker, and TouchGUI CSS carries the responsive card layout marker. Both shell installers show a standalone `v1.23` tag near the top. The editor uses AllScan's node-cleaned name before the table shortens it, strips a previously saved literal `&hellip;`, and leaves the table display unchanged. This prevents the editor from resaving the appended node number repeatedly. The installer upgrades known Mods TouchGUI versions v1.05-v1.18 with timestamped backups and migrates the v1.19-v1.22 favorite-editor and TouchGUI states in place.
-- TouchGUI card labels and their node/callsign metadata use responsive text sizing. The metadata wraps instead of being cut off with an ellipsis, and the maximum 33-character card title scales with the available card text width while preserving word wrapping.
+- The AllScan JavaScript retains the `v1.18` callsign-removal marker, and TouchGUI CSS carries the responsive card layout marker. Both shell installers show a standalone `v1.25` tag near the top. The editor uses AllScan's node-cleaned name before the table shortens it, strips a previously saved literal `&hellip;`, and leaves the table display unchanged. This prevents the editor from resaving the appended node number repeatedly. The installer upgrades known Mods TouchGUI versions v1.05-v1.18 with timestamped backups and migrates the v1.19-v1.24 favorite-editor and TouchGUI states in place.
+- TouchGUI card labels and their node/callsign metadata use responsive text sizing. The metadata stays on one line and measures its actual text width, shrinking only when that card’s node/callsign needs the room. This prevents different callsign glyphs from clipping or increasing card height. The maximum 33-character card title scales with the available card text width while preserving word wrapping.
 - Favorite-editor guidance is separated from the field labels and shown in a larger, higher-contrast text style.
 - Applies to TouchGUI on AllScan v1.02, v1.03, and v1.04. AllScan v1.01 has no TouchGUI.
 - On the integrated v1.03/v1.04 path, the installer creates dedicated timestamped TouchGUI backups; the legacy v1.02/pre-integration v1.03 path uses the installer's existing full-file backups.
@@ -285,7 +285,7 @@ sudo cp -a /var/www/html/allscan/js/simple.js.before-touchgui-activity-YYYYMMDD-
 
 Only restore these backups while the same AllScan version and files are still installed. If an official AllScan update has replaced these files or integrated the feature, do not restore the older backups; that could remove upstream changes. Reinstall or update AllScan through David's official installer instead.
 
-For the TouchGUI card-label feature on v1.03/v1.04, the installer prints backups for `index.php`, `include/viewUtils.php`, `js/main.js`, `include/favsUtils.php`, `simple/index.php`, and `js/simple.js`, each ending in `.before-touchgui-labels-YYYYMMDD-HHMMSS`. v1.23 also backs up `css/main.css` with the same suffix for the editor guidance style. Restore the matching files only while the same AllScan version and source files remain installed. Do not restore them after David's updater changes AllScan or if official AllScan includes TouchGUI card labels. The node-keyed label comments in `favorites*.ini` are ignored by AllScan and can remain if you revert the code.
+For the TouchGUI card-label feature on v1.03/v1.04, the installer prints backups for `index.php`, `include/viewUtils.php`, `js/main.js`, `include/favsUtils.php`, `simple/index.php`, and `js/simple.js`, each ending in `.before-touchgui-labels-YYYYMMDD-HHMMSS`. v1.23 and later also back up `css/main.css` with the same suffix for the editor guidance style. Restore the matching files only while the same AllScan version and source files remain installed. Do not restore them after David's updater changes AllScan or if official AllScan includes TouchGUI card labels. The node-keyed label comments in `favorites*.ini` are ignored by AllScan and can remain if you revert the code.
 
 To reverse an individual Favorite edit, copy its matching `.before-edit-YYYYMMDD-HHMMSS` backup over the active `favorites*.ini` file.
 
@@ -347,7 +347,9 @@ The selected entry is not a standard adjacent `label[]` and `cmd[] = "rpt cmd %n
 | AllScan Mods v1.20 | Local regression tests and simulated v1.04 install/idempotence passed; `pi4test` testing pending |
 | AllScan Mods v1.21 | Regression tests and simulated v1.20-to-v1.21 migration/idempotence passed; `pi4test` pending |
 | AllScan Mods v1.22 | Dual AllScan/TouchGUI Favorites labels; regression tests and simulated v1.04 install/idempotence plus v1.21 migration passed; PHP lint unavailable; `pi4test` install succeeded |
-| AllScan Mods v1.23 | Responsive card label/metadata sizing and clearer Favorites editor guidance; workspace checks passed; `pi4test` visual test pending |
+| AllScan Mods v1.23 | Superseded before node testing; not installed |
+| AllScan Mods v1.24 | User visual review approved the card text sizing; reported card-column gap and editor-help sizing issues |
+| AllScan Mods v1.25 | Tighter TouchGUI card column spacing and smaller Favorites editor guidance; workspace checks passed; `pi4test` visual test pending |
 
 The editor, layout, Save & Close workflow, validation, backups, Add/Delete controls, connection controls, Rx%/LCnt sorting, and Disconnect before Monitor behavior were browser-tested before consolidation.
 
