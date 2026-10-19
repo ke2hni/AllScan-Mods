@@ -14,7 +14,7 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.47" in text, installer
+        assert "TouchGUI activity colors mod version: v1.48" in text, installer
         assert "Responsive TouchGUI label auto-fit v1.37" in text, installer
         assert "window.matchMedia && window.matchMedia('(orientation: portrait)').matches" in text, installer
         assert "apply_touchgui_activity_live" in text, installer
@@ -103,6 +103,8 @@ def main():
         assert "TouchGUI top-aligned callsign with description gap v1.47" in patched_css
         assert ".channel-content {\njustify-content:flex-start;\n}" in patched_css
         assert ".channel-meta {\nmargin-bottom:6px;\n}" in patched_css
+        assert "TouchGUI bold node/callsign line v1.48" in patched_css
+        assert ".channel-meta {\nfont-weight:bold;\n}" in patched_css
         assert "font-size:14px;\nline-height:1.1;" in patched_css
         assert "@media (max-width:700px) {\n.channel-label { font-size:16px; }\n}" in patched_css
         assert "@media (max-height:430px) {\n.channel-label { font-size:15px; }\n.channel-meta { font-size:12px; }\n}" in patched_css
