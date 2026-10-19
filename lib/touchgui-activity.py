@@ -59,6 +59,7 @@ def main():
             and "TouchGUI single-line label fit v1.37" in css
             and "TouchGUI adaptive title fit v1.45" in js
             and "TouchGUI callsign-first card content v1.46" in js
+            and "TouchGUI top-aligned callsign with description gap v1.47" in css
             and "function fitChannelLabel(button)" in js
             and "@media (orientation: portrait)" in css
             and "display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-1.5ch; overflow:visible;" in css
@@ -702,6 +703,17 @@ overflow-wrap:anywhere;
 '''
     if "TouchGUI single-line label fit v1.37" not in css:
         css = css.rstrip() + "\n" + single_line_css
+
+    callsign_first_spacing_css = '''/* AllScan Mods: TouchGUI top-aligned callsign with description gap v1.47. */
+.channel-content {
+justify-content:flex-start;
+}
+.channel-meta {
+margin-bottom:6px;
+}
+'''
+    if "TouchGUI top-aligned callsign with description gap v1.47" not in css:
+        css = css.rstrip() + "\n" + callsign_first_spacing_css
 
     footer_css = '''.simple-footer { height:auto; min-height:30px; flex:0 0 auto; overflow:visible; }
 .simple-footer #scanmsg,

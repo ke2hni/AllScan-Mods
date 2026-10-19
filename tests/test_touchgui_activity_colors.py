@@ -14,7 +14,7 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.46" in text, installer
+        assert "TouchGUI activity colors mod version: v1.47" in text, installer
         assert "Responsive TouchGUI label auto-fit v1.37" in text, installer
         assert "window.matchMedia && window.matchMedia('(orientation: portrait)').matches" in text, installer
         assert "apply_touchgui_activity_live" in text, installer
@@ -100,6 +100,9 @@ def main():
         assert "white-space:nowrap;" in patched_css and "overflow-wrap:normal;" in patched_css
         assert "@media (orientation: portrait) {\n.channel-meta { display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-1.5ch; overflow:visible; }\n}" in patched_css
         assert "font-size:18px;\nline-height:1.12;" in patched_css
+        assert "TouchGUI top-aligned callsign with description gap v1.47" in patched_css
+        assert ".channel-content {\njustify-content:flex-start;\n}" in patched_css
+        assert ".channel-meta {\nmargin-bottom:6px;\n}" in patched_css
         assert "font-size:14px;\nline-height:1.1;" in patched_css
         assert "@media (max-width:700px) {\n.channel-label { font-size:16px; }\n}" in patched_css
         assert "@media (max-height:430px) {\n.channel-label { font-size:15px; }\n.channel-meta { font-size:12px; }\n}" in patched_css
@@ -680,6 +683,32 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         current = (current_js.read_bytes(), current_css.read_bytes())
         subprocess.run(["python3", str(PATCHER), str(current_js), str(current_css)], check=True)
         assert current == (current_js.read_bytes(), current_css.read_bytes()), "stats patch was not idempotent"
+
+        v145_js = temp / "v1.45.js"
+        v145_css = temp / "v1.45.css"
+        shutil.copy2(FIXTURES / "touchgui-installed-v1.45.js", v145_js)
+        shutil.copy2(FIXTURES / "touchgui-installed-v1.45.css", v145_css)
+        subprocess.run(["python3", str(PATCHER), str(v145_js), str(v145_css)], check=True)
+        subprocess.run(["node", "--check", str(v145_js)], check=True)
+        migrated_v145_js = v145_js.read_text(encoding="utf-8")
+        migrated_v145_markup = re.search(r"btn\.innerHTML = [\s\S]*?;", migrated_v145_js).group(0)
+        assert "TouchGUI callsign-first card content v1.46" in migrated_v145_js
+        assert migrated_v145_markup.index('class="channel-meta"') < migrated_v145_markup.index('class="channel-label"')
+        assert "TouchGUI top-aligned callsign with description gap v1.47" in v145_css.read_text(encoding="utf-8")
+
+        v146_js = temp / "v1.46.js"
+        v146_css = temp / "v1.46.css"
+        shutil.copy2(FIXTURES / "touchgui-installed-v1.46.js", v146_js)
+        shutil.copy2(FIXTURES / "touchgui-installed-v1.46.css", v146_css)
+        subprocess.run(["python3", str(PATCHER), str(v146_js), str(v146_css)], check=True)
+        subprocess.run(["node", "--check", str(v146_js)], check=True)
+        migrated_v146_css = v146_css.read_text(encoding="utf-8")
+        assert "TouchGUI top-aligned callsign with description gap v1.47" in migrated_v146_css
+        assert "justify-content:flex-start;" in migrated_v146_css
+        assert "margin-bottom:6px;" in migrated_v146_css
+        migrated_v146 = (v146_js.read_bytes(), v146_css.read_bytes())
+        subprocess.run(["python3", str(PATCHER), str(v146_js), str(v146_css)], check=True)
+        assert migrated_v146 == (v146_js.read_bytes(), v146_css.read_bytes()), "v1.46 migration was not idempotent"
 
         v145_js = temp / "v1.45.js"
         v145_css = temp / "v1.45.css"
