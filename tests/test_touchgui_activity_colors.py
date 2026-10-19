@@ -14,7 +14,7 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.44" in text, installer
+        assert "TouchGUI activity colors mod version: v1.45" in text, installer
         assert "Responsive TouchGUI label auto-fit v1.37" in text, installer
         assert "window.matchMedia && window.matchMedia('(orientation: portrait)').matches" in text, installer
         assert "apply_touchgui_activity_live" in text, installer
@@ -25,7 +25,7 @@ def main():
         assert "font-size:12px;" in text, installer
         assert "grep -A7 -F '.channel-stats {'" in text, installer
         assert "channel-side" in text, installer
-        assert "function fitChannelLabel(button)" in text and "TouchGUI uniform-card title fit v1.44" in text, installer
+        assert "function fitChannelLabel(button)" in text and "TouchGUI adaptive title fit v1.45" in text, installer
         assert "function fitTouchguiCardText()" in text, installer
         assert "var scaleFactor = isPortrait ? 0.90 : 0.96;" in text, installer
         assert "@media (orientation: portrait)" in text and "left:-1.5ch;" in text, installer
@@ -67,8 +67,9 @@ def main():
         assert "var scaleFactor = isPortrait ? 0.90 : 0.96;" in patched_js
         assert "meta.style.transform = 'scaleX('" in patched_js
         assert "function fitChannelLabel(button)" in patched_js
-        assert "var minFontSize = Math.min(10, fontSize);" in patched_js
-        assert "TouchGUI uniform-card title fit v1.44" in patched_js
+        assert "var isSmallScreen = window.matchMedia && window.matchMedia('(max-width:700px)').matches;" in patched_js
+        assert "var minFontSize = isSmallScreen ? 12 : 14;" in patched_js
+        assert "TouchGUI adaptive title fit v1.45" in patched_js
         assert "button.style.gridColumn" not in patched_js
         assert "label.style.whiteSpace = 'normal';" in patched_js
         assert "label.style.overflowWrap = 'anywhere';" in patched_js
@@ -199,8 +200,13 @@ Object.defineProperty(longTitle, 'scrollWidth', {get: function() {
 	return 200 * (parseFloat(longTitle.style.fontSize) || 18) / 18;
 }});
 fitChannelLabel(longTitleButton);
-if(longTitle.style.fontSize !== '10px' || longTitle.style.whiteSpace !== 'normal' || longTitle.style.overflowWrap !== 'anywhere' || longTitle.style.maxHeight !== '3.36em' || longTitleButton.style.gridColumn !== undefined)
-	throw new Error('Long TouchGUI title did not wrap within the unchanged card width: ' + JSON.stringify(longTitle.style));
+if(longTitle.style.fontSize !== '14px' || longTitle.style.whiteSpace !== 'normal' || longTitle.style.overflowWrap !== 'anywhere' || longTitle.style.maxHeight !== '3.36em' || longTitleButton.style.gridColumn !== undefined)
+	throw new Error('Long TouchGUI title did not wrap at the desktop 14px floor within the unchanged card width: ' + JSON.stringify(longTitle.style));
+window.matchMedia = function(query) { return {matches: query === '(max-width:700px)'}; };
+var mobileTitle = {clientWidth: 80, scrollWidth: 200, style: {fontSize: '', transform: '', whiteSpace: '', overflowWrap: '', display: '', maxHeight: '', overflow: ''}};
+fitChannelLabel({style: {}, querySelector: function() { return mobileTitle; }});
+if(mobileTitle.style.fontSize !== '12px' || mobileTitle.style.whiteSpace !== 'normal')
+	throw new Error('Narrow-screen TouchGUI title did not retain the 12px minimum before wrapping: ' + JSON.stringify(mobileTitle.style));
 simple.channels = [
 	{node: '30000'}, {node: '2000'}, {node: '30000'},
 	{node: '1999'}, {node: '3000000'}, {node: '2001'}
@@ -664,13 +670,27 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         legacy_136_js = temp / "v1.36.js"
         legacy_136_js.write_text(current_source, encoding="utf-8")
         subprocess.run(["python3", str(PATCHER), str(legacy_136_js), str(legacy_136_css)], check=True)
-        assert "TouchGUI uniform-card title fit v1.44" in legacy_136_js.read_text(encoding="utf-8")
+        assert "TouchGUI adaptive title fit v1.45" in legacy_136_js.read_text(encoding="utf-8")
         assert "TouchGUI single-line label fit v1.37" in legacy_136_css.read_text(encoding="utf-8")
         assert "Responsive TouchGUI label auto-fit v1.37" in legacy_136_css.read_text(encoding="utf-8")
 
         current = (current_js.read_bytes(), current_css.read_bytes())
         subprocess.run(["python3", str(PATCHER), str(current_js), str(current_css)], check=True)
         assert current == (current_js.read_bytes(), current_css.read_bytes()), "stats patch was not idempotent"
+
+        v144_js = temp / "v1.44.js"
+        v144_css = temp / "v1.44.css"
+        shutil.copy2(FIXTURES / "touchgui-installed-v1.44.js", v144_js)
+        shutil.copy2(FIXTURES / "touchgui-installed-v1.44.css", v144_css)
+        subprocess.run(["python3", str(PATCHER), str(v144_js), str(v144_css)], check=True)
+        subprocess.run(["node", "--check", str(v144_js)], check=True)
+        migrated_v144_js = v144_js.read_text(encoding="utf-8")
+        assert "TouchGUI adaptive title fit v1.45" in migrated_v144_js
+        assert "var minFontSize = isSmallScreen ? 12 : 14;" in migrated_v144_js
+        assert "button.style.gridColumn" not in migrated_v144_js
+        migrated_v144 = (v144_js.read_bytes(), v144_css.read_bytes())
+        subprocess.run(["python3", str(PATCHER), str(v144_js), str(v144_css)], check=True)
+        assert migrated_v144 == (v144_js.read_bytes(), v144_css.read_bytes()), "v1.44 migration was not idempotent"
 
         v143_js = temp / "v1.43.js"
         v143_css = temp / "v1.43.css"
@@ -679,7 +699,7 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         subprocess.run(["python3", str(PATCHER), str(v143_js), str(v143_css)], check=True)
         subprocess.run(["node", "--check", str(v143_js)], check=True)
         migrated_v143_js = v143_js.read_text(encoding="utf-8")
-        assert "TouchGUI uniform-card title fit v1.44" in migrated_v143_js
+        assert "TouchGUI adaptive title fit v1.45" in migrated_v143_js
         assert "function fitChannelLabel(button, expanded)" not in migrated_v143_js
         assert "button.style.gridColumn" not in migrated_v143_js
         assert "label.style.overflowWrap = 'anywhere';" in migrated_v143_js

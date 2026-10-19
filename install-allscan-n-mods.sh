@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.44
+# TouchGUI activity colors mod version: v1.45
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -335,7 +335,7 @@ touchgui_activity_present() {
     grep -Fq 'channel-content' "$SIMPLE_JS_FILE" &&
     grep -Fq 'function fitChannelMeta(button)' "$SIMPLE_JS_FILE" &&
     grep -Fq 'function fitChannelLabel(button)' "$SIMPLE_JS_FILE" &&
-    grep -Fq 'TouchGUI uniform-card title fit v1.44' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'TouchGUI adaptive title fit v1.45' "$SIMPLE_JS_FILE" &&
     grep -Fq 'function fitTouchguiCardText()' "$SIMPLE_JS_FILE" &&
     grep -Fq 'number < 3000000' "$SIMPLE_JS_FILE" &&
     grep -Fq 'simple.txTim[node] = now' "$SIMPLE_JS_FILE" &&
