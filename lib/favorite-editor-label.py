@@ -26,24 +26,28 @@ def main() -> None:
     favs = favs_path.read_text(encoding="utf-8")
     css = css_path.read_text(encoding="utf-8")
 
-    view_marker = "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.40. -->"
+    view_marker = "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.41. -->"
     view_markers_old = (
         "// AllScan Mods: 33-character call-sign-free Favorites editor label v1.37.",
         "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.38. -->",
         "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.39. -->",
+        "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.40. -->",
     )
-    fav_marker = "// AllScan Mods: Call-sign-free Favorites editor value v1.40."
+    fav_marker = "// AllScan Mods: Call-sign-free Favorites editor value v1.41."
     fav_markers_old = (
         "// AllScan Mods: Call-sign-free Favorites editor value v1.37.",
         "// AllScan Mods: Call-sign-free Favorites editor value v1.38.",
         "// AllScan Mods: Call-sign-free Favorites editor value v1.39.",
+        "// AllScan Mods: Call-sign-free Favorites editor value v1.40.",
     )
-    css_marker = "/* AllScan Mods: Favorites editor call-sign hint v1.40. */"
-    old_css_marker = "/* AllScan Mods: Favorites editor call-sign hint v1.39. */"
+    css_marker = "/* AllScan Mods: Favorites editor call-sign hint v1.41. */"
+    old_css_markers = (
+        "/* AllScan Mods: Favorites editor call-sign hint v1.39. */",
+        "/* AllScan Mods: Favorites editor call-sign hint v1.40. */",
+    )
     hint_markup = '<div class="favoriteEditHint">The callsign is added automatically.</div>'
     hint_style = (
-        ".favEditPanel .favoriteEditHint {margin:2px 0 6px;color:#fff;"
-        "font:12px/1.25 Verdana,Arial,Helvetica,sans-serif;font-weight:normal;}"
+        ".favEditPanel .favoriteEditHint {margin:2px 0 6px;color:#fff;font-size:11px;}"
     )
 
     if (view_marker in view and fav_marker in favs and css_marker in css
@@ -128,19 +132,23 @@ def main() -> None:
         index = replace_once(index, old_message, new_message, "the v1.04 label validation message")
 
     if css_marker not in css:
-        old_hint_style = (
+        old_hint_styles = (
             ".favEditPanel .favoriteEditHint {margin:2px 0 6px;color:#edc;"
-            "font-size:13px;font-weight:bold;line-height:1.25;}"
+            "font-size:13px;font-weight:bold;line-height:1.25;}",
+            ".favEditPanel .favoriteEditHint {margin:2px 0 6px;color:#fff;"
+            "font:12px/1.25 Verdana,Arial,Helvetica,sans-serif;font-weight:normal;}",
         )
-        if old_css_marker in css:
-            css = replace_once(css, old_css_marker, css_marker, "the v1.39 guidance style marker")
-            css = replace_once(css, old_hint_style, hint_style, "the v1.39 bold guidance style")
+        old_css_marker = next((marker for marker in old_css_markers if marker in css), None)
+        old_hint_style = next((style for style in old_hint_styles if style in css), None)
+        if old_css_marker and old_hint_style:
+            css = replace_once(css, old_css_marker, css_marker, "the previous guidance style marker")
+            css = replace_once(css, old_hint_style, hint_style, "the previous explicit guidance style")
         elif ".favEditPanel .favoriteEditHint" in css:
             raise SystemExit("ERROR: Existing Favorites guidance style is unexpected.")
         else:
             css = css.rstrip() + "\n\n" + css_marker + "\n" + hint_style + "\n"
     elif hint_style not in css:
-        raise SystemExit("ERROR: Existing v1.40 Favorites guidance style is incomplete.")
+        raise SystemExit("ERROR: Existing v1.41 Favorites guidance style is incomplete.")
 
     # Only write after each upstream structure has been recognized.
     favs_path.write_text(favs, encoding="utf-8")
