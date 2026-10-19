@@ -14,7 +14,7 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.49" in text, installer
+        assert "TouchGUI activity colors mod version: v1.50" in text, installer
         assert "Responsive TouchGUI label auto-fit v1.37" in text, installer
         assert "window.matchMedia && window.matchMedia('(orientation: portrait)').matches" in text, installer
         assert "apply_touchgui_activity_live" in text, installer
@@ -105,8 +105,8 @@ def main():
         assert ".channel-meta {\nmargin-bottom:6px;\n}" in patched_css
         assert "TouchGUI bold node/callsign line v1.48" in patched_css
         assert ".channel-meta {\nfont-weight:bold;\n}" in patched_css
-        assert "TouchGUI landscape callsign fit v1.49" in patched_css
-        assert "@media (orientation: landscape) {\n.channel-meta { display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-1.5ch; overflow:visible; }\n}" in patched_css
+        assert "TouchGUI landscape callsign fit v1.50" in patched_css
+        assert "@media (orientation: landscape) {\n.channel-meta { display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-0.75ch; overflow:visible; }\n}" in patched_css
         assert "font-size:14px;\nline-height:1.1;" in patched_css
         assert "@media (max-width:700px) {\n.channel-label { font-size:16px; }\n}" in patched_css
         assert "@media (max-height:430px) {\n.channel-label { font-size:15px; }\n.channel-meta { font-size:12px; }\n}" in patched_css
@@ -770,8 +770,25 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         subprocess.run(["python3", str(PATCHER), str(v117_js), str(v117_css)], check=True)
         assert upgraded_v117 == (v117_js.read_bytes(), v117_css.read_bytes()), "v1.17 upgrade was not idempotent"
 
+    with tempfile.TemporaryDirectory(prefix="touchgui-v149-upgrade-") as temp:
+        v149_js = Path(temp) / "simple.js"
+        v149_css = Path(temp) / "simple.css"
+        shutil.copy2(FIXTURES / "touchgui-installed-v1.49.js", v149_js)
+        shutil.copy2(FIXTURES / "touchgui-installed-v1.49.css", v149_css)
+        portrait_rule = "@media (orientation: portrait) {\n.channel-meta { display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-1.5ch; overflow:visible; }\n}"
+        assert portrait_rule in v149_css.read_text(encoding="utf-8")
+        subprocess.run(["python3", str(PATCHER), str(v149_js), str(v149_css)], check=True)
+        upgraded_css = v149_css.read_text(encoding="utf-8")
+        assert upgraded_css.count("TouchGUI landscape callsign fit v1.50") == 1
+        assert "TouchGUI landscape callsign fit v1.49" not in upgraded_css
+        assert "left:-0.75ch;" in upgraded_css
+        assert portrait_rule in upgraded_css
+        migrated_v149 = (v149_js.read_bytes(), v149_css.read_bytes())
+        subprocess.run(["python3", str(PATCHER), str(v149_js), str(v149_css)], check=True)
+        assert migrated_v149 == (v149_js.read_bytes(), v149_css.read_bytes()), "v1.49 migration was not idempotent"
+
     print("PASS: installers include the TouchGUI activity patch path.")
-    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, footer, compatibility upgrades, syntax, and repeat application.")
+    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, footer, compatibility upgrades, syntax, repeat application, and v1.49 landscape fit migration.")
 
 
 if __name__ == "__main__":
