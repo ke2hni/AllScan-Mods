@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Ensure v1.42 edits one shared call-sign-free Favorites label."""
+"""Ensure v1.43 edits one shared call-sign-free Favorites label."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -13,9 +13,9 @@ def main() -> None:
     )
     for filename in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         source = (ROOT / filename).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.42" in source
+        assert "TouchGUI activity colors mod version: v1.43" in source
         assert "favoriteEditHint" in source
-        assert "Favorites editor call-sign hint v1.42." in source
+        assert "Favorites editor call-sign hint v1.43." in source
         assert "apply_favorite_editor_label_live" in source
         assert "favorite-editor-label.py" in source
         for marker in forbidden:
@@ -28,7 +28,7 @@ def main() -> None:
     assert "TouchGUI matching callsign removal v1.18" in activity
     assert "touchguiLabel" not in activity
     assert "label.length > 33" not in activity
-    assert "TouchGUI horizontal title fit v1.37" in activity
+    assert "TouchGUI readable long-title fit v1.43" in activity
     assert "TouchGUI single-line label fit v1.37" in activity
 
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
@@ -37,7 +37,7 @@ def main() -> None:
     assert "optional TouchGUI card label overrides" not in readme
 
     helper = (ROOT / "lib/favorite-editor-label.py").read_text(encoding="utf-8")
-    assert '<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.42. -->' in helper
+    assert '<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.43. -->' in helper
     assert "font-size:10px;font-weight:normal" in helper
     assert "color:hsl(240,30%,70%)" in helper
     assert 'maxlength="33"' in helper

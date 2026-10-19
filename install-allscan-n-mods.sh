@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.42
+# TouchGUI activity colors mod version: v1.43
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -258,10 +258,10 @@ fi
 
 
 favorite_editor_label_present() {
-    grep -Fq '<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.42. -->' "$VIEW_FILE" &&
-    grep -Fq 'Call-sign-free Favorites editor value v1.42.' "$FAVS_UTILS_FILE" &&
+    grep -Fq '<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.43. -->' "$VIEW_FILE" &&
+    grep -Fq 'Call-sign-free Favorites editor value v1.43.' "$FAVS_UTILS_FILE" &&
     grep -Fq '<div class="favoriteEditHint">The callsign is added automatically.</div>' "$VIEW_FILE" &&
-    grep -Fq 'Favorites editor call-sign hint v1.42.' "$CSS_FILE" &&
+    grep -Fq 'Favorites editor call-sign hint v1.43.' "$CSS_FILE" &&
     grep -Fq '.favEditPanel label {display:block;margin-top:7px;color:#edc;font-size:12px;}' "$CSS_FILE" &&
     grep -Fq 'font-size:10px;font-weight:normal;' "$CSS_FILE" &&
     grep -Fq 'maxlength="33"' "$VIEW_FILE" &&
@@ -334,8 +334,8 @@ touchgui_activity_present() {
     grep -Fq 'channel-side' "$SIMPLE_JS_FILE" &&
     grep -Fq 'channel-content' "$SIMPLE_JS_FILE" &&
     grep -Fq 'function fitChannelMeta(button)' "$SIMPLE_JS_FILE" &&
-    grep -Fq 'function fitChannelLabel(button)' "$SIMPLE_JS_FILE" &&
-    grep -Fq 'TouchGUI horizontal title fit v1.37' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'function fitChannelLabel(button, expanded)' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'TouchGUI readable long-title fit v1.43' "$SIMPLE_JS_FILE" &&
     grep -Fq 'function fitTouchguiCardText()' "$SIMPLE_JS_FILE" &&
     grep -Fq 'number < 3000000' "$SIMPLE_JS_FILE" &&
     grep -Fq 'simple.txTim[node] = now' "$SIMPLE_JS_FILE" &&

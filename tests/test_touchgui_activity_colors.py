@@ -14,7 +14,7 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.42" in text, installer
+        assert "TouchGUI activity colors mod version: v1.43" in text, installer
         assert "Responsive TouchGUI label auto-fit v1.37" in text, installer
         assert "window.matchMedia && window.matchMedia('(orientation: portrait)').matches" in text, installer
         assert "apply_touchgui_activity_live" in text, installer
@@ -25,7 +25,7 @@ def main():
         assert "font-size:12px;" in text, installer
         assert "grep -A7 -F '.channel-stats {'" in text, installer
         assert "channel-side" in text, installer
-        assert "function fitChannelLabel(button)" in text and "TouchGUI horizontal title fit v1.37" in text, installer
+        assert "function fitChannelLabel(button, expanded)" in text and "TouchGUI readable long-title fit v1.43" in text, installer
         assert "function fitTouchguiCardText()" in text, installer
         assert "var scaleFactor = isPortrait ? 0.90 : 0.96;" in text, installer
         assert "@media (orientation: portrait)" in text and "left:-1.5ch;" in text, installer
@@ -66,13 +66,16 @@ def main():
         assert "var minFontSize = isPortrait ? 10 : Math.max(12, fontSize * 0.9);" in patched_js
         assert "var scaleFactor = isPortrait ? 0.90 : 0.96;" in patched_js
         assert "meta.style.transform = 'scaleX('" in patched_js
-        assert "function fitChannelLabel(button)" in patched_js
+        assert "function fitChannelLabel(button, expanded)" in patched_js
         assert "var minFontSize = Math.min(10, fontSize);" in patched_js
-        assert "TouchGUI horizontal title fit v1.37" in patched_js
+        assert "TouchGUI readable long-title fit v1.43" in patched_js
+        assert "button.style.gridColumn = 'span 2';" in patched_js
+        assert "button.style.gridColumn = '1 / -1';" in patched_js
+        assert "label.style.transform = 'scaleX('" not in patched_js
         assert "function fitTouchguiCardText()" in patched_js
         assert "fitChannelLabel(btn);" in patched_js
         assert patched_js.count("function fitChannelMeta(button)") == 1
-        assert patched_js.count("function fitChannelLabel(button)") == 1
+        assert patched_js.count("function fitChannelLabel(button, expanded)") == 1
         assert "simple.txTim[node] = now" in patched_js
         assert "convertActivityRange(2 * rxPct, 10, 30)" in patched_js
         assert "convertActivityRange(3 * linkCount, 15, 30)" in patched_js
@@ -175,14 +178,31 @@ window.matchMedia = function(query) { return {matches: query === '(orientation: 
 fitChannelMeta({querySelector: function() { return portraitMeta; }});
 if(parseFloat(portraitMeta.style.fontSize) !== 10 || portraitMeta.style.transform !== 'scaleX(0.45)')
 	throw new Error('Portrait metadata did not use its 10px minimum: ' + portraitMeta.style.fontSize);
-var shortTitle = {clientWidth: 120, scrollWidth: 100, style: {fontSize: '', transform: ''}};
-fitChannelLabel({querySelector: function() { return shortTitle; }});
+window.requestAnimationFrame = function(callback) { callback(); };
+var titleGrid = {};
+window.getComputedStyle = function(element) {
+	if(element === titleGrid) return {gridTemplateColumns: '90px 90px 90px'};
+	var isTitle = element.style.webkitLineClamp !== undefined;
+	var size = parseFloat(element.style.fontSize) || (isTitle ? 18 : 14);
+	return {fontSize: size + 'px', lineHeight: (size * (isTitle ? 1.12 : 1.1)) + 'px'};
+};
+var shortTitle = {clientWidth: 120, scrollWidth: 100, style: {fontSize: '', transform: '', webkitLineClamp: '3'}};
+fitChannelLabel({style: {}, querySelector: function() { return shortTitle; }});
 if(shortTitle.style.fontSize !== '' || shortTitle.style.transform !== '')
 	throw new Error('Short TouchGUI title was unnecessarily resized');
-var longTitle = {clientWidth: 100, scrollWidth: 200, style: {fontSize: '', transform: ''}};
-fitChannelLabel({querySelector: function() { return longTitle; }});
-if(longTitle.style.fontSize !== '10px' || longTitle.style.transform !== 'scaleX(0.48)')
-	throw new Error('Long TouchGUI title did not shrink/scale to fit one line: ' + longTitle.style.fontSize + ', ' + longTitle.style.transform);
+var longTitleButton = {style: {}, parentElement: titleGrid, querySelector: function(selector) {
+	return selector === '.channel-label' ? longTitle : null;
+}};
+var longTitle = {style: {fontSize: '', transform: '', webkitLineClamp: '3'}};
+Object.defineProperty(longTitle, 'clientWidth', {get: function() {
+	return longTitleButton.style.gridColumn ? 180 : 80;
+}});
+Object.defineProperty(longTitle, 'scrollWidth', {get: function() {
+	return 200 * (parseFloat(longTitle.style.fontSize) || 18) / 18;
+}});
+fitChannelLabel(longTitleButton);
+if(longTitle.style.fontSize !== '16.2px' || longTitle.style.transform !== '' || longTitleButton.style.gridColumn !== 'span 2')
+	throw new Error('Long TouchGUI title was not given more readable grid width: ' + longTitle.style.fontSize + ', ' + longTitle.style.transform + ', ' + longTitleButton.style.gridColumn);
 simple.channels = [
 	{node: '30000'}, {node: '2000'}, {node: '30000'},
 	{node: '1999'}, {node: '3000000'}, {node: '2001'}
@@ -413,8 +433,8 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         v127_js.write_text(js_text.replace("function formatTouchguiStatusMessage(msg)", legacy_v127_fit + "\nfunction formatTouchguiStatusMessage(msg)"), encoding="utf-8")
         subprocess.run(["python3", str(PATCHER), str(v127_js), str(v127_css)], check=True)
         assert "Responsive TouchGUI label auto-fit v1.37" in v127_css.read_text(encoding="utf-8")
-        assert "function fitChannelLabel(button)" in v127_js.read_text(encoding="utf-8")
-        assert v127_js.read_text(encoding="utf-8").count("requestAnimationFrame(function()") == 1
+        assert "function fitChannelLabel(button, expanded)" in v127_js.read_text(encoding="utf-8")
+        assert v127_js.read_text(encoding="utf-8").count("fitChannelLabel(btn);") == 1
 
         old_scale_block = "\t\tif(textWidth > meta.clientWidth) {\n\t\t\tvar scaleFactor = isPortrait ? 0.90 : 0.96;\n\t\t\tmeta.style.transform = 'scaleX(' + (meta.clientWidth / textWidth * scaleFactor) + ')';\n\t\t}"
         prior_scale_line = "\t\tif(textWidth > meta.clientWidth)\n\t\t\tmeta.style.transform = 'scaleX(' + (meta.clientWidth / textWidth * 0.96) + ')';"
@@ -646,7 +666,7 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         legacy_136_js = temp / "v1.36.js"
         legacy_136_js.write_text(current_source, encoding="utf-8")
         subprocess.run(["python3", str(PATCHER), str(legacy_136_js), str(legacy_136_css)], check=True)
-        assert "TouchGUI horizontal title fit v1.37" in legacy_136_js.read_text(encoding="utf-8")
+        assert "TouchGUI readable long-title fit v1.43" in legacy_136_js.read_text(encoding="utf-8")
         assert "TouchGUI single-line label fit v1.37" in legacy_136_css.read_text(encoding="utf-8")
         assert "Responsive TouchGUI label auto-fit v1.37" in legacy_136_css.read_text(encoding="utf-8")
 
