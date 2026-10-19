@@ -14,7 +14,7 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.45" in text, installer
+        assert "TouchGUI activity colors mod version: v1.46" in text, installer
         assert "Responsive TouchGUI label auto-fit v1.37" in text, installer
         assert "window.matchMedia && window.matchMedia('(orientation: portrait)').matches" in text, installer
         assert "apply_touchgui_activity_live" in text, installer
@@ -83,6 +83,9 @@ def main():
         assert "convertActivityRange(2 * rxPct, 10, 30)" in patched_js
         assert "convertActivityRange(3 * linkCount, 15, 30)" in patched_js
         assert "channel-side" in patched_js and "channel-content" in patched_js
+        assert "TouchGUI callsign-first card content v1.46" in patched_js
+        channel_markup = re.search(r"btn\.innerHTML = [\s\S]*?;", patched_js).group(0)
+        assert channel_markup.index('class="channel-meta"') < channel_markup.index('class="channel-label"')
         assert patched_js.index('class="channel-side"') < patched_js.index('class="channel-content"')
         assert "active-wt" in patched_js
         assert "TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.17." in patched_css
@@ -677,6 +680,20 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         current = (current_js.read_bytes(), current_css.read_bytes())
         subprocess.run(["python3", str(PATCHER), str(current_js), str(current_css)], check=True)
         assert current == (current_js.read_bytes(), current_css.read_bytes()), "stats patch was not idempotent"
+
+        v145_js = temp / "v1.45.js"
+        v145_css = temp / "v1.45.css"
+        shutil.copy2(FIXTURES / "touchgui-installed-v1.45.js", v145_js)
+        shutil.copy2(FIXTURES / "touchgui-installed-v1.45.css", v145_css)
+        subprocess.run(["python3", str(PATCHER), str(v145_js), str(v145_css)], check=True)
+        subprocess.run(["node", "--check", str(v145_js)], check=True)
+        migrated_v145_js = v145_js.read_text(encoding="utf-8")
+        assert "TouchGUI callsign-first card content v1.46" in migrated_v145_js
+        migrated_markup = re.search(r"btn\.innerHTML = [\s\S]*?;", migrated_v145_js).group(0)
+        assert migrated_markup.index('class="channel-meta"') < migrated_markup.index('class="channel-label"')
+        migrated_v145 = (v145_js.read_bytes(), v145_css.read_bytes())
+        subprocess.run(["python3", str(PATCHER), str(v145_js), str(v145_css)], check=True)
+        assert migrated_v145 == (v145_js.read_bytes(), v145_css.read_bytes()), "v1.45 migration was not idempotent"
 
         v144_js = temp / "v1.44.js"
         v144_css = temp / "v1.44.css"

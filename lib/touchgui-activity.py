@@ -58,6 +58,7 @@ def main():
             and "Responsive TouchGUI label auto-fit v1.37" in css
             and "TouchGUI single-line label fit v1.37" in css
             and "TouchGUI adaptive title fit v1.45" in js
+            and "TouchGUI callsign-first card content v1.46" in js
             and "function fitChannelLabel(button)" in js
             and "@media (orientation: portrait)" in css
             and "display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-1.5ch; overflow:visible;" in css
@@ -102,10 +103,11 @@ def main():
         js = js.replace(render_marker, render_new, 1)
 
     channel_markup = r'''(?m)^[ \t]*btn\.innerHTML = [\s\S]*?;'''
-    channel_markup_new = '''\t\tbtn.innerHTML = '<span class="channel-side"><span class="channel-index">' + (i + 1) + '</span>'
+    channel_markup_new = '''\t\t// AllScan Mods: TouchGUI callsign-first card content v1.46.
+\t\tbtn.innerHTML = '<span class="channel-side"><span class="channel-index">' + (i + 1) + '</span>'
 \t\t\t+ '<span class="channel-stats"><span class="channel-rx">—</span><span class="channel-lcnt">—</span></span></span>'
-\t\t\t+ '<span class="channel-content"><span class="channel-label">' + escapeHtml(channelLabel(channel)) + '</span>'
-\t\t\t+ '<span class="channel-meta">' + escapeHtml(channelMeta(channel)) + '</span></span>';
+\t\t\t+ '<span class="channel-content"><span class="channel-meta">' + escapeHtml(channelMeta(channel)) + '</span>'
+\t\t\t+ '<span class="channel-label">' + escapeHtml(channelLabel(channel)) + '</span></span>';
 '''.replace("\\t", "\t")
     updated_js, markup_count = re.subn(channel_markup, lambda _: channel_markup_new, js, count=1)
     if markup_count != 1 or "channel-index" not in js or "channel-label" not in js:
@@ -115,7 +117,7 @@ def main():
         r"(?ms)^[ \t]*requestAnimationFrame\(function\(\) \{[^{}]*fitChannelMeta\(btn\);[^{}]*\}\);"
     )
     js = render_fit_pattern.sub("", js)
-    render_end = "\t\t\t+ '<span class=\"channel-meta\">' + escapeHtml(channelMeta(channel)) + '</span></span>';"
+    render_end = "\t\t\t+ '<span class=\"channel-label\">' + escapeHtml(channelLabel(channel)) + '</span></span>';"
     if js.count(render_end) != 1:
         raise SystemExit("ERROR: Expected one TouchGUI card render insertion point; no files changed.")
     render_fit_call = "\t\trequestAnimationFrame(function() {\n\t\t\tfitChannelMeta(btn);\n\t\t\tfitChannelLabel(btn);\n\t\t});"
