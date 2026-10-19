@@ -57,12 +57,13 @@ def main():
             and "TouchGUI centered card text v1.17" in css
             and "Responsive TouchGUI label auto-fit v1.37" in css
             and "TouchGUI single-line label fit v1.37" in css
-            and "TouchGUI readable long-title fit v1.43" in js
+            and "TouchGUI uniform-card title fit v1.44" in js
+            and "function fitChannelLabel(button)" in js
             and "@media (orientation: portrait)" in css
             and "display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-1.5ch; overflow:visible;" in css
             and "left:-1.5ch;" in css
             and "function fitChannelMeta(button)" in js
-            and "function fitChannelLabel(button, expanded)" in js
+            and "function fitChannelLabel(button)" in js
             and "function fitTouchguiCardText()" in js
             and "window.matchMedia('(orientation: portrait)')" in js
             and "var scaleFactor = isPortrait ? 0.90 : 0.96;" in js
@@ -318,39 +319,29 @@ function channelLabel(channel) {
 		}
 	}
 }
-// AllScan Mods: TouchGUI readable long-title fit v1.43.
-function fitChannelLabel(button, expanded) {
+// AllScan Mods: TouchGUI uniform-card title fit v1.44.
+function fitChannelLabel(button) {
 	var label = button.querySelector('.channel-label');
 	if(!label || !label.clientWidth)
 		return;
-	if(!expanded)
-		button.style.gridColumn = '';
 	label.style.fontSize = '';
 	label.style.transform = '';
+	label.style.whiteSpace = '';
+	label.style.overflowWrap = '';
+	label.style.display = '';
+	label.style.maxHeight = '';
+	label.style.overflow = '';
 	var textWidth = label.scrollWidth;
 	if(textWidth > label.clientWidth) {
 		var fontSize = parseFloat(window.getComputedStyle(label).fontSize);
 		var minFontSize = Math.min(10, fontSize);
 		label.style.fontSize = Math.max(minFontSize, fontSize * label.clientWidth / textWidth) + 'px';
-		textWidth = label.scrollWidth;
-		if(textWidth > label.clientWidth) {
-			var grid = button.parentElement;
-			var columns = grid && window.getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/).length;
-			if(!expanded && columns > 1) {
-				button.style.gridColumn = 'span 2';
-				window.requestAnimationFrame(function() {
-					fitChannelMeta(button);
-					fitChannelLabel(button, 'span');
-				});
-				return;
-			}
-			if(expanded === 'span' && columns > 2) {
-				button.style.gridColumn = '1 / -1';
-				window.requestAnimationFrame(function() {
-					fitChannelMeta(button);
-					fitChannelLabel(button, 'full');
-				});
-			}
+		if(label.scrollWidth > label.clientWidth) {
+			label.style.whiteSpace = 'normal';
+			label.style.overflowWrap = 'anywhere';
+			label.style.display = 'block';
+			label.style.maxHeight = '3.36em';
+			label.style.overflow = 'hidden';
 		}
 	}
 }
@@ -377,17 +368,17 @@ window.addEventListener('resize', fitTouchguiCardText);'''
         js = old_text_fit_pattern.sub(lambda _: card_text_fit_funcs, js, count=1)
     elif js.count("function fitChannelLabel(button)") != 1 or "function fitTouchguiCardText()" not in js:
         raise SystemExit("ERROR: TouchGUI card title sizing helper is ambiguous; no files changed.")
-    if "TouchGUI readable long-title fit v1.43" not in js:
+    if "TouchGUI uniform-card title fit v1.44" not in js:
         title_fit_pattern = re.compile(
-            r"(?ms)^(?:// AllScan Mods: TouchGUI horizontal title fit v1\.37\.\n)?"
-            r"function fitChannelLabel\(button\) \{.*?^}"
+            r"(?ms)^(?:// AllScan Mods: TouchGUI (?:horizontal title fit v1\.37|readable long-title fit v1\.43)\.\n)?"
+            r"function fitChannelLabel\(button(?:, expanded)?\) \{.*?^}"
         )
         title_fits = list(title_fit_pattern.finditer(js))
         if len(title_fits) != 1:
             raise SystemExit("ERROR: Existing TouchGUI title fitting function is ambiguous; no files changed.")
-        title_function = "function fitChannelLabel(button, expanded)" + card_text_fit_funcs.split("function fitChannelLabel(button, expanded)", 1)[1].split("function fitTouchguiCardText()", 1)[0]
+        title_function = "function fitChannelLabel(button)" + card_text_fit_funcs.split("function fitChannelLabel(button)", 1)[1].split("function fitTouchguiCardText()", 1)[0]
         js = title_fit_pattern.sub(
-            lambda _: "// AllScan Mods: TouchGUI readable long-title fit v1.43.\n" + title_function,
+            lambda _: "// AllScan Mods: TouchGUI uniform-card title fit v1.44.\n" + title_function,
             js,
             count=1,
         )
@@ -918,7 +909,7 @@ text-overflow:clip;
             or "TouchGUI centered card text v1.17" not in css
             or "Responsive TouchGUI label auto-fit v1.37" not in css
             or "TouchGUI single-line label fit v1.37" not in css
-            or "TouchGUI readable long-title fit v1.43" not in js
+            or "TouchGUI uniform-card title fit v1.44" not in js
             or "@media (orientation: portrait)" not in css
             or "display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-1.5ch; overflow:visible;" not in css
             or "left:-1.5ch;" not in css):

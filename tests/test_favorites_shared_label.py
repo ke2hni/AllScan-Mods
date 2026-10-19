@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Ensure v1.43 edits one shared call-sign-free Favorites label."""
+"""Ensure v1.44 edits one shared call-sign-free Favorites label."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -13,7 +13,7 @@ def main() -> None:
     )
     for filename in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         source = (ROOT / filename).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.43" in source
+        assert "TouchGUI activity colors mod version: v1.44" in source
         assert "favoriteEditHint" in source
         assert "Favorites editor call-sign hint v1.43." in source
         assert "apply_favorite_editor_label_live" in source
@@ -28,7 +28,7 @@ def main() -> None:
     assert "TouchGUI matching callsign removal v1.18" in activity
     assert "touchguiLabel" not in activity
     assert "label.length > 33" not in activity
-    assert "TouchGUI readable long-title fit v1.43" in activity
+    assert "TouchGUI uniform-card title fit v1.44" in activity
     assert "TouchGUI single-line label fit v1.37" in activity
 
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
@@ -44,7 +44,7 @@ def main() -> None:
     assert "substr($name, 0, 33)" in helper
     assert "newLabel.length > 33" in helper
     print("PASS: v1.04 keeps one shared, call-sign-free, 33-character Favorites label.")
-    print("PASS: TouchGUI title fitting preserves long text on one line without ellipsis.")
+    print("PASS: TouchGUI title fitting keeps card widths uniform and preserves long text without ellipsis.")
     print("PASS: Rx%/LCnt sorting and PR #37 editor detection remain in both installers.")
 
 
