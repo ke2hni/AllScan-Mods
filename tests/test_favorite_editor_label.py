@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check the shared Favorites label, inherited hint styling, and prior-version migrations."""
+"""Check the shared Favorites label, hint hierarchy, and prior-version migrations."""
 from pathlib import Path
 import subprocess
 import tempfile
@@ -43,6 +43,7 @@ function buildFavList($favs) {
 }
 '''
 CSS = '''body, textarea, input, select { font:12px/1.25 Verdana,Arial,Helvetica,sans-serif; }
+.favEditPanel label {display:block;margin-top:7px;color:#edc;}
 '''
 
 
@@ -73,10 +74,9 @@ def main() -> None:
         assert 'maxlength="33"' in view and 'class="favoriteEditHint">The callsign is added automatically.' in view
         assert "Up to 33 characters." not in view
         assert "// AllScan Mods: 33-character" not in view
-        assert "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.41. -->" in view
-        assert ".favEditPanel .favoriteEditHint {margin:2px 0 6px;color:#fff;font-size:11px;}" in current["main.css"]
-        assert "font-weight:" not in current["main.css"].split(".favEditPanel .favoriteEditHint", 1)[1].split("}", 1)[0]
-        assert "favoriteEditHint {margin:2px 0 6px;color:#fff;font-weight" not in current["main.css"]
+        assert "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.42. -->" in view
+        assert ".favEditPanel .favoriteEditHint {margin:2px 0 6px;color:hsl(240,30%,70%);font-size:10px;font-weight:normal;}" in current["main.css"]
+        assert ".favEditPanel label {display:block;margin-top:7px;color:#edc;font-size:12px;}" in current["main.css"]
         assert "strlen($newLabel) > 33" in current["index.php"] and "$newLabel === ''" not in current["index.php"]
         assert "newLabel.length > 33" in current["main.js"] and "!newLabel" not in current["main.js"]
         assert "$editName = substr($name, 0, 33);" in current["favsUtils.php"]
@@ -92,15 +92,17 @@ def main() -> None:
              '<div class="favoriteEditHint">The callsign is added automatically.</div>'),
             ("1.40", "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.40. -->",
              '<div class="favoriteEditHint">The callsign is added automatically.</div>'),
+            ("1.41", "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.41. -->",
+             '<div class="favoriteEditHint">The callsign is added automatically.</div>'),
         ):
             legacy = dict(current)
             legacy["viewUtils.php"] = view.replace(
-                "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.41. -->",
+                "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.42. -->",
                 old_marker, 1).replace(
                 '<div class="favoriteEditHint">The callsign is added automatically.</div>',
                 old_help, 1)
             legacy["favsUtils.php"] = current["favsUtils.php"].replace(
-                "Call-sign-free Favorites editor value v1.41.",
+                "Call-sign-free Favorites editor value v1.42.",
                 f"Call-sign-free Favorites editor value v{old_version}.", 1)
             legacy_css = CSS
             if old_version == "1.39":
@@ -115,6 +117,11 @@ def main() -> None:
                     ".favEditPanel .favoriteEditHint {margin:2px 0 6px;color:#fff;"
                     "font:12px/1.25 Verdana,Arial,Helvetica,sans-serif;font-weight:normal;}\n"
                 )
+            elif old_version == "1.41":
+                legacy_css += (
+                    "\n/* AllScan Mods: Favorites editor call-sign hint v1.41. */\n"
+                    ".favEditPanel .favoriteEditHint {margin:2px 0 6px;color:#fff;font-size:11px;}\n"
+                )
             legacy["main.css"] = legacy_css
             write_files(temp, legacy)
             before = {name: (temp / name).read_bytes() for name in ("index.php", "main.js")}
@@ -125,17 +132,16 @@ def main() -> None:
                 assert old_help not in migrated_view
             assert "Up to 33 characters." not in migrated_view
             assert '<div class="favoriteEditHint">The callsign is added automatically.</div>' in migrated_view
-            assert "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.41. -->" in migrated_view
+            assert "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.42. -->" in migrated_view
             migrated_css = (temp / "main.css").read_text(encoding="utf-8")
-            assert ".favEditPanel .favoriteEditHint {margin:2px 0 6px;color:#fff;font-size:11px;}" in migrated_css
-            assert "font-weight:" not in migrated_css.split(".favEditPanel .favoriteEditHint", 1)[1].split("}", 1)[0]
-            assert "favoriteEditHint {margin:2px 0 6px;color:#fff;font-weight" not in migrated_css
+            assert ".favEditPanel .favoriteEditHint {margin:2px 0 6px;color:hsl(240,30%,70%);font-size:10px;font-weight:normal;}" in migrated_css
+            assert ".favEditPanel label {display:block;margin-top:7px;color:#edc;font-size:12px;}" in migrated_css
             assert (temp / "index.php").read_bytes() == before["index.php"]
             assert (temp / "main.js").read_bytes() == before["main.js"]
 
     print("PASS: one shared call-sign-free label is capped at 33 characters.")
-    print("PASS: the hint matches the form labels' 11px size and regular weight, with increased contrast and no length phrase.")
-    print("PASS: clean install, repeat install, and v1.37-v1.40 editor migrations.")
+    print("PASS: the 10px hint uses the Edit Favorite heading color; field labels increase to 12px.")
+    print("PASS: clean install, repeat install, and v1.37-v1.41 editor migrations.")
 
 
 if __name__ == "__main__":
