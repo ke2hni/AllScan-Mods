@@ -18,6 +18,12 @@ function statMsg(msg) {
 		return;
 	simple.statmsg.innerHTML = msg;
 }
+function channelTitle(node) {
+	var channel = simple.channelByNode[node];
+	if(!channel)
+		return 'Node ' + node;
+	return channelLabel(channel) + ' (' + node + ')';
+}
 function renderChannels() {
 		btn.innerHTML = '<span class="channel-index">1</span>'
 			+ '<span class="channel-label">Channel</span>'

@@ -62,6 +62,7 @@ def main():
             and "TouchGUI top-aligned callsign with description gap v1.47" in css
             and "TouchGUI bold node/callsign line v1.48" in css
             and "TouchGUI landscape callsign fit v1.50" in css
+            and "TouchGUI connected banner callsign v1.51" in js
             and "function fitChannelLabel(button)" in js
             and "@media (orientation: portrait)" in css
             and "display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-1.5ch; overflow:visible;" in css
@@ -267,6 +268,27 @@ function convertActivityRange(value, min, max) {
         if js.count(handler_marker) != 1:
             raise SystemExit("ERROR: Expected TouchGUI event-handler marker exactly once; no files changed.")
         js = js.replace(handler_marker, handler + handler_marker, 1)
+
+    channel_title = r'''// AllScan Mods: TouchGUI connected banner callsign v1.51.
+function channelTitle(node) {
+	var channel = simple.channelByNode[node];
+	if(!channel)
+		return 'Node ' + node;
+	var nodeCall = String(node);
+	if(channel.call)
+		nodeCall += ' - ' + String(channel.call).trim();
+	return channelLabel(channel) + ' (' + nodeCall + ')';
+}'''
+    channel_title_pattern = re.compile(r"(?m)^function channelTitle\(node\) \{.*?^\}", re.DOTALL)
+    title_matches = list(channel_title_pattern.finditer(js))
+    if len(title_matches) == 1:
+        js = channel_title_pattern.sub(lambda _: channel_title, js, count=1)
+    elif not title_matches:
+        if js.count(handler_marker) != 1:
+            raise SystemExit("ERROR: Expected one TouchGUI connected-title insertion point; no files changed.")
+        js = js.replace(handler_marker, channel_title + "\n\n" + handler_marker, 1)
+    else:
+        raise SystemExit("ERROR: Expected the TouchGUI channel-title function exactly once; no files changed.")
 
     channel_label_pattern = re.compile(r"(?m)^function channelLabel\(channel\) \{.*?^\}", re.DOTALL)
     channel_label = r'''// AllScan Mods: TouchGUI matching callsign removal v1.18.

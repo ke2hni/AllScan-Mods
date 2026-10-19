@@ -14,7 +14,8 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.50" in text, installer
+        assert "TouchGUI activity colors mod version: v1.51" in text, installer
+        assert "TouchGUI connected banner callsign v1.51" in text
         assert "Responsive TouchGUI label auto-fit v1.37" in text, installer
         assert "window.matchMedia && window.matchMedia('(orientation: portrait)').matches" in text, installer
         assert "apply_touchgui_activity_live" in text, installer
@@ -84,6 +85,7 @@ def main():
         assert "convertActivityRange(3 * linkCount, 15, 30)" in patched_js
         assert "channel-side" in patched_js and "channel-content" in patched_js
         assert "TouchGUI callsign-first card content v1.46" in patched_js
+        assert "TouchGUI connected banner callsign v1.51" in patched_js
         channel_markup = re.search(r"btn\.innerHTML = [\s\S]*?;", patched_js).group(0)
         assert channel_markup.index('class="channel-meta"') < channel_markup.index('class="channel-label"')
         assert patched_js.index('class="channel-side"') < patched_js.index('class="channel-content"')
@@ -176,6 +178,12 @@ if(cardLabel !== 'Backup Repeater')
 cardLabel = channelLabel({node: '512511', call: 'GB3CR', label: 'GB3CR 12345678901234567890123456789012345 512511'});
 if(cardLabel !== '12345678901234567890123456789012345')
 	throw new Error('TouchGUI clipped a long card title instead of preserving it for fitting: ' + cardLabel);
+simple.channelByNode['672000'] = {node: '672000', call: 'W2NJR', label: 'W2NJR Chillin with Bill Everyday 10am 672000'};
+if(channelTitle('672000') !== 'Chillin with Bill Everyday 10am (672000 - W2NJR)')
+	throw new Error('Connected banner did not show the node and callsign after the description: ' + channelTitle('672000'));
+simple.channelByNode['1234'] = {node: '1234', call: '', label: 'Example repeater'};
+if(channelTitle('1234') !== 'Example repeater (1234)')
+	throw new Error('Connected banner changed its fallback when the callsign is unavailable');
 var fittedMeta = {clientWidth: 90, scrollWidth: 100, style: {fontSize: '', transform: ''}};
 window.matchMedia = function() { return {matches: false}; };
 window.getComputedStyle = function(element) {
@@ -787,8 +795,28 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         subprocess.run(["python3", str(PATCHER), str(v149_js), str(v149_css)], check=True)
         assert migrated_v149 == (v149_js.read_bytes(), v149_css.read_bytes()), "v1.49 migration was not idempotent"
 
+    with tempfile.TemporaryDirectory(prefix="touchgui-v150-upgrade-") as temp:
+        v150_js = Path(temp) / "simple.js"
+        v150_css = Path(temp) / "simple.css"
+        shutil.copy2(FIXTURES / "touchgui-installed-v1.50.js", v150_js)
+        shutil.copy2(FIXTURES / "touchgui-installed-v1.50.css", v150_css)
+        landscape_rule = "@media (orientation: landscape) {\n.channel-meta { display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-0.75ch; overflow:visible; }\n}"
+        portrait_rule = "@media (orientation: portrait) {\n.channel-meta { display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-1.5ch; overflow:visible; }\n}"
+        assert landscape_rule in v150_css.read_text(encoding="utf-8")
+        assert portrait_rule in v150_css.read_text(encoding="utf-8")
+        subprocess.run(["python3", str(PATCHER), str(v150_js), str(v150_css)], check=True)
+        upgraded_js = v150_js.read_text(encoding="utf-8")
+        upgraded_css = v150_css.read_text(encoding="utf-8")
+        assert upgraded_js.count("TouchGUI connected banner callsign v1.51") == 1
+        assert landscape_rule in upgraded_css
+        assert portrait_rule in upgraded_css
+        assert "return channelLabel(channel) + ' (' + nodeCall + ')';" in upgraded_js
+        upgraded_v150 = (v150_js.read_bytes(), v150_css.read_bytes())
+        subprocess.run(["python3", str(PATCHER), str(v150_js), str(v150_css)], check=True)
+        assert upgraded_v150 == (v150_js.read_bytes(), v150_css.read_bytes()), "v1.50 upgrade was not idempotent"
+
     print("PASS: installers include the TouchGUI activity patch path.")
-    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, footer, compatibility upgrades, syntax, repeat application, and v1.49 landscape fit migration.")
+    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, connected-banner callsign, compatibility upgrades, syntax, repeat application, and v1.49/v1.50 migrations.")
 
 
 if __name__ == "__main__":
