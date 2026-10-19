@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.48
+# TouchGUI activity colors mod version: v1.49
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -167,6 +167,7 @@ touchgui_activity_present() {
     grep -Fq 'TouchGUI callsign-first card content v1.46' "$SIMPLE_JS_FILE" &&
     grep -Fq 'TouchGUI top-aligned callsign with description gap v1.47' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'TouchGUI bold node/callsign line v1.48' "$SIMPLE_CSS_FILE" &&
+    grep -Fq 'TouchGUI landscape callsign fit v1.49' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'function fitTouchguiCardText()' "$SIMPLE_JS_FILE" &&
     grep -Fq 'number < 3000000' "$SIMPLE_JS_FILE" &&
     grep -Fq 'simple.txTim[node] = now' "$SIMPLE_JS_FILE" &&

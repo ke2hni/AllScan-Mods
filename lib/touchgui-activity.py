@@ -61,6 +61,7 @@ def main():
             and "TouchGUI callsign-first card content v1.46" in js
             and "TouchGUI top-aligned callsign with description gap v1.47" in css
             and "TouchGUI bold node/callsign line v1.48" in css
+            and "TouchGUI landscape callsign fit v1.49" in css
             and "function fitChannelLabel(button)" in js
             and "@media (orientation: portrait)" in css
             and "display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-1.5ch; overflow:visible;" in css
@@ -723,6 +724,14 @@ font-weight:bold;
 '''
     if "TouchGUI bold node/callsign line v1.48" not in css:
         css = css.rstrip() + "\n" + bold_callsign_css
+
+    landscape_callsign_css = '''/* AllScan Mods: TouchGUI landscape callsign fit v1.49. */
+@media (orientation: landscape) {
+.channel-meta { display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-1.5ch; overflow:visible; }
+}
+'''
+    if "TouchGUI landscape callsign fit v1.49" not in css:
+        css = css.rstrip() + "\n" + landscape_callsign_css
 
     footer_css = '''.simple-footer { height:auto; min-height:30px; flex:0 0 auto; overflow:visible; }
 .simple-footer #scanmsg,
