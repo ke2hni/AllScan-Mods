@@ -77,6 +77,7 @@ def main():
             and "TouchGUI near-fit overflow visibility v1.60" in js
             and "TouchGUI bottom-aligned note row v1.58" in css
             and "TouchGUI raised white note row v1.60" in css
+            and "TouchGUI aqua row alignment and note clearance v1.61" in css
             and "function fitChannelLabel(button)" in js
             and "@media (orientation: portrait)" in css
             and "display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-1.5ch; overflow:visible;" in css
@@ -1156,6 +1157,13 @@ top:-3px;
     if "TouchGUI raised white note row v1.60" not in css:
         css = css.rstrip() + "\n" + note_raise_css
 
+    row_alignment_css = '''/* AllScan Mods: TouchGUI aqua row alignment and note clearance v1.61. */
+.channel-description { left:-0.5ch; }
+.channel-note { top:-5px; }
+'''
+    if "TouchGUI aqua row alignment and note clearance v1.61" not in css:
+        css = css.rstrip() + "\n" + row_alignment_css
+
     if "TouchGUI responsive description sizing v1.55" not in js:
         fit_function = re.compile(r"(?ms)^function fitChannelText\(element\) \{.*?^}")
         fit_matches = list(fit_function.finditer(js))
@@ -1209,6 +1217,9 @@ top:-3px;
             or "margin-top:auto;\npadding-top:3px;" not in css
             or "TouchGUI raised white note row v1.60" not in css
             or "position:relative;\ntop:-3px;" not in css
+            or "TouchGUI aqua row alignment and note clearance v1.61" not in css
+            or ".channel-description { left:-0.5ch; }" not in css
+            or ".channel-note { top:-5px; }" not in css
             or "calc(180px + 5ch)" not in css
             or "color:#00f5f5;" not in css
             or "@media (orientation: portrait)" not in css

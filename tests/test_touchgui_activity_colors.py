@@ -14,7 +14,7 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.60" in text, installer
+        assert "TouchGUI activity colors mod version: v1.61" in text, installer
         assert "TouchGUI connected banner callsign v1.51" in text
         assert "TouchGUI three-row card data v1.52" in text
         assert "TouchGUI three-row card styling v1.52" in text
@@ -28,6 +28,7 @@ def main():
         assert "TouchGUI note separation v1.56" in text
         assert "TouchGUI bottom-aligned note row v1.58" in text
         assert "TouchGUI raised white note row v1.60" in text
+        assert "TouchGUI aqua row alignment and note clearance v1.61" in text
         assert "Responsive TouchGUI label auto-fit v1.37" in text, installer
         assert "window.matchMedia && window.matchMedia('(orientation: portrait)').matches" in text, installer
         assert "apply_touchgui_activity_live" in text, installer
@@ -142,6 +143,9 @@ def main():
         assert ".channel-note { margin-top:3px; }" in patched_css
         assert "TouchGUI bottom-aligned note row v1.58" in patched_css
         assert "TouchGUI raised white note row v1.60" in patched_css
+        assert "TouchGUI aqua row alignment and note clearance v1.61" in patched_css
+        assert ".channel-description { left:-0.5ch; }" in patched_css
+        assert ".channel-note { top:-5px; }" in patched_css
         assert "position:relative;\ntop:-3px;" in patched_css
         assert "margin-top:auto;\npadding-top:3px;" in patched_css
         assert ".channel-meta { left:-0.75ch; }" in patched_css
@@ -976,6 +980,9 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         assert upgraded_css.count("TouchGUI note separation v1.56") == 1
         assert upgraded_css.count("TouchGUI bottom-aligned note row v1.58") == 1
         assert upgraded_css.count("TouchGUI raised white note row v1.60") == 1
+        assert upgraded_css.count("TouchGUI aqua row alignment and note clearance v1.61") == 1
+        assert ".channel-description { left:-0.5ch; }" in upgraded_css
+        assert ".channel-note { top:-5px; }" in upgraded_css
         assert "position:relative;\ntop:-3px;" in upgraded_css
         assert ".channel-description { font-size:13px; }" in upgraded_css
         assert ".channel-meta { left:-0.75ch; }" in upgraded_css
@@ -1002,6 +1009,9 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         assert upgraded_css.count("TouchGUI note separation v1.56") == 1
         assert upgraded_css.count("TouchGUI bottom-aligned note row v1.58") == 1
         assert upgraded_css.count("TouchGUI raised white note row v1.60") == 1
+        assert upgraded_css.count("TouchGUI aqua row alignment and note clearance v1.61") == 1
+        assert ".channel-description { left:-0.5ch; }" in upgraded_css
+        assert ".channel-note { top:-5px; }" in upgraded_css
         assert "position:relative;\ntop:-3px;" in upgraded_css
         subprocess.run(["node", "--check", str(v154_js)], check=True)
         upgraded_v154 = (v154_js.read_bytes(), v154_css.read_bytes())
@@ -1040,6 +1050,9 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         assert upgraded_css.count("TouchGUI note separation v1.56") == 1
         assert upgraded_css.count("TouchGUI bottom-aligned note row v1.58") == 1
         assert upgraded_css.count("TouchGUI raised white note row v1.60") == 1
+        assert upgraded_css.count("TouchGUI aqua row alignment and note clearance v1.61") == 1
+        assert ".channel-description { left:-0.5ch; }" in upgraded_css
+        assert ".channel-note { top:-5px; }" in upgraded_css
         assert "position:relative;\ntop:-3px;" in upgraded_css
         subprocess.run(["node", "--check", str(v156_js)], check=True)
         upgraded_v156 = (v156_js.read_bytes(), v156_css.read_bytes())
@@ -1060,6 +1073,9 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         assert "label.scrollWidth <= label.clientWidth * 1.12" in upgraded_js
         assert upgraded_css.count("TouchGUI bottom-aligned note row v1.58") == 1
         assert upgraded_css.count("TouchGUI raised white note row v1.60") == 1
+        assert upgraded_css.count("TouchGUI aqua row alignment and note clearance v1.61") == 1
+        assert ".channel-description { left:-0.5ch; }" in upgraded_css
+        assert ".channel-note { top:-5px; }" in upgraded_css
         assert "position:relative;\ntop:-3px;" in upgraded_css
         subprocess.run(["node", "--check", str(v157_js)], check=True)
         upgraded_v157 = (v157_js.read_bytes(), v157_css.read_bytes())
@@ -1098,7 +1114,7 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         assert upgraded_v158 == (v158_js.read_bytes(), v158_css.read_bytes()), "v1.58 upgrade was not idempotent"
 
     print("PASS: installers include the TouchGUI activity patch path.")
-    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, text fitting and spacing, connected-banner callsign, compatibility upgrades, syntax, repeat application, and v1.49-v1.52 migrations and v1.53-v1.60 sizing upgrades.")
+    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, text fitting and spacing, connected-banner callsign, compatibility upgrades, syntax, repeat application, and v1.49-v1.52 migrations and v1.53-v1.61 sizing upgrades.")
 
 
 if __name__ == "__main__":

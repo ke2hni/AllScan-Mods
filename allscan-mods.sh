@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.60
+# TouchGUI activity colors mod version: v1.61
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -182,6 +182,7 @@ touchgui_activity_present() {
     grep -Fq 'TouchGUI near-fit overflow visibility v1.60' "$SIMPLE_JS_FILE" &&
     grep -Fq 'TouchGUI bottom-aligned note row v1.58' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'TouchGUI raised white note row v1.60' "$SIMPLE_CSS_FILE" &&
+    grep -Fq 'TouchGUI aqua row alignment and note clearance v1.61' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'font-size:13px;' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'function fitTouchguiCardText()' "$SIMPLE_JS_FILE" &&
     grep -Fq 'number < 3000000' "$SIMPLE_JS_FILE" &&
