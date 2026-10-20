@@ -14,7 +14,7 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.58" in text, installer
+        assert "TouchGUI activity colors mod version: v1.59" in text, installer
         assert "TouchGUI connected banner callsign v1.51" in text
         assert "TouchGUI three-row card data v1.52" in text
         assert "TouchGUI three-row card styling v1.52" in text
@@ -23,7 +23,7 @@ def main():
         assert "TouchGUI responsive description sizing v1.55" in text
         assert "TouchGUI centered node line v1.55" in text
         assert "TouchGUI measured aqua row fit v1.57" in text
-        assert "TouchGUI aqua near-fit allowance v1.58" in text
+        assert "TouchGUI aqua near-fit migration v1.59" in text
         assert "TouchGUI note separation v1.56" in text
         assert "TouchGUI bottom-aligned note row v1.58" in text
         assert "Responsive TouchGUI label auto-fit v1.37" in text, installer
@@ -90,7 +90,7 @@ def main():
         assert "fitChannelText(button.querySelector('.channel-description'), 18, 13);" in patched_js
         assert "TouchGUI measured aqua row fit v1.57" in patched_js
         assert "Math.max(minSize, targetFontSize * label.clientWidth / textWidth)" in patched_js
-        assert "TouchGUI aqua near-fit allowance v1.58" in patched_js
+        assert "TouchGUI aqua near-fit migration v1.59" in patched_js
         assert "label.scrollWidth <= label.clientWidth * 1.12" in patched_js
         title_fit = re.search(r"(?ms)^function fitChannelLabel\(button\) \{.*?^}", patched_js)
         assert title_fit and "scaleX(" not in title_fit.group(0)
@@ -959,7 +959,7 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         upgraded_css = v153_css.read_text(encoding="utf-8")
         assert upgraded_js.count("TouchGUI responsive description sizing v1.55") == 1
         assert upgraded_js.count("TouchGUI measured aqua row fit v1.57") == 1
-        assert upgraded_js.count("TouchGUI aqua near-fit allowance v1.58") == 1
+        assert upgraded_js.count("TouchGUI aqua near-fit migration v1.59") == 1
         assert "label.scrollWidth <= label.clientWidth * 1.12" in upgraded_js
         assert "var targetFontSize = maxFontSize ? Math.max(fontSize, maxFontSize) : fontSize;" in upgraded_js
         assert "fitChannelText(button.querySelector('.channel-description'), 18, 13);" in upgraded_js
@@ -984,7 +984,7 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         upgraded_css = v154_css.read_text(encoding="utf-8")
         assert upgraded_js.count("TouchGUI responsive description sizing v1.55") == 1
         assert upgraded_js.count("TouchGUI measured aqua row fit v1.57") == 1
-        assert upgraded_js.count("TouchGUI aqua near-fit allowance v1.58") == 1
+        assert upgraded_js.count("TouchGUI aqua near-fit migration v1.59") == 1
         assert "fitChannelText(button.querySelector('.channel-description'), 18, 13);" in upgraded_js
         assert upgraded_css.count("TouchGUI centered node line v1.55") == 1
         assert upgraded_css.count("TouchGUI note separation v1.56") == 1
@@ -1018,7 +1018,7 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         upgraded_js = v156_js.read_text(encoding="utf-8")
         upgraded_css = v156_css.read_text(encoding="utf-8")
         assert upgraded_js.count("TouchGUI measured aqua row fit v1.57") == 1
-        assert upgraded_js.count("TouchGUI aqua near-fit allowance v1.58") == 1
+        assert upgraded_js.count("TouchGUI aqua near-fit migration v1.59") == 1
         assert "fitMargin" not in upgraded_js
         assert "} else if(!maxFontSize) {" in upgraded_js
         assert upgraded_css.count("TouchGUI note separation v1.56") == 1
@@ -1036,7 +1036,7 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         subprocess.run(["python3", str(PATCHER), str(v157_js), str(v157_css)], check=True)
         upgraded_js = v157_js.read_text(encoding="utf-8")
         upgraded_css = v157_css.read_text(encoding="utf-8")
-        assert upgraded_js.count("TouchGUI aqua near-fit allowance v1.58") == 1
+        assert upgraded_js.count("TouchGUI aqua near-fit migration v1.59") == 1
         assert "label.scrollWidth <= label.clientWidth * 1.12" in upgraded_js
         assert upgraded_css.count("TouchGUI bottom-aligned note row v1.58") == 1
         subprocess.run(["node", "--check", str(v157_js)], check=True)
@@ -1044,8 +1044,37 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         subprocess.run(["python3", str(PATCHER), str(v157_js), str(v157_css)], check=True)
         assert upgraded_v157 == (v157_js.read_bytes(), v157_css.read_bytes()), "v1.57 upgrade was not idempotent"
 
+    with tempfile.TemporaryDirectory(prefix="touchgui-v158-upgrade-") as temp:
+        v158_js = Path(temp) / "simple.js"
+        v158_css = Path(temp) / "simple.css"
+        shutil.copy2(FIXTURES / "touchgui-installed-v1.57.js", v158_js)
+        shutil.copy2(FIXTURES / "touchgui-installed-v1.57.css", v158_css)
+        js_source = v158_js.read_text(encoding="utf-8")
+        js_source = js_source.replace(
+            "\t\t\tif(maxFontSize && label.scrollWidth <= label.clientWidth * 1.04) {",
+            "\t\t\t// AllScan Mods: TouchGUI aqua near-fit allowance v1.58.\n"
+            "\t\t\tif(maxFontSize && label.scrollWidth <= label.clientWidth * 1.12) {",
+            1,
+        )
+        v158_js.write_text(js_source, encoding="utf-8")
+        with v158_css.open("a", encoding="utf-8") as css_file:
+            css_file.write(
+                "\n/* AllScan Mods: TouchGUI bottom-aligned note row v1.58. */\n"
+                ".channel-note {\nmargin-top:auto;\npadding-top:3px;\n}\n"
+            )
+        subprocess.run(["python3", str(PATCHER), str(v158_js), str(v158_css)], check=True)
+        upgraded_js = v158_js.read_text(encoding="utf-8")
+        upgraded_css = v158_css.read_text(encoding="utf-8")
+        assert upgraded_js.count("TouchGUI aqua near-fit migration v1.59") == 1
+        assert "label.scrollWidth <= label.clientWidth * 1.12" in upgraded_js
+        assert "TouchGUI bottom-aligned note row v1.58" in upgraded_css
+        subprocess.run(["node", "--check", str(v158_js)], check=True)
+        upgraded_v158 = (v158_js.read_bytes(), v158_css.read_bytes())
+        subprocess.run(["python3", str(PATCHER), str(v158_js), str(v158_css)], check=True)
+        assert upgraded_v158 == (v158_js.read_bytes(), v158_css.read_bytes()), "v1.58 upgrade was not idempotent"
+
     print("PASS: installers include the TouchGUI activity patch path.")
-    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, text fitting and spacing, connected-banner callsign, compatibility upgrades, syntax, repeat application, and v1.49-v1.52 migrations and v1.53-v1.58 sizing upgrades.")
+    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, text fitting and spacing, connected-banner callsign, compatibility upgrades, syntax, repeat application, and v1.49-v1.52 migrations and v1.53-v1.59 sizing upgrades.")
 
 
 if __name__ == "__main__":

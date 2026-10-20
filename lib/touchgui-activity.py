@@ -73,7 +73,7 @@ def main():
             and "TouchGUI centered node line v1.55" in css
             and "TouchGUI measured aqua row fit v1.57" in js
             and "TouchGUI note separation v1.56" in css
-            and "TouchGUI aqua near-fit allowance v1.58" in js
+            and "TouchGUI aqua near-fit migration v1.59" in js
             and "TouchGUI bottom-aligned note row v1.58" in css
             and "function fitChannelLabel(button)" in js
             and "@media (orientation: portrait)" in css
@@ -411,7 +411,7 @@ function fitChannelText(element, maxFontSize, minFontSize) {
 		// AllScan Mods: TouchGUI measured aqua row fit v1.57.
 		label.style.fontSize = Math.max(minSize, targetFontSize * label.clientWidth / textWidth) + 'px';
 		if(label.scrollWidth > label.clientWidth) {
-			// AllScan Mods: TouchGUI aqua near-fit allowance v1.58.
+			// AllScan Mods: TouchGUI aqua near-fit migration v1.59.
 			if(maxFontSize && label.scrollWidth <= label.clientWidth * 1.12) {
 				label.style.transform = 'scaleX(' + (label.clientWidth / label.scrollWidth * 0.98) + ')';
 			} else {
@@ -1099,12 +1099,25 @@ top:-2px;
     if no_overflow_reset in js:
         js = js.replace(no_overflow_reset, "\t} else if(!maxFontSize) {\n\t\tlabel.style.whiteSpace = '';\n\t}", 1)
 
-    if "TouchGUI aqua near-fit allowance v1.58" not in js:
+    near_fit_marker = "// AllScan Mods: TouchGUI aqua near-fit migration v1.59."
+    if near_fit_marker not in js:
+        v158_marker = "// AllScan Mods: TouchGUI aqua near-fit allowance v1.58."
+        v157_threshold = "\t\t\tif(maxFontSize && label.scrollWidth <= label.clientWidth * 1.04) {"
+        v158_threshold = "\t\t\tif(maxFontSize && label.scrollWidth <= label.clientWidth * 1.12) {"
         old_wrap = "\t\tif(label.scrollWidth > label.clientWidth) {\n\t\t\tlabel.style.whiteSpace = 'normal';\n\t\t\tlabel.style.overflowWrap = 'anywhere';\n\t\t\tlabel.style.display = 'block';\n\t\t}"
-        new_wrap = "\t\tif(label.scrollWidth > label.clientWidth) {\n\t\t\t// AllScan Mods: TouchGUI aqua near-fit allowance v1.58.\n\t\t\tif(maxFontSize && label.scrollWidth <= label.clientWidth * 1.12) {\n\t\t\t\tlabel.style.transform = 'scaleX(' + (label.clientWidth / label.scrollWidth * 0.98) + ')';\n\t\t\t} else {\n\t\t\t\tlabel.style.whiteSpace = 'normal';\n\t\t\t\tlabel.style.overflowWrap = 'anywhere';\n\t\t\t\tlabel.style.display = 'block';\n\t\t\t}\n\t\t}"
-        if js.count(old_wrap) != 1:
+        if js.count(v158_marker) == 1 and js.count(v158_threshold) == 1:
+            js = js.replace(v158_marker, near_fit_marker, 1)
+        elif js.count(v157_threshold) == 1:
+            js = js.replace(
+                v157_threshold,
+                "\t\t\t" + near_fit_marker + "\n" + v158_threshold,
+                1,
+            )
+        elif js.count(old_wrap) == 1:
+            new_wrap = "\t\tif(label.scrollWidth > label.clientWidth) {\n\t\t\t" + near_fit_marker + "\n\t\t\tif(maxFontSize && label.scrollWidth <= label.clientWidth * 1.12) {\n\t\t\t\tlabel.style.transform = 'scaleX(' + (label.clientWidth / label.scrollWidth * 0.98) + ')';\n\t\t\t} else {\n\t\t\t\tlabel.style.whiteSpace = 'normal';\n\t\t\t\tlabel.style.overflowWrap = 'anywhere';\n\t\t\t\tlabel.style.display = 'block';\n\t\t\t}\n\t\t}"
+            js = js.replace(old_wrap, new_wrap, 1)
+        else:
             raise SystemExit("ERROR: Existing TouchGUI text wrapping block is unexpected; no files changed.")
-        js = js.replace(old_wrap, new_wrap, 1)
 
     note_spacing_css = '''/* AllScan Mods: TouchGUI note separation v1.56. */
 .channel-note { margin-top:3px; }
@@ -1164,7 +1177,7 @@ padding-top:3px;
             or "TouchGUI responsive description sizing v1.55" not in js
             or "TouchGUI centered node line v1.55" not in css
             or "TouchGUI measured aqua row fit v1.57" not in js
-            or "TouchGUI aqua near-fit allowance v1.58" not in js
+            or "TouchGUI aqua near-fit migration v1.59" not in js
             or "label.scrollWidth <= label.clientWidth * 1.12" not in js
             or "TouchGUI note separation v1.56" not in css
             or ".channel-note { margin-top:3px; }" not in css
