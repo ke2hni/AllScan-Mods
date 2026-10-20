@@ -81,6 +81,8 @@ def main():
             and "TouchGUI white note glyph clearance v1.62" in css
             and "TouchGUI name and location card rows v1.63" in js
             and "TouchGUI name/description similarity v1.64" in js
+            and "TouchGUI description/location duplicate cleanup v1.65" in js
+            and "TouchGUI row centering and descender clearance v1.65" in css
             and "TouchGUI name/location row fit v1.63" in js
             and "TouchGUI name/location card row styling v1.63" in css
             and "function channelLocation(channel)" in js
@@ -352,8 +354,15 @@ function channelLabel(channel) {
         raise SystemExit("ERROR: Expected the TouchGUI channel-label function exactly once; no files changed.")
 
     card_field_funcs = r'''// AllScan Mods: TouchGUI name and location card rows v1.63.
+// AllScan Mods: TouchGUI description/location duplicate cleanup v1.65.
 function channelDescription(channel) {
-	return String(channel.desc || '').trim();
+	var description = String(channel.desc || '').trim();
+	var location = String(channel.loc || '').trim();
+	if (/\bUSA\b/i.test(location))
+		description = description.replace(/(^|[\s,;:-]+)U\.?S\.?(?=$|[\s,;:-]+)/gi, '$1');
+	else if (/\bU\.?S\.?\b/i.test(location))
+		description = description.replace(/(^|[\s,;:-]+)USA(?=$|[\s,;:-]+)/gi, '$1');
+	return description.replace(/\s{2,}/g, ' ').replace(/^[\s,;:.()]+|[\s,;:.()]+$/g, '').trim();
 }
 function channelLocation(channel) {
 	return String(channel.loc || '').trim();
@@ -362,6 +371,8 @@ function channelLocation(channel) {
 function channelNameMatchesDescription(name, description) {
 	var normalizedName = String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 	var normalizedDescription = String(description || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+	if (normalizedName === normalizedDescription || (normalizedName === 'us' && normalizedDescription === 'usa') || (normalizedName === 'usa' && normalizedDescription === 'us'))
+		return !!normalizedName;
 	if(normalizedName.length < 6 || normalizedDescription.length < 6)
 		return false;
 	if(normalizedName.indexOf(normalizedDescription) >= 0 || normalizedDescription.indexOf(normalizedName) >= 0)
@@ -393,7 +404,7 @@ function channelNote(channel) {
 	});
 	text = text.replace(/\s{2,}/g, ' ').replace(/^[\s,;:.()]+|[\s,;:.()]+$/g, '').trim();
 	var location = channelLocation(channel);
-	if(!text || channelNameMatchesDescription(text, channel.desc))
+	if(!text || channelNameMatchesDescription(text, channel.desc) || channelNameMatchesDescription(text, channel.loc))
 		return location;
 	return text;
 }'''
@@ -420,6 +431,23 @@ function channelNote(channel) {
         similarity_function = card_field_funcs.split("// AllScan Mods: TouchGUI name/description similarity v1.64.\n", 1)[1]
         similarity_function = "// AllScan Mods: TouchGUI name/description similarity v1.64.\n" + similarity_function.split("\nfunction channelNote(channel)", 1)[0]
         js = similarity_pattern.sub(lambda _: similarity_function, js, count=1)
+    if "TouchGUI description/location duplicate cleanup v1.65" not in js:
+        description_pattern = re.compile(r"(?ms)^function channelDescription\(channel\) \{.*?^}")
+        description_matches = list(description_pattern.finditer(js))
+        if len(description_matches) != 1:
+            raise SystemExit("ERROR: Existing TouchGUI Description helper is unexpected; no files changed.")
+        description_function = card_field_funcs.split("// AllScan Mods: TouchGUI description/location duplicate cleanup v1.65.\n", 1)[1].split("\nfunction channelLocation(channel)", 1)[0]
+        description_function = "// AllScan Mods: TouchGUI description/location duplicate cleanup v1.65.\n" + description_function
+        js = description_pattern.sub(lambda _: description_function, js, count=1)
+        note_pattern = re.compile(r"(?ms)^function channelNote\(channel\) \{.*?^}")
+        note_matches = list(note_pattern.finditer(js))
+        if len(note_matches) != 1:
+            raise SystemExit("ERROR: Existing TouchGUI Name helper is unexpected; no files changed.")
+        note_match = re.search(r"(?ms)^function channelNote\(channel\) \{.*?^}", card_field_funcs)
+        if note_match is None:
+            raise SystemExit("ERROR: TouchGUI Name helper template is unexpected; no files changed.")
+        note_function = note_match.group(0)
+        js = note_pattern.sub(lambda _: note_function, js, count=1)
 
     card_text_fit_funcs = r'''function fitChannelMeta(button) {
 	var meta = button.querySelector('.channel-meta');
@@ -1260,6 +1288,13 @@ width:100%;
     if "TouchGUI name/location card row styling v1.63" not in css:
         css = css.rstrip() + "\n" + name_location_css
 
+    row_alignment_css = '''/* AllScan Mods: TouchGUI row centering and descender clearance v1.65. */
+.channel-note { left:-0.5ch; }
+.channel-description { overflow:visible; }
+'''
+    if "TouchGUI row centering and descender clearance v1.65" not in css:
+        css = css.rstrip() + "\n" + row_alignment_css
+
     if "TouchGUI responsive description sizing v1.55" not in js:
         fit_function = re.compile(r"(?ms)^function fitChannelText\(element\) \{.*?^}")
         fit_matches = list(fit_function.finditer(js))
@@ -1322,6 +1357,8 @@ width:100%;
             or "TouchGUI name/description similarity v1.64" not in js
             or "TouchGUI name/location row fit v1.63" not in js
             or "TouchGUI name/location card row styling v1.63" not in css
+            or "TouchGUI description/location duplicate cleanup v1.65" not in js
+            or "TouchGUI row centering and descender clearance v1.65" not in css
             or "function channelLocation(channel)" not in js
             or "function channelNameMatchesDescription(name, description)" not in js
             or "calc(180px + 5ch)" not in css

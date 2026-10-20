@@ -14,7 +14,7 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.64" in text, installer
+        assert "TouchGUI activity colors mod version: v1.65" in text, installer
         assert "TouchGUI connected banner callsign v1.51" in text
         assert "TouchGUI three-row card data v1.52" in text
         assert "TouchGUI three-row card styling v1.52" in text
@@ -31,6 +31,8 @@ def main():
         assert "TouchGUI aqua row alignment and note clearance v1.61" in text
         assert "TouchGUI white note glyph clearance v1.62" in text
         assert "TouchGUI name/description similarity v1.64" in text
+        assert "TouchGUI description/location duplicate cleanup v1.65" in text
+        assert "TouchGUI row centering and descender clearance v1.65" in text
         assert "TouchGUI name and location card rows v1.63" in text
         assert "TouchGUI name/description similarity v1.64" in text
         assert "TouchGUI name/location row fit v1.63" in text
@@ -243,12 +245,18 @@ if(cardLabel !== '12345678901234567890123456789012345')
 	throw new Error('TouchGUI clipped a long card title instead of preserving it for fitting: ' + cardLabel);
 if(channelDescription({desc: 'System Main Hub'}) !== 'System Main Hub')
 	throw new Error('TouchGUI did not expose the ASTDB description for its own row');
+if(channelDescription({desc: 'SOUTHCARS HUB US', loc: 'USA'}) !== 'SOUTHCARS HUB')
+	throw new Error('TouchGUI did not remove the repeated US country suffix from the description');
+if(channelDescription({desc: 'SOUTHCARS HUB USA', loc: 'US'}) !== 'SOUTHCARS HUB')
+	throw new Error('TouchGUI did not normalize the alternate USA country suffix');
 if(channelNote({node: '672000', call: 'W2NJR', desc: 'System Main Hub', loc: 'Somewhere', label: 'W2NJR Chillin with Bill Everyday 10am 672000'}) !== 'Chillin with Bill Everyday 10am')
 	throw new Error('TouchGUI note did not retain only the user label text');
 if(channelNote({node: '54318', call: 'GB3EG', desc: '430.9125', loc: 'Wigan, Greater Manchester', label: 'GB3EG 430.9125, Wigan, Greater Manchester 54318'}) !== 'Wigan, Greater Manchester')
 	throw new Error('TouchGUI did not use location when no separate favorite note remains');
 if(channelNote({node: '54318', desc: '430.9125 +7.6MHz', loc: 'Wigan, Greater Manchester', label: '430.9125'}) !== 'Wigan, Greater Manchester')
 	throw new Error('TouchGUI did not replace a redundant Name with Location');
+if(channelNote({node: '54318', desc: 'Regional repeater', loc: 'Raleigh, NC', label: 'Raleigh NC'}) !== 'Raleigh, NC')
+	throw new Error('TouchGUI did not replace a Name that duplicates the Location');
 if(channelNote({node: '54318', desc: '430.9125 +7.6MHz', loc: 'Wigan, Greater Manchester', label: 'Regional net meets nightly'}) !== 'Regional net meets nightly')
 	throw new Error('TouchGUI removed a nonredundant favorite Name');
 if(channelNote({node: '42235', call: 'K4JDR', desc: '441.725+RF-BBone HUB', loc: 'Raleigh, NC', label: 'K4JDR 441.725+Backbone HUB 42235'}) !== 'Raleigh, NC')
