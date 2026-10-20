@@ -79,6 +79,10 @@ def main():
             and "TouchGUI raised white note row v1.60" in css
             and "TouchGUI aqua row alignment and note clearance v1.61" in css
             and "TouchGUI white note glyph clearance v1.62" in css
+            and "TouchGUI name and location card rows v1.63" in js
+            and "TouchGUI name/location row fit v1.63" in js
+            and "TouchGUI name/location card row styling v1.63" in css
+            and "function channelLocation(channel)" in js
             and "function fitChannelLabel(button)" in js
             and "@media (orientation: portrait)" in css
             and "display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-1.5ch; overflow:visible;" in css
@@ -129,7 +133,8 @@ def main():
 \t\t\t+ '<span class="channel-stats"><span class="channel-rx">—</span><span class="channel-lcnt">—</span></span></span>'
 \t\t\t+ '<span class="channel-content"><span class="channel-meta">' + escapeHtml(channelMeta(channel)) + '</span>'
 \t\t\t+ '<span class="channel-description">' + escapeHtml(channelDescription(channel)) + '</span>'
-\t\t\t+ '<span class="channel-note">' + escapeHtml(channelNote(channel)) + '</span></span>';
+\t\t\t+ '<span class="channel-note"><span class="channel-note-name">' + escapeHtml(channelNote(channel)) + '</span>'
+\t\t\t+ '<span class="channel-location">' + escapeHtml(channelLocation(channel)) + '</span></span></span>';
 '''.replace("\\t", "\t")
     updated_js, markup_count = re.subn(channel_markup, lambda _: channel_markup_new, js, count=1)
     if markup_count != 1 or "channel-index" not in updated_js or "channel-description" not in updated_js or "channel-note" not in updated_js:
@@ -139,7 +144,7 @@ def main():
         r"(?ms)^[ \t]*requestAnimationFrame\(function\(\) \{[^{}]*fitChannelMeta\(btn\);[^{}]*\}\);"
     )
     js = render_fit_pattern.sub("", js)
-    render_end = "\t\t\t+ '<span class=\"channel-note\">' + escapeHtml(channelNote(channel)) + '</span></span>';"
+    render_end = "\t\t\t+ '<span class=\"channel-note\"><span class=\"channel-note-name\">' + escapeHtml(channelNote(channel)) + '</span>'\n\t\t\t+ '<span class=\"channel-location\">' + escapeHtml(channelLocation(channel)) + '</span></span></span>';"
     if js.count(render_end) != 1:
         raise SystemExit("ERROR: Expected one TouchGUI card render insertion point; no files changed.")
     render_fit_call = "\t\trequestAnimationFrame(function() {\n\t\t\tfitChannelMeta(btn);\n\t\t\tfitChannelDescription(btn);\n\t\t\tfitChannelLabel(btn);\n\t\t});"
@@ -345,8 +350,19 @@ function channelLabel(channel) {
     else:
         raise SystemExit("ERROR: Expected the TouchGUI channel-label function exactly once; no files changed.")
 
-    card_field_funcs = r'''function channelDescription(channel) {
+    card_field_funcs = r'''// AllScan Mods: TouchGUI name and location card rows v1.63.
+function channelDescription(channel) {
 	return String(channel.desc || '').trim();
+}
+function channelLocation(channel) {
+	return String(channel.loc || '').trim();
+}
+function channelNameMatchesDescription(name, description) {
+	var normalizedName = String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+	var normalizedDescription = String(description || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+	if(normalizedName.length < 6 || normalizedDescription.length < 6)
+		return false;
+	return normalizedName.indexOf(normalizedDescription) >= 0 || normalizedDescription.indexOf(normalizedName) >= 0;
 }
 function channelNote(channel) {
 	var text = String(channel.label || '');
@@ -361,14 +377,26 @@ function channelNote(channel) {
 		});
 	});
 	text = text.replace(/\s{2,}/g, ' ').replace(/^[\s,;:.()]+|[\s,;:.()]+$/g, '').trim();
-	return text || String(channel.loc || '').trim();
+	var location = channelLocation(channel);
+	if(!text || channelNameMatchesDescription(text, channel.desc))
+		return location;
+	return text;
 }'''
-    if "function channelNote(channel)" not in js:
+    card_field_pattern = re.compile(r"(?ms)^function channelDescription\(channel\) \{.*?^}\nfunction channelNote\(channel\) \{.*?^}")
+    card_field_matches = list(card_field_pattern.finditer(js))
+    if len(card_field_matches) == 1:
+        if "TouchGUI name and location card rows v1.63" not in js:
+            js = card_field_pattern.sub(lambda _: card_field_funcs, js, count=1)
+    elif not card_field_matches and "function channelNote(channel)" not in js:
         label_functions = list(channel_label_pattern.finditer(js))
         if len(label_functions) != 1:
             raise SystemExit("ERROR: Existing TouchGUI label helper is incomplete; no files changed.")
         label_end = label_functions[0].end()
         js = js[:label_end] + "\n" + card_field_funcs + js[label_end:]
+    else:
+        raise SystemExit("ERROR: Existing TouchGUI card field helpers are unexpected; no files changed.")
+    if "TouchGUI name and location card rows v1.63" not in js:
+        raise SystemExit("ERROR: TouchGUI name/location helper migration failed; no files changed.")
 
     card_text_fit_funcs = r'''function fitChannelMeta(button) {
 	var meta = button.querySelector('.channel-meta');
@@ -432,8 +460,24 @@ function fitChannelDescription(button) {
 	fitChannelText(button.querySelector('.channel-description'), 18, 13);
 }
 // AllScan Mods: TouchGUI adaptive title fit v1.45.
+// AllScan Mods: TouchGUI name/location row fit v1.63.
 function fitChannelLabel(button) {
-	fitChannelText(button.querySelector('.channel-note'));
+	var note = button.querySelector('.channel-note-name');
+	var location = button.querySelector('.channel-location');
+	if(!note)
+		return;
+	fitChannelText(note);
+	if(!location)
+		return;
+	location.style.position = 'absolute';
+	location.style.visibility = 'hidden';
+	fitChannelText(location);
+	var noteText = String(note.textContent || '').trim().toLowerCase();
+	var locationText = String(location.textContent || '').trim().toLowerCase();
+	if(!note.clientWidth || !noteText || !locationText || noteText === locationText || note.style.whiteSpace === 'normal')
+		return;
+	location.style.position = 'static';
+	location.style.visibility = 'visible';
 }
 function fitTouchguiCardText() {
 	document.querySelectorAll('.channel-btn').forEach(function(button) {
@@ -481,6 +525,17 @@ window.addEventListener('resize', fitTouchguiCardText);'''
             js,
             count=1,
         )
+    if "TouchGUI name/location row fit v1.63" not in js:
+        title_fit_pattern = re.compile(r"(?ms)^function fitChannelLabel\(button\) \{.*?^}")
+        title_fits = list(title_fit_pattern.finditer(js))
+        if len(title_fits) != 1:
+            raise SystemExit("ERROR: Existing TouchGUI title fit helper is unexpected; no files changed.")
+        title_function = (
+            "// AllScan Mods: TouchGUI name/location row fit v1.63.\n"
+            "function fitChannelLabel(button)"
+            + card_text_fit_funcs.split("function fitChannelLabel(button)", 1)[1].split("function fitTouchguiCardText()", 1)[0]
+        )
+        js = title_fit_pattern.sub(lambda _: title_function, js, count=1)
 
     if "var scaleFactor = isPortrait ? 0.90 : 0.96;" not in js:
         fit_pattern = re.compile(r"(?ms)^function fitChannelMeta\(button\) \{.*?^}")
@@ -1171,6 +1226,17 @@ top:-3px;
     if "TouchGUI white note glyph clearance v1.62" not in css:
         css = css.rstrip() + "\n" + note_glyph_css
 
+    name_location_css = '''/* AllScan Mods: TouchGUI name/location card row styling v1.63. */
+.channel-note-name,
+.channel-location {
+display:block;
+width:100%;
+}
+.channel-location { position:absolute; visibility:hidden; }
+'''
+    if "TouchGUI name/location card row styling v1.63" not in css:
+        css = css.rstrip() + "\n" + name_location_css
+
     if "TouchGUI responsive description sizing v1.55" not in js:
         fit_function = re.compile(r"(?ms)^function fitChannelText\(element\) \{.*?^}")
         fit_matches = list(fit_function.finditer(js))
@@ -1229,6 +1295,11 @@ top:-3px;
             or ".channel-note { top:-5px; }" not in css
             or "TouchGUI white note glyph clearance v1.62" not in css
             or ".channel-note { overflow:visible; }" not in css
+            or "TouchGUI name and location card rows v1.63" not in js
+            or "TouchGUI name/location row fit v1.63" not in js
+            or "TouchGUI name/location card row styling v1.63" not in css
+            or "function channelLocation(channel)" not in js
+            or "function channelNameMatchesDescription(name, description)" not in js
             or "calc(180px + 5ch)" not in css
             or "color:#00f5f5;" not in css
             or "@media (orientation: portrait)" not in css

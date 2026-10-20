@@ -14,7 +14,7 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.62" in text, installer
+        assert "TouchGUI activity colors mod version: v1.63" in text, installer
         assert "TouchGUI connected banner callsign v1.51" in text
         assert "TouchGUI three-row card data v1.52" in text
         assert "TouchGUI three-row card styling v1.52" in text
@@ -30,6 +30,9 @@ def main():
         assert "TouchGUI raised white note row v1.60" in text
         assert "TouchGUI aqua row alignment and note clearance v1.61" in text
         assert "TouchGUI white note glyph clearance v1.62" in text
+        assert "TouchGUI name and location card rows v1.63" in text
+        assert "TouchGUI name/location row fit v1.63" in text
+        assert "TouchGUI name/location card row styling v1.63" in text
         assert "Responsive TouchGUI label auto-fit v1.37" in text, installer
         assert "window.matchMedia && window.matchMedia('(orientation: portrait)').matches" in text, installer
         assert "apply_touchgui_activity_live" in text, installer
@@ -113,8 +116,12 @@ def main():
         assert "TouchGUI three-row card data v1.52" in patched_js
         assert "function channelDescription(channel)" in patched_js
         assert "function channelNote(channel)" in patched_js
+        assert "function channelLocation(channel)" in patched_js
+        assert "function channelNameMatchesDescription(name, description)" in patched_js
+        assert "TouchGUI name and location card rows v1.63" in patched_js
+        assert "TouchGUI name/location row fit v1.63" in patched_js
         channel_markup = re.search(r"btn\.innerHTML = [\s\S]*?;", patched_js).group(0)
-        assert channel_markup.index('class="channel-meta"') < channel_markup.index('class="channel-description"') < channel_markup.index('class="channel-note"')
+        assert channel_markup.index('class="channel-meta"') < channel_markup.index('class="channel-description"') < channel_markup.index('class="channel-note-name"') < channel_markup.index('class="channel-location"')
         assert patched_js.index('class="channel-side"') < patched_js.index('class="channel-content"')
         assert "active-wt" in patched_js
         assert "TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.17." in patched_css
@@ -146,6 +153,8 @@ def main():
         assert "TouchGUI raised white note row v1.60" in patched_css
         assert "TouchGUI aqua row alignment and note clearance v1.61" in patched_css
         assert "TouchGUI white note glyph clearance v1.62" in patched_css
+        assert "TouchGUI name/location card row styling v1.63" in patched_css
+        assert ".channel-location { position:absolute; visibility:hidden; }" in patched_css
         assert ".channel-note { overflow:visible; }" in patched_css
         assert ".channel-description { left:-0.5ch; }" in patched_css
         assert ".channel-note { top:-5px; }" in patched_css
@@ -235,6 +244,10 @@ if(channelNote({node: '672000', call: 'W2NJR', desc: 'System Main Hub', loc: 'So
 	throw new Error('TouchGUI note did not retain only the user label text');
 if(channelNote({node: '54318', call: 'GB3EG', desc: '430.9125', loc: 'Wigan, Greater Manchester', label: 'GB3EG 430.9125, Wigan, Greater Manchester 54318'}) !== 'Wigan, Greater Manchester')
 	throw new Error('TouchGUI did not use location when no separate favorite note remains');
+if(channelNote({node: '54318', desc: '430.9125 +7.6MHz', loc: 'Wigan, Greater Manchester', label: '430.9125'}) !== 'Wigan, Greater Manchester')
+	throw new Error('TouchGUI did not replace a redundant Name with Location');
+if(channelNote({node: '54318', desc: '430.9125 +7.6MHz', loc: 'Wigan, Greater Manchester', label: 'Regional net meets nightly'}) !== 'Regional net meets nightly')
+	throw new Error('TouchGUI removed a nonredundant favorite Name');
 simple.channelByNode['672000'] = {node: '672000', call: 'W2NJR', label: 'W2NJR Chillin with Bill Everyday 10am 672000'};
 if(channelTitle('672000') !== 'Chillin with Bill Everyday 10am (672000 - W2NJR)')
 	throw new Error('Connected banner did not show the node and callsign after the description: ' + channelTitle('672000'));
@@ -261,25 +274,43 @@ window.getComputedStyle = function(element) {
 	var size = parseFloat(element.style.fontSize) || 18;
 	return {fontSize: size + 'px', lineHeight: (size * 1.12) + 'px'};
 };
-var shortTitle = {clientWidth: 120, scrollWidth: 100, style: {fontSize: '', transform: '', whiteSpace: '', overflowWrap: '', display: '', maxHeight: '', overflow: ''}};
-fitChannelLabel({style: {}, querySelector: function() { return shortTitle; }});
-if(shortTitle.style.fontSize !== '' || shortTitle.style.transform !== '')
-	throw new Error('Short TouchGUI title was unnecessarily resized');
-var longTitleButton = {style: {}, querySelector: function(selector) {
-	return selector === '.channel-note' ? longTitle : null;
+function makeFitElement(text, width, naturalWidth) {
+	var element = {textContent: text, clientWidth: width, style: {fontSize: '', transform: '', whiteSpace: '', overflowWrap: '', display: '', maxHeight: '', overflow: ''}};
+	Object.defineProperty(element, 'scrollWidth', {get: function() {
+		return element.style.whiteSpace === 'normal' ? element.clientWidth : naturalWidth * (parseFloat(element.style.fontSize) || 18) / 18;
+	}});
+	return element;
+}
+var shortTitle = makeFitElement('Regional Hub', 120, 80);
+var shortLocation = makeFitElement('Wigan, Greater Manchester', 120, 100);
+shortLocation.style.position = 'absolute';
+shortLocation.style.visibility = 'hidden';
+var shortButton = {style: {}, querySelector: function(selector) {
+	if(selector === '.channel-note-name') return shortTitle;
+	if(selector === '.channel-location') return shortLocation;
+	return null;
 }};
-var longTitle = {style: {fontSize: '', transform: '', whiteSpace: '', overflowWrap: '', display: '', maxHeight: '', overflow: ''}};
-Object.defineProperty(longTitle, 'clientWidth', {value: 80});
-Object.defineProperty(longTitle, 'scrollWidth', {get: function() {
-	if(longTitle.style.whiteSpace === 'normal') return 80;
-	return 200 * (parseFloat(longTitle.style.fontSize) || 18) / 18;
-}});
+fitChannelLabel(shortButton);
+if(shortTitle.style.fontSize !== '' || shortTitle.style.transform !== '' || shortLocation.style.position !== 'static' || shortLocation.style.visibility !== 'visible')
+	throw new Error('One-line TouchGUI Name did not show Location beneath it: ' + JSON.stringify({note: shortTitle.style, location: shortLocation.style}));
+var longTitle = makeFitElement('A very long favorite label that wraps', 80, 200);
+var longLocation = makeFitElement('Wigan, Greater Manchester', 80, 125);
+longLocation.style.position = 'absolute';
+longLocation.style.visibility = 'hidden';
+var longTitleButton = {style: {}, querySelector: function(selector) {
+	if(selector === '.channel-note-name') return longTitle;
+	if(selector === '.channel-location') return longLocation;
+	return null;
+}};
 fitChannelLabel(longTitleButton);
-if(longTitle.style.fontSize !== '14px' || longTitle.style.whiteSpace !== 'normal' || longTitle.style.overflowWrap !== 'anywhere' || longTitle.style.maxHeight !== '' || longTitleButton.style.gridColumn !== undefined)
-	throw new Error('Long TouchGUI title did not wrap at the desktop 14px floor within the unchanged card width: ' + JSON.stringify(longTitle.style));
+if(longTitle.style.fontSize !== '14px' || longTitle.style.whiteSpace !== 'normal' || longTitle.style.overflowWrap !== 'anywhere' || longTitle.style.maxHeight !== '' || longTitleButton.style.gridColumn !== undefined || longLocation.style.position !== 'absolute' || longLocation.style.visibility !== 'hidden')
+	throw new Error('Long TouchGUI Name did not wrap within the unchanged card width or incorrectly showed Location: ' + JSON.stringify(longTitle.style));
 window.matchMedia = function(query) { return {matches: query === '(max-width:700px)'}; };
-var mobileTitle = {clientWidth: 80, scrollWidth: 200, style: {fontSize: '', transform: '', whiteSpace: '', overflowWrap: '', display: '', maxHeight: '', overflow: ''}};
-fitChannelLabel({style: {}, querySelector: function() { return mobileTitle; }});
+var mobileTitle = makeFitElement('Mobile long title', 80, 200);
+var mobileButton = {style: {}, querySelector: function(selector) {
+	return selector === '.channel-note-name' ? mobileTitle : null;
+}};
+fitChannelLabel(mobileButton);
 if(mobileTitle.style.fontSize !== '12px' || mobileTitle.style.whiteSpace !== 'normal')
 	throw new Error('Narrow-screen TouchGUI title did not retain the 12px minimum before wrapping: ' + JSON.stringify(mobileTitle.style));
 window.getComputedStyle = function(element) {
@@ -1078,8 +1109,12 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         upgraded_css = v157_css.read_text(encoding="utf-8")
         assert upgraded_js.count("TouchGUI aqua near-fit migration v1.59") == 1
         assert upgraded_js.count("TouchGUI near-fit overflow visibility v1.60") == 1
+        assert upgraded_js.count("TouchGUI name and location card rows v1.63") == 1
+        assert upgraded_js.count("TouchGUI name/location row fit v1.63") == 1
+        assert "channel-note-name" in upgraded_js and "channel-location" in upgraded_js
         assert "label.style.overflow = 'visible';" in upgraded_js
         assert "label.scrollWidth <= label.clientWidth * 1.12" in upgraded_js
+        assert upgraded_css.count("TouchGUI name/location card row styling v1.63") == 1
         assert upgraded_css.count("TouchGUI bottom-aligned note row v1.58") == 1
         assert upgraded_css.count("TouchGUI raised white note row v1.60") == 1
         assert upgraded_css.count("TouchGUI aqua row alignment and note clearance v1.61") == 1
@@ -1125,7 +1160,7 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         assert upgraded_v158 == (v158_js.read_bytes(), v158_css.read_bytes()), "v1.58 upgrade was not idempotent"
 
     print("PASS: installers include the TouchGUI activity patch path.")
-    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, text fitting and spacing, connected-banner callsign, compatibility upgrades, syntax, repeat application, and v1.49-v1.52 migrations and v1.53-v1.62 sizing upgrades.")
+    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, text fitting and spacing, connected-banner callsign, compatibility upgrades, syntax, repeat application, and v1.49-v1.52 migrations and v1.53-v1.63 sizing and card-data upgrades.")
 
 
 if __name__ == "__main__":
