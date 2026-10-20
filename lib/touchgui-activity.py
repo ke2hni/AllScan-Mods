@@ -73,6 +73,8 @@ def main():
             and "TouchGUI centered node line v1.55" in css
             and "TouchGUI measured aqua row fit v1.57" in js
             and "TouchGUI note separation v1.56" in css
+            and "TouchGUI aqua near-fit allowance v1.58" in js
+            and "TouchGUI bottom-aligned note row v1.58" in css
             and "function fitChannelLabel(button)" in js
             and "@media (orientation: portrait)" in css
             and "display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-1.5ch; overflow:visible;" in css
@@ -409,7 +411,8 @@ function fitChannelText(element, maxFontSize, minFontSize) {
 		// AllScan Mods: TouchGUI measured aqua row fit v1.57.
 		label.style.fontSize = Math.max(minSize, targetFontSize * label.clientWidth / textWidth) + 'px';
 		if(label.scrollWidth > label.clientWidth) {
-			if(maxFontSize && label.scrollWidth <= label.clientWidth * 1.04) {
+			// AllScan Mods: TouchGUI aqua near-fit allowance v1.58.
+			if(maxFontSize && label.scrollWidth <= label.clientWidth * 1.12) {
 				label.style.transform = 'scaleX(' + (label.clientWidth / label.scrollWidth * 0.98) + ')';
 			} else {
 				label.style.whiteSpace = 'normal';
@@ -1096,9 +1099,9 @@ top:-2px;
     if no_overflow_reset in js:
         js = js.replace(no_overflow_reset, "\t} else if(!maxFontSize) {\n\t\tlabel.style.whiteSpace = '';\n\t}", 1)
 
-    if "label.scrollWidth <= label.clientWidth * 1.04" not in js:
+    if "TouchGUI aqua near-fit allowance v1.58" not in js:
         old_wrap = "\t\tif(label.scrollWidth > label.clientWidth) {\n\t\t\tlabel.style.whiteSpace = 'normal';\n\t\t\tlabel.style.overflowWrap = 'anywhere';\n\t\t\tlabel.style.display = 'block';\n\t\t}"
-        new_wrap = "\t\tif(label.scrollWidth > label.clientWidth) {\n\t\t\tif(maxFontSize && label.scrollWidth <= label.clientWidth * 1.04) {\n\t\t\t\tlabel.style.transform = 'scaleX(' + (label.clientWidth / label.scrollWidth * 0.98) + ')';\n\t\t\t} else {\n\t\t\t\tlabel.style.whiteSpace = 'normal';\n\t\t\t\tlabel.style.overflowWrap = 'anywhere';\n\t\t\t\tlabel.style.display = 'block';\n\t\t\t}\n\t\t}"
+        new_wrap = "\t\tif(label.scrollWidth > label.clientWidth) {\n\t\t\t// AllScan Mods: TouchGUI aqua near-fit allowance v1.58.\n\t\t\tif(maxFontSize && label.scrollWidth <= label.clientWidth * 1.12) {\n\t\t\t\tlabel.style.transform = 'scaleX(' + (label.clientWidth / label.scrollWidth * 0.98) + ')';\n\t\t\t} else {\n\t\t\t\tlabel.style.whiteSpace = 'normal';\n\t\t\t\tlabel.style.overflowWrap = 'anywhere';\n\t\t\t\tlabel.style.display = 'block';\n\t\t\t}\n\t\t}"
         if js.count(old_wrap) != 1:
             raise SystemExit("ERROR: Existing TouchGUI text wrapping block is unexpected; no files changed.")
         js = js.replace(old_wrap, new_wrap, 1)
@@ -1108,6 +1111,15 @@ top:-2px;
 '''
     if "TouchGUI note separation v1.56" not in css:
         css = css.rstrip() + "\n" + note_spacing_css
+
+    note_alignment_css = '''/* AllScan Mods: TouchGUI bottom-aligned note row v1.58. */
+.channel-note {
+margin-top:auto;
+padding-top:3px;
+}
+'''
+    if "TouchGUI bottom-aligned note row v1.58" not in css:
+        css = css.rstrip() + "\n" + note_alignment_css
 
     if "TouchGUI responsive description sizing v1.55" not in js:
         fit_function = re.compile(r"(?ms)^function fitChannelText\(element\) \{.*?^}")
@@ -1152,9 +1164,12 @@ top:-2px;
             or "TouchGUI responsive description sizing v1.55" not in js
             or "TouchGUI centered node line v1.55" not in css
             or "TouchGUI measured aqua row fit v1.57" not in js
-            or "label.scrollWidth <= label.clientWidth * 1.04" not in js
+            or "TouchGUI aqua near-fit allowance v1.58" not in js
+            or "label.scrollWidth <= label.clientWidth * 1.12" not in js
             or "TouchGUI note separation v1.56" not in css
             or ".channel-note { margin-top:3px; }" not in css
+            or "TouchGUI bottom-aligned note row v1.58" not in css
+            or "margin-top:auto;\npadding-top:3px;" not in css
             or "calc(180px + 5ch)" not in css
             or "color:#00f5f5;" not in css
             or "@media (orientation: portrait)" not in css
