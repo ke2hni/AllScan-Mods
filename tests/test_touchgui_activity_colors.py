@@ -14,10 +14,12 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.52" in text, installer
+        assert "TouchGUI activity colors mod version: v1.53" in text, installer
         assert "TouchGUI connected banner callsign v1.51" in text
         assert "TouchGUI three-row card data v1.52" in text
         assert "TouchGUI three-row card styling v1.52" in text
+        assert "TouchGUI row text width fit v1.53" in text
+        assert "TouchGUI aqua row spacing v1.53" in text
         assert "Responsive TouchGUI label auto-fit v1.37" in text, installer
         assert "window.matchMedia && window.matchMedia('(orientation: portrait)').matches" in text, installer
         assert "apply_touchgui_activity_live" in text, installer
@@ -76,7 +78,8 @@ def main():
         assert "button.style.gridColumn" not in patched_js
         assert "label.style.whiteSpace = 'normal';" in patched_js
         assert "label.style.overflowWrap = 'anywhere';" in patched_js
-        assert "label.style.maxHeight = (1.12 * maxLines) + 'em';" in patched_js
+        assert "label.style.whiteSpace = 'nowrap';" in patched_js
+        assert "TouchGUI row text width fit v1.53" in patched_js
         assert "label.style.transform = 'scaleX('" not in patched_js
         assert "function fitTouchguiCardText()" in patched_js
         assert "fitChannelLabel(btn);" in patched_js
@@ -115,6 +118,8 @@ def main():
         assert "TouchGUI landscape callsign fit v1.50" in patched_css
         assert "@media (orientation: landscape) {\n.channel-meta { display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-0.75ch; overflow:visible; }\n}" in patched_css
         assert "TouchGUI three-row card styling v1.52" in patched_css
+        assert "TouchGUI aqua row spacing v1.53" in patched_css
+        assert "position:relative;\ntop:-2px;" in patched_css
         assert "calc(180px + 5ch)" in patched_css
         assert "calc(145px + 5ch)" in patched_css
         assert ".channel-description { color:#00f5f5; }" in patched_css
@@ -235,7 +240,7 @@ Object.defineProperty(longTitle, 'scrollWidth', {get: function() {
 	return 200 * (parseFloat(longTitle.style.fontSize) || 18) / 18;
 }});
 fitChannelLabel(longTitleButton);
-if(longTitle.style.fontSize !== '14px' || longTitle.style.whiteSpace !== 'normal' || longTitle.style.overflowWrap !== 'anywhere' || longTitle.style.maxHeight !== '2.24em' || longTitleButton.style.gridColumn !== undefined)
+if(longTitle.style.fontSize !== '14px' || longTitle.style.whiteSpace !== 'normal' || longTitle.style.overflowWrap !== 'anywhere' || longTitle.style.maxHeight !== '' || longTitleButton.style.gridColumn !== undefined)
 	throw new Error('Long TouchGUI title did not wrap at the desktop 14px floor within the unchanged card width: ' + JSON.stringify(longTitle.style));
 window.matchMedia = function(query) { return {matches: query === '(max-width:700px)'}; };
 var mobileTitle = {clientWidth: 80, scrollWidth: 200, style: {fontSize: '', transform: '', whiteSpace: '', overflowWrap: '', display: '', maxHeight: '', overflow: ''}};
@@ -869,8 +874,26 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         subprocess.run(["python3", str(PATCHER), str(v151_js), str(v151_css)], check=True)
         assert upgraded_v151 == (v151_js.read_bytes(), v151_css.read_bytes()), "v1.51 upgrade was not idempotent"
 
+    with tempfile.TemporaryDirectory(prefix="touchgui-v152-upgrade-") as temp:
+        v152_js = Path(temp) / "simple.js"
+        v152_css = Path(temp) / "simple.css"
+        shutil.copy2(FIXTURES / "touchgui-installed-v1.52.js", v152_js)
+        shutil.copy2(FIXTURES / "touchgui-installed-v1.52.css", v152_css)
+        subprocess.run(["python3", str(PATCHER), str(v152_js), str(v152_css)], check=True)
+        upgraded_js = v152_js.read_text(encoding="utf-8")
+        upgraded_css = v152_css.read_text(encoding="utf-8")
+        assert upgraded_js.count("TouchGUI row text width fit v1.53") == 1
+        assert "label.style.whiteSpace = 'nowrap';" in upgraded_js
+        assert "label.style.maxHeight = (1.12 * maxLines) + 'em';" not in upgraded_js
+        assert upgraded_css.count("TouchGUI aqua row spacing v1.53") == 1
+        assert "position:relative;\ntop:-2px;" in upgraded_css
+        subprocess.run(["node", "--check", str(v152_js)], check=True)
+        upgraded_v152 = (v152_js.read_bytes(), v152_css.read_bytes())
+        subprocess.run(["python3", str(PATCHER), str(v152_js), str(v152_css)], check=True)
+        assert upgraded_v152 == (v152_js.read_bytes(), v152_css.read_bytes()), "v1.52 upgrade was not idempotent"
+
     print("PASS: installers include the TouchGUI activity patch path.")
-    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, connected-banner callsign, compatibility upgrades, syntax, repeat application, and v1.49-v1.51 migrations.")
+    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, row-width fitting, connected-banner callsign, compatibility upgrades, syntax, repeat application, and v1.49-v1.52 migrations.")
 
 
 if __name__ == "__main__":

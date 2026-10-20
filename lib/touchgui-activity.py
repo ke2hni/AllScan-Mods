@@ -66,6 +66,8 @@ def main():
             and "TouchGUI three-row card data v1.52" in js
             and "function channelNote(channel)" in js
             and "TouchGUI three-row card styling v1.52" in css
+            and "TouchGUI row text width fit v1.53" in js
+            and "TouchGUI aqua row spacing v1.53" in css
             and "function fitChannelLabel(button)" in js
             and "@media (orientation: portrait)" in css
             and "display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-1.5ch; overflow:visible;" in css
@@ -377,7 +379,7 @@ function channelNote(channel) {
 	}
 }
 
-function fitChannelText(element, maxLines) {
+function fitChannelText(element) {
 	var label = element;
 	if(!label || !label.clientWidth)
 		return;
@@ -388,6 +390,7 @@ function fitChannelText(element, maxLines) {
 	label.style.display = '';
 	label.style.maxHeight = '';
 	label.style.overflow = '';
+	label.style.whiteSpace = 'nowrap';
 	var textWidth = label.scrollWidth;
 	if(textWidth > label.clientWidth) {
 		var fontSize = parseFloat(window.getComputedStyle(label).fontSize);
@@ -398,17 +401,17 @@ function fitChannelText(element, maxLines) {
 			label.style.whiteSpace = 'normal';
 			label.style.overflowWrap = 'anywhere';
 			label.style.display = 'block';
-			label.style.maxHeight = (1.12 * maxLines) + 'em';
-			label.style.overflow = 'hidden';
 		}
+	} else {
+		label.style.whiteSpace = '';
 	}
 }
 function fitChannelDescription(button) {
-	fitChannelText(button.querySelector('.channel-description'), 2);
+	fitChannelText(button.querySelector('.channel-description'));
 }
 // AllScan Mods: TouchGUI adaptive title fit v1.45.
 function fitChannelLabel(button) {
-	fitChannelText(button.querySelector('.channel-note'), 2);
+	fitChannelText(button.querySelector('.channel-note'));
 }
 function fitTouchguiCardText() {
 	document.querySelectorAll('.channel-btn').forEach(function(button) {
@@ -434,14 +437,14 @@ window.addEventListener('resize', fitTouchguiCardText);'''
         js = old_text_fit_pattern.sub(lambda _: card_text_fit_funcs, js, count=1)
     elif js.count("function fitChannelLabel(button)") != 1 or "function fitTouchguiCardText()" not in js:
         raise SystemExit("ERROR: TouchGUI card title sizing helper is ambiguous; no files changed.")
-    if "TouchGUI three-row card styling v1.52" not in js:
+    if "TouchGUI row text width fit v1.53" not in js:
         fit_block_pattern = re.compile(
             r"(?s)function fitChannelMeta\(button\) \{.*?window\.addEventListener\('resize', fitTouchguiCardText\);"
         )
         fit_blocks = list(fit_block_pattern.finditer(js))
         if len(fit_blocks) != 1:
             raise SystemExit("ERROR: Existing TouchGUI text fitting block is unexpected; no files changed.")
-        js = fit_block_pattern.sub(lambda _: "// AllScan Mods: TouchGUI three-row card styling v1.52.\n" + card_text_fit_funcs, js, count=1)
+        js = fit_block_pattern.sub(lambda _: "// AllScan Mods: TouchGUI row text width fit v1.53.\n" + card_text_fit_funcs, js, count=1)
     if "TouchGUI adaptive title fit v1.45" not in js:
         title_fit_pattern = re.compile(
             r"(?ms)^(?:// AllScan Mods: TouchGUI (?:horizontal title fit v1\.37|readable long-title fit v1\.43|uniform-card title fit v1\.44)\.\n)?"
@@ -1032,6 +1035,15 @@ overflow-wrap:anywhere;
     if "TouchGUI three-row card styling v1.52" not in css:
         css = css.rstrip() + "\n" + three_row_css
 
+    row_spacing_css = '''/* AllScan Mods: TouchGUI aqua row spacing v1.53. */
+.channel-description {
+position:relative;
+top:-2px;
+}
+'''
+    if "TouchGUI aqua row spacing v1.53" not in css:
+        css = css.rstrip() + "\n" + row_spacing_css
+
     if ("simple.statsTmr = setTimeout(getChannelStats" not in js
             or "active-wt" not in js
             or "simple.txTim[node] = now" not in js
@@ -1050,6 +1062,8 @@ overflow-wrap:anywhere;
             or "function channelDescription(channel)" not in js
             or "function channelNote(channel)" not in js
             or "TouchGUI three-row card styling v1.52" not in css
+            or "TouchGUI row text width fit v1.53" not in js
+            or "TouchGUI aqua row spacing v1.53" not in css
             or "calc(180px + 5ch)" not in css
             or "color:#00f5f5;" not in css
             or "@media (orientation: portrait)" not in css

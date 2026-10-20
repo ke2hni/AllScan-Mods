@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.52
+# TouchGUI activity colors mod version: v1.53
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -171,6 +171,8 @@ touchgui_activity_present() {
     grep -Fq 'TouchGUI connected banner callsign v1.51' "$SIMPLE_JS_FILE" &&
     grep -Fq 'TouchGUI three-row card data v1.52' "$SIMPLE_JS_FILE" &&
     grep -Fq 'TouchGUI three-row card styling v1.52' "$SIMPLE_CSS_FILE" &&
+    grep -Fq 'TouchGUI row text width fit v1.53' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'TouchGUI aqua row spacing v1.53' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'function fitTouchguiCardText()' "$SIMPLE_JS_FILE" &&
     grep -Fq 'number < 3000000' "$SIMPLE_JS_FILE" &&
     grep -Fq 'simple.txTim[node] = now' "$SIMPLE_JS_FILE" &&
