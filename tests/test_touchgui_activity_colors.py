@@ -14,8 +14,10 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.51" in text, installer
+        assert "TouchGUI activity colors mod version: v1.52" in text, installer
         assert "TouchGUI connected banner callsign v1.51" in text
+        assert "TouchGUI three-row card data v1.52" in text
+        assert "TouchGUI three-row card styling v1.52" in text
         assert "Responsive TouchGUI label auto-fit v1.37" in text, installer
         assert "window.matchMedia && window.matchMedia('(orientation: portrait)').matches" in text, installer
         assert "apply_touchgui_activity_live" in text, installer
@@ -74,7 +76,7 @@ def main():
         assert "button.style.gridColumn" not in patched_js
         assert "label.style.whiteSpace = 'normal';" in patched_js
         assert "label.style.overflowWrap = 'anywhere';" in patched_js
-        assert "label.style.maxHeight = '3.36em';" in patched_js
+        assert "label.style.maxHeight = (1.12 * maxLines) + 'em';" in patched_js
         assert "label.style.transform = 'scaleX('" not in patched_js
         assert "function fitTouchguiCardText()" in patched_js
         assert "fitChannelLabel(btn);" in patched_js
@@ -86,8 +88,11 @@ def main():
         assert "channel-side" in patched_js and "channel-content" in patched_js
         assert "TouchGUI callsign-first card content v1.46" in patched_js
         assert "TouchGUI connected banner callsign v1.51" in patched_js
+        assert "TouchGUI three-row card data v1.52" in patched_js
+        assert "function channelDescription(channel)" in patched_js
+        assert "function channelNote(channel)" in patched_js
         channel_markup = re.search(r"btn\.innerHTML = [\s\S]*?;", patched_js).group(0)
-        assert channel_markup.index('class="channel-meta"') < channel_markup.index('class="channel-label"')
+        assert channel_markup.index('class="channel-meta"') < channel_markup.index('class="channel-description"') < channel_markup.index('class="channel-note"')
         assert patched_js.index('class="channel-side"') < patched_js.index('class="channel-content"')
         assert "active-wt" in patched_js
         assert "TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.17." in patched_css
@@ -109,6 +114,11 @@ def main():
         assert ".channel-meta {\nfont-weight:bold;\n}" in patched_css
         assert "TouchGUI landscape callsign fit v1.50" in patched_css
         assert "@media (orientation: landscape) {\n.channel-meta { display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-0.75ch; overflow:visible; }\n}" in patched_css
+        assert "TouchGUI three-row card styling v1.52" in patched_css
+        assert "calc(180px + 5ch)" in patched_css
+        assert "calc(145px + 5ch)" in patched_css
+        assert ".channel-description { color:#00f5f5; }" in patched_css
+        assert "font-size:14px;\nfont-weight:bold;\nline-height:1.05;" in patched_css
         assert "font-size:14px;\nline-height:1.1;" in patched_css
         assert "@media (max-width:700px) {\n.channel-label { font-size:16px; }\n}" in patched_css
         assert "@media (max-height:430px) {\n.channel-label { font-size:15px; }\n.channel-meta { font-size:12px; }\n}" in patched_css
@@ -178,6 +188,12 @@ if(cardLabel !== 'Backup Repeater')
 cardLabel = channelLabel({node: '512511', call: 'GB3CR', label: 'GB3CR 12345678901234567890123456789012345 512511'});
 if(cardLabel !== '12345678901234567890123456789012345')
 	throw new Error('TouchGUI clipped a long card title instead of preserving it for fitting: ' + cardLabel);
+if(channelDescription({desc: 'System Main Hub'}) !== 'System Main Hub')
+	throw new Error('TouchGUI did not expose the ASTDB description for its own row');
+if(channelNote({node: '672000', call: 'W2NJR', desc: 'System Main Hub', loc: 'Somewhere', label: 'W2NJR Chillin with Bill Everyday 10am 672000'}) !== 'Chillin with Bill Everyday 10am')
+	throw new Error('TouchGUI note did not retain only the user label text');
+if(channelNote({node: '54318', call: 'GB3EG', desc: '430.9125', loc: 'Wigan, Greater Manchester', label: 'GB3EG 430.9125, Wigan, Greater Manchester 54318'}) !== 'Wigan, Greater Manchester')
+	throw new Error('TouchGUI did not use location when no separate favorite note remains');
 simple.channelByNode['672000'] = {node: '672000', call: 'W2NJR', label: 'W2NJR Chillin with Bill Everyday 10am 672000'};
 if(channelTitle('672000') !== 'Chillin with Bill Everyday 10am (672000 - W2NJR)')
 	throw new Error('Connected banner did not show the node and callsign after the description: ' + channelTitle('672000'));
@@ -209,7 +225,7 @@ fitChannelLabel({style: {}, querySelector: function() { return shortTitle; }});
 if(shortTitle.style.fontSize !== '' || shortTitle.style.transform !== '')
 	throw new Error('Short TouchGUI title was unnecessarily resized');
 var longTitleButton = {style: {}, querySelector: function(selector) {
-	return selector === '.channel-label' ? longTitle : null;
+	return selector === '.channel-note' ? longTitle : null;
 }};
 var longTitle = {style: {fontSize: '', transform: '', whiteSpace: '', overflowWrap: '', display: '', maxHeight: '', overflow: ''}};
 Object.defineProperty(longTitle, 'clientWidth', {value: 80});
@@ -218,7 +234,7 @@ Object.defineProperty(longTitle, 'scrollWidth', {get: function() {
 	return 200 * (parseFloat(longTitle.style.fontSize) || 18) / 18;
 }});
 fitChannelLabel(longTitleButton);
-if(longTitle.style.fontSize !== '14px' || longTitle.style.whiteSpace !== 'normal' || longTitle.style.overflowWrap !== 'anywhere' || longTitle.style.maxHeight !== '3.36em' || longTitleButton.style.gridColumn !== undefined)
+if(longTitle.style.fontSize !== '14px' || longTitle.style.whiteSpace !== 'normal' || longTitle.style.overflowWrap !== 'anywhere' || longTitle.style.maxHeight !== '2.24em' || longTitleButton.style.gridColumn !== undefined)
 	throw new Error('Long TouchGUI title did not wrap at the desktop 14px floor within the unchanged card width: ' + JSON.stringify(longTitle.style));
 window.matchMedia = function(query) { return {matches: query === '(max-width:700px)'}; };
 var mobileTitle = {clientWidth: 80, scrollWidth: 200, style: {fontSize: '', transform: '', whiteSpace: '', overflowWrap: '', display: '', maxHeight: '', overflow: ''}};
@@ -348,14 +364,14 @@ transform-origin:center;
         css.write_text(current_css.replace(new_responsive_css, old_responsive_css, 1), encoding="utf-8")
         js_text = js.read_text(encoding="utf-8")
         js_text = re.sub(r"(?ms)^function fitChannelMeta\(button\) \{.*?^window\.addEventListener\('resize', fitTouchguiCardText\);\n?", "", js_text, count=1)
-        js_text = js_text.replace("\t\trequestAnimationFrame(function() {\n\t\t\tfitChannelMeta(btn);\n\t\t\tfitChannelLabel(btn);\n\t\t});\n", "")
+        js_text = js_text.replace("\t\trequestAnimationFrame(function() {\n\t\t\tfitChannelMeta(btn);\n\t\t\tfitChannelDescription(btn);\n\t\t\tfitChannelLabel(btn);\n\t\t});\n", "")
         assert "function fitChannelMeta(button)" not in js_text
         js.write_text(js_text, encoding="utf-8")
         subprocess.run(["python3", str(PATCHER), str(js), str(css)], check=True)
         upgraded_js = js.read_text(encoding="utf-8")
         upgraded_css = css.read_text(encoding="utf-8")
         assert upgraded_js.count("function fitChannelMeta(button)") == 1
-        assert "requestAnimationFrame(function() {\n\t\t\tfitChannelMeta(btn);\n\t\t\tfitChannelLabel(btn);\n\t\t});" in upgraded_js
+        assert "requestAnimationFrame(function() {\n\t\t\tfitChannelMeta(btn);\n\t\t\tfitChannelDescription(btn);\n\t\t\tfitChannelLabel(btn);\n\t\t});" in upgraded_js
         assert upgraded_css.count(new_responsive_css) == 1
         assert "Responsive TouchGUI card labels and fitted one-line metadata v1.24" not in upgraded_css
         assert "Responsive TouchGUI card spacing v1.25" not in upgraded_css
@@ -705,7 +721,7 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         migrated_v145_js = v145_js.read_text(encoding="utf-8")
         migrated_v145_markup = re.search(r"btn\.innerHTML = [\s\S]*?;", migrated_v145_js).group(0)
         assert "TouchGUI callsign-first card content v1.46" in migrated_v145_js
-        assert migrated_v145_markup.index('class="channel-meta"') < migrated_v145_markup.index('class="channel-label"')
+        assert migrated_v145_markup.index('class="channel-meta"') < migrated_v145_markup.index('class="channel-description"') < migrated_v145_markup.index('class="channel-note"')
         assert "TouchGUI top-aligned callsign with description gap v1.47" in v145_css.read_text(encoding="utf-8")
 
         v146_js = temp / "v1.46.js"
@@ -731,7 +747,7 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         migrated_v145_js = v145_js.read_text(encoding="utf-8")
         assert "TouchGUI callsign-first card content v1.46" in migrated_v145_js
         migrated_markup = re.search(r"btn\.innerHTML = [\s\S]*?;", migrated_v145_js).group(0)
-        assert migrated_markup.index('class="channel-meta"') < migrated_markup.index('class="channel-label"')
+        assert migrated_markup.index('class="channel-meta"') < migrated_markup.index('class="channel-description"') < migrated_markup.index('class="channel-note"')
         migrated_v145 = (v145_js.read_bytes(), v145_css.read_bytes())
         subprocess.run(["python3", str(PATCHER), str(v145_js), str(v145_css)], check=True)
         assert migrated_v145 == (v145_js.read_bytes(), v145_css.read_bytes()), "v1.45 migration was not idempotent"
@@ -815,8 +831,31 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         subprocess.run(["python3", str(PATCHER), str(v150_js), str(v150_css)], check=True)
         assert upgraded_v150 == (v150_js.read_bytes(), v150_css.read_bytes()), "v1.50 upgrade was not idempotent"
 
+    with tempfile.TemporaryDirectory(prefix="touchgui-v151-upgrade-") as temp:
+        v151_js = Path(temp) / "simple.js"
+        v151_css = Path(temp) / "simple.css"
+        shutil.copy2(FIXTURES / "touchgui-installed-v1.51.js", v151_js)
+        shutil.copy2(FIXTURES / "touchgui-installed-v1.51.css", v151_css)
+        subprocess.run(["python3", str(PATCHER), str(v151_js), str(v151_css)], check=True)
+        upgraded_js = v151_js.read_text(encoding="utf-8")
+        upgraded_css = v151_css.read_text(encoding="utf-8")
+        assert upgraded_js.count("TouchGUI three-row card data v1.52") == 1
+        assert "function channelDescription(channel)" in upgraded_js
+        assert "function channelNote(channel)" in upgraded_js
+        assert "fitChannelDescription(btn);" in upgraded_js
+        assert "class=\"channel-description\"" in upgraded_js
+        assert "class=\"channel-note\"" in upgraded_js
+        assert "calc(180px + 5ch)" in upgraded_css
+        assert "calc(145px + 5ch)" in upgraded_css
+        assert ".channel-description { color:#00f5f5; }" in upgraded_css
+        assert ".channel-note { color:#f8fbff; }" in upgraded_css
+        subprocess.run(["node", "--check", str(v151_js)], check=True)
+        upgraded_v151 = (v151_js.read_bytes(), v151_css.read_bytes())
+        subprocess.run(["python3", str(PATCHER), str(v151_js), str(v151_css)], check=True)
+        assert upgraded_v151 == (v151_js.read_bytes(), v151_css.read_bytes()), "v1.51 upgrade was not idempotent"
+
     print("PASS: installers include the TouchGUI activity patch path.")
-    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, connected-banner callsign, compatibility upgrades, syntax, repeat application, and v1.49/v1.50 migrations.")
+    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, connected-banner callsign, compatibility upgrades, syntax, repeat application, and v1.49-v1.51 migrations.")
 
 
 if __name__ == "__main__":

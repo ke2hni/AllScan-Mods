@@ -63,6 +63,9 @@ def main():
             and "TouchGUI bold node/callsign line v1.48" in css
             and "TouchGUI landscape callsign fit v1.50" in css
             and "TouchGUI connected banner callsign v1.51" in js
+            and "TouchGUI three-row card data v1.52" in js
+            and "function channelNote(channel)" in js
+            and "TouchGUI three-row card styling v1.52" in css
             and "function fitChannelLabel(button)" in js
             and "@media (orientation: portrait)" in css
             and "display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-1.5ch; overflow:visible;" in css
@@ -108,23 +111,25 @@ def main():
 
     channel_markup = r'''(?m)^[ \t]*btn\.innerHTML = [\s\S]*?;'''
     channel_markup_new = '''\t\t// AllScan Mods: TouchGUI callsign-first card content v1.46.
+\t\t// AllScan Mods: TouchGUI three-row card data v1.52.
 \t\tbtn.innerHTML = '<span class="channel-side"><span class="channel-index">' + (i + 1) + '</span>'
 \t\t\t+ '<span class="channel-stats"><span class="channel-rx">—</span><span class="channel-lcnt">—</span></span></span>'
 \t\t\t+ '<span class="channel-content"><span class="channel-meta">' + escapeHtml(channelMeta(channel)) + '</span>'
-\t\t\t+ '<span class="channel-label">' + escapeHtml(channelLabel(channel)) + '</span></span>';
+\t\t\t+ '<span class="channel-description">' + escapeHtml(channelDescription(channel)) + '</span>'
+\t\t\t+ '<span class="channel-note">' + escapeHtml(channelNote(channel)) + '</span></span>';
 '''.replace("\\t", "\t")
     updated_js, markup_count = re.subn(channel_markup, lambda _: channel_markup_new, js, count=1)
-    if markup_count != 1 or "channel-index" not in js or "channel-label" not in js:
+    if markup_count != 1 or "channel-index" not in updated_js or "channel-description" not in updated_js or "channel-note" not in updated_js:
         raise SystemExit("ERROR: Expected one TouchGUI card markup block; no files changed.")
     js = updated_js
     render_fit_pattern = re.compile(
         r"(?ms)^[ \t]*requestAnimationFrame\(function\(\) \{[^{}]*fitChannelMeta\(btn\);[^{}]*\}\);"
     )
     js = render_fit_pattern.sub("", js)
-    render_end = "\t\t\t+ '<span class=\"channel-label\">' + escapeHtml(channelLabel(channel)) + '</span></span>';"
+    render_end = "\t\t\t+ '<span class=\"channel-note\">' + escapeHtml(channelNote(channel)) + '</span></span>';"
     if js.count(render_end) != 1:
         raise SystemExit("ERROR: Expected one TouchGUI card render insertion point; no files changed.")
-    render_fit_call = "\t\trequestAnimationFrame(function() {\n\t\t\tfitChannelMeta(btn);\n\t\t\tfitChannelLabel(btn);\n\t\t});"
+    render_fit_call = "\t\trequestAnimationFrame(function() {\n\t\t\tfitChannelMeta(btn);\n\t\t\tfitChannelDescription(btn);\n\t\t\tfitChannelLabel(btn);\n\t\t});"
     js = js.replace(render_end, render_end + "\n" + render_fit_call, 1)
 
     unload_marker = "\twindow.addEventListener('beforeunload', closeEventSource);"
@@ -327,6 +332,35 @@ function channelLabel(channel) {
     else:
         raise SystemExit("ERROR: Expected the TouchGUI channel-label function exactly once; no files changed.")
 
+    card_field_funcs = r'''function channelDescription(channel) {
+	return String(channel.desc || '').trim();
+}
+function channelNote(channel) {
+	var text = String(channel.label || '');
+	var fields = [channel.node, channel.call, channel.desc, channel.loc]
+		.filter(function(value) { return value !== undefined && value !== null && String(value).trim() && String(value).trim() !== '-'; })
+		.map(function(value) { return String(value).trim(); })
+		.sort(function(a, b) { return b.length - a.length; });
+	fields.forEach(function(value) {
+		var fieldPat = new RegExp('(^|[\\s,;:-]+)' + escapeRegExp(value) + '(?=$|[\\s,;:-]+)', 'gi');
+		text = text.replace(fieldPat, function(match, prefix) {
+			return prefix && prefix.trim() ? prefix : '';
+		});
+	});
+	text = text.replace(/\s{2,}/g, ' ').replace(/^[\s,;:.()]+|[\s,;:.()]+$/g, '').trim();
+	return text || String(channel.loc || '').trim();
+}'''
+    if "function channelNote(channel)" not in js:
+        marker = "// AllScan Mods: TouchGUI matching callsign removal v1.18."
+        if js.count(marker) != 1:
+            raise SystemExit("ERROR: Expected the TouchGUI label helper marker exactly once; no files changed.")
+        label_start = js.find(marker)
+        label_end = js.find("\n}", js.find("function channelLabel(channel)", label_start))
+        if label_end < 0:
+            raise SystemExit("ERROR: Existing TouchGUI label helper is incomplete; no files changed.")
+        label_end += 2
+        js = js[:label_end] + "\n" + card_field_funcs + "\n" + js[label_end:]
+
     card_text_fit_funcs = r'''function fitChannelMeta(button) {
 	var meta = button.querySelector('.channel-meta');
 	if(!meta || !meta.clientWidth)
@@ -346,9 +380,9 @@ function channelLabel(channel) {
 		}
 	}
 }
-// AllScan Mods: TouchGUI adaptive title fit v1.45.
-function fitChannelLabel(button) {
-	var label = button.querySelector('.channel-label');
+
+function fitChannelText(element, maxLines) {
+	var label = element;
 	if(!label || !label.clientWidth)
 		return;
 	label.style.fontSize = '';
@@ -368,14 +402,22 @@ function fitChannelLabel(button) {
 			label.style.whiteSpace = 'normal';
 			label.style.overflowWrap = 'anywhere';
 			label.style.display = 'block';
-			label.style.maxHeight = '3.36em';
+			label.style.maxHeight = (1.12 * maxLines) + 'em';
 			label.style.overflow = 'hidden';
 		}
 	}
 }
+function fitChannelDescription(button) {
+	fitChannelText(button.querySelector('.channel-description'), 2);
+}
+// AllScan Mods: TouchGUI adaptive title fit v1.45.
+function fitChannelLabel(button) {
+	fitChannelText(button.querySelector('.channel-note'), 2);
+}
 function fitTouchguiCardText() {
 	document.querySelectorAll('.channel-btn').forEach(function(button) {
 		fitChannelMeta(button);
+		fitChannelDescription(button);
 		fitChannelLabel(button);
 	});
 }
@@ -396,6 +438,14 @@ window.addEventListener('resize', fitTouchguiCardText);'''
         js = old_text_fit_pattern.sub(lambda _: card_text_fit_funcs, js, count=1)
     elif js.count("function fitChannelLabel(button)") != 1 or "function fitTouchguiCardText()" not in js:
         raise SystemExit("ERROR: TouchGUI card title sizing helper is ambiguous; no files changed.")
+    if "TouchGUI three-row card styling v1.52" not in js:
+        fit_block_pattern = re.compile(
+            r"(?s)function fitChannelMeta\(button\) \{.*?window\.addEventListener\('resize', fitTouchguiCardText\);"
+        )
+        fit_blocks = list(fit_block_pattern.finditer(js))
+        if len(fit_blocks) != 1:
+            raise SystemExit("ERROR: Existing TouchGUI text fitting block is unexpected; no files changed.")
+        js = fit_block_pattern.sub(lambda _: "// AllScan Mods: TouchGUI three-row card styling v1.52.\n" + card_text_fit_funcs, js, count=1)
     if "TouchGUI adaptive title fit v1.45" not in js:
         title_fit_pattern = re.compile(
             r"(?ms)^(?:// AllScan Mods: TouchGUI (?:horizontal title fit v1\.37|readable long-title fit v1\.43|uniform-card title fit v1\.44)\.\n)?"
@@ -958,6 +1008,34 @@ text-overflow:clip;
         else:
             raise SystemExit("ERROR: Existing responsive TouchGUI CSS is unexpected; no files changed.")
 
+    three_row_css = '''/* AllScan Mods: TouchGUI three-row card styling v1.52. */
+.channels-grid {
+grid-template-columns:repeat(auto-fit, minmax(calc(180px + 5ch), 1fr));
+}
+.channel-description,
+.channel-note {
+display:block;
+width:100%;
+min-width:0;
+box-sizing:border-box;
+text-align:center;
+font-size:14px;
+font-weight:bold;
+line-height:1.05;
+overflow:hidden;
+overflow-wrap:anywhere;
+}
+.channel-description { color:#00f5f5; }
+.channel-note { color:#f8fbff; }
+.channel-description:empty,
+.channel-note:empty { display:none; }
+@media (max-width:700px) {
+.channels-grid { grid-template-columns:repeat(auto-fit, minmax(calc(145px + 5ch), 1fr)); }
+}
+'''
+    if "TouchGUI three-row card styling v1.52" not in css:
+        css = css.rstrip() + "\n" + three_row_css
+
     if ("simple.statsTmr = setTimeout(getChannelStats" not in js
             or "active-wt" not in js
             or "simple.txTim[node] = now" not in js
@@ -972,6 +1050,12 @@ text-overflow:clip;
             or "Responsive TouchGUI label auto-fit v1.37" not in css
             or "TouchGUI single-line label fit v1.37" not in css
             or "TouchGUI adaptive title fit v1.45" not in js
+            or "TouchGUI three-row card data v1.52" not in js
+            or "function channelDescription(channel)" not in js
+            or "function channelNote(channel)" not in js
+            or "TouchGUI three-row card styling v1.52" not in css
+            or "calc(180px + 5ch)" not in css
+            or "color:#00f5f5;" not in css
             or "@media (orientation: portrait)" not in css
             or "display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-1.5ch; overflow:visible;" not in css
             or "left:-1.5ch;" not in css):
