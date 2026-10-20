@@ -14,12 +14,13 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.53" in text, installer
+        assert "TouchGUI activity colors mod version: v1.54" in text, installer
         assert "TouchGUI connected banner callsign v1.51" in text
         assert "TouchGUI three-row card data v1.52" in text
         assert "TouchGUI three-row card styling v1.52" in text
         assert "TouchGUI row text width fit v1.53" in text
         assert "TouchGUI aqua row spacing v1.53" in text
+        assert "TouchGUI aqua description font size v1.54" in text
         assert "Responsive TouchGUI label auto-fit v1.37" in text, installer
         assert "window.matchMedia && window.matchMedia('(orientation: portrait)').matches" in text, installer
         assert "apply_touchgui_activity_live" in text, installer
@@ -73,13 +74,15 @@ def main():
         assert "meta.style.transform = 'scaleX('" in patched_js
         assert "function fitChannelLabel(button)" in patched_js
         assert "var isSmallScreen = window.matchMedia && window.matchMedia('(max-width:700px)').matches;" in patched_js
-        assert "var minFontSize = isSmallScreen ? 12 : 14;" in patched_js
+        assert "var minFontSize = Math.min(isSmallScreen ? 12 : 14, fontSize);" in patched_js
         assert "TouchGUI adaptive title fit v1.45" in patched_js
         assert "button.style.gridColumn" not in patched_js
         assert "label.style.whiteSpace = 'normal';" in patched_js
         assert "label.style.overflowWrap = 'anywhere';" in patched_js
         assert "label.style.whiteSpace = 'nowrap';" in patched_js
         assert "TouchGUI row text width fit v1.53" in patched_js
+        assert "TouchGUI aqua font fit floor v1.54" in patched_js
+        assert "Math.min(isSmallScreen ? 12 : 14, fontSize)" in patched_js
         assert "label.style.transform = 'scaleX('" not in patched_js
         assert "function fitTouchguiCardText()" in patched_js
         assert "fitChannelLabel(btn);" in patched_js
@@ -119,6 +122,8 @@ def main():
         assert "@media (orientation: landscape) {\n.channel-meta { display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-0.75ch; overflow:visible; }\n}" in patched_css
         assert "TouchGUI three-row card styling v1.52" in patched_css
         assert "TouchGUI aqua row spacing v1.53" in patched_css
+        assert "TouchGUI aqua description font size v1.54" in patched_css
+        assert ".channel-description { font-size:13px; }" in patched_css
         assert "position:relative;\ntop:-2px;" in patched_css
         assert "calc(180px + 5ch)" in patched_css
         assert "calc(145px + 5ch)" in patched_css
@@ -766,7 +771,7 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         subprocess.run(["node", "--check", str(v144_js)], check=True)
         migrated_v144_js = v144_js.read_text(encoding="utf-8")
         assert "TouchGUI adaptive title fit v1.45" in migrated_v144_js
-        assert "var minFontSize = isSmallScreen ? 12 : 14;" in migrated_v144_js
+        assert "var minFontSize = Math.min(isSmallScreen ? 12 : 14, fontSize);" in migrated_v144_js
         assert "button.style.gridColumn" not in migrated_v144_js
         migrated_v144 = (v144_js.read_bytes(), v144_css.read_bytes())
         subprocess.run(["python3", str(PATCHER), str(v144_js), str(v144_css)], check=True)
@@ -887,13 +892,33 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         assert "label.style.maxHeight = (1.12 * maxLines) + 'em';" not in upgraded_js
         assert upgraded_css.count("TouchGUI aqua row spacing v1.53") == 1
         assert "position:relative;\ntop:-2px;" in upgraded_css
+        assert "TouchGUI aqua description font size v1.54" in upgraded_css
+        assert ".channel-description { font-size:13px; }" in upgraded_css
+        assert "TouchGUI aqua font fit floor v1.54" in upgraded_js
         subprocess.run(["node", "--check", str(v152_js)], check=True)
         upgraded_v152 = (v152_js.read_bytes(), v152_css.read_bytes())
         subprocess.run(["python3", str(PATCHER), str(v152_js), str(v152_css)], check=True)
         assert upgraded_v152 == (v152_js.read_bytes(), v152_css.read_bytes()), "v1.52 upgrade was not idempotent"
 
+    with tempfile.TemporaryDirectory(prefix="touchgui-v153-upgrade-") as temp:
+        v153_js = Path(temp) / "simple.js"
+        v153_css = Path(temp) / "simple.css"
+        shutil.copy2(FIXTURES / "touchgui-installed-v1.53.js", v153_js)
+        shutil.copy2(FIXTURES / "touchgui-installed-v1.53.css", v153_css)
+        subprocess.run(["python3", str(PATCHER), str(v153_js), str(v153_css)], check=True)
+        upgraded_js = v153_js.read_text(encoding="utf-8")
+        upgraded_css = v153_css.read_text(encoding="utf-8")
+        assert upgraded_js.count("TouchGUI aqua font fit floor v1.54") == 1
+        assert "var minFontSize = Math.min(isSmallScreen ? 12 : 14, fontSize);" in upgraded_js
+        assert upgraded_css.count("TouchGUI aqua description font size v1.54") == 1
+        assert ".channel-description { font-size:13px; }" in upgraded_css
+        subprocess.run(["node", "--check", str(v153_js)], check=True)
+        upgraded_v153 = (v153_js.read_bytes(), v153_css.read_bytes())
+        subprocess.run(["python3", str(PATCHER), str(v153_js), str(v153_css)], check=True)
+        assert upgraded_v153 == (v153_js.read_bytes(), v153_css.read_bytes()), "v1.53 upgrade was not idempotent"
+
     print("PASS: installers include the TouchGUI activity patch path.")
-    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, row-width fitting, connected-banner callsign, compatibility upgrades, syntax, repeat application, and v1.49-v1.52 migrations.")
+    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, row-width fitting, connected-banner callsign, compatibility upgrades, syntax, repeat application, and v1.49-v1.52 migrations and v1.53-to-v1.54 font-size upgrade.")
 
 
 if __name__ == "__main__":

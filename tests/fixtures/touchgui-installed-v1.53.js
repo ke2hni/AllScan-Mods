@@ -1,0 +1,310 @@
+var simple = {
+	channels: [],
+	channelByNode: {},
+	baseUrl: '',
+	channelsGrid: {querySelector: function() { return null; }},
+	statsTmr: null,
+	statsReq: null,
+	statsIndex: 0,
+	txCnt: {},
+	txTim: {},
+	txTT: {},
+	txAvg: {},
+	retryTmr: null
+};
+function simpleInit() {
+	initEventSource();
+	getChannelStats();
+}
+function initEventSource() {}
+function bindControls() {
+	window.addEventListener('beforeunload', closeEventSource);
+	window.addEventListener('beforeunload', closeChannelStats);
+}
+function closeEventSource() {}
+function formatTouchguiStatusMessage(msg) {
+	if(typeof msg !== 'string' || msg.indexOf('ASL Ver:') !== 0)
+		return msg;
+	var lines = msg.split(/<br\s*\/?\s*>/i);
+	lines = lines.map(function(line) { return line.trim(); });
+	if(lines.length < 3)
+		return msg;
+	var settingsIndex = lines.indexOf('Channel driver settings:');
+	if(settingsIndex < 0 || settingsIndex === lines.length - 1)
+		return msg;
+	var settings = lines.slice(settingsIndex + 1).filter(function(line) { return line !== ''; }).map(function(line) {
+		return line.replace(/ Level currently set to /, ' ');
+	});
+	if(!settings.length)
+		return msg;
+	return lines.slice(0, settingsIndex).join(' - ') + '<br>Channel settings: ' + settings.join(' | ');
+}
+
+function statMsg(msg) {
+	if(!simple.statmsg || !msg)
+		return;
+	simple.statmsg.innerHTML = formatTouchguiStatusMessage(msg);
+}
+// AllScan Mods: TouchGUI connected banner callsign v1.51.
+// AllScan Mods: TouchGUI connected banner callsign v1.51.
+function channelTitle(node) {
+	var channel = simple.channelByNode[node];
+	if(!channel)
+		return 'Node ' + node;
+	var nodeCall = String(node);
+	if(channel.call)
+		nodeCall += ' - ' + String(channel.call).trim();
+	return channelLabel(channel) + ' (' + nodeCall + ')';
+}
+function renderChannels() {
+		// AllScan Mods: TouchGUI callsign-first card content v1.46.
+		// AllScan Mods: TouchGUI callsign-first card content v1.46.
+		// AllScan Mods: TouchGUI three-row card data v1.52.
+		btn.innerHTML = '<span class="channel-side"><span class="channel-index">' + (i + 1) + '</span>'
+			+ '<span class="channel-stats"><span class="channel-rx">—</span><span class="channel-lcnt">—</span></span></span>'
+			+ '<span class="channel-content"><span class="channel-meta">' + escapeHtml(channelMeta(channel)) + '</span>'
+			+ '<span class="channel-description">' + escapeHtml(channelDescription(channel)) + '</span>'
+			+ '<span class="channel-note">' + escapeHtml(channelNote(channel)) + '</span></span>';
+		requestAnimationFrame(function() {
+			fitChannelMeta(btn);
+			fitChannelDescription(btn);
+			fitChannelLabel(btn);
+		});
+
+
+
+		simple.channelByNode[channel.node] = channel;
+		if(channel.activity)
+			applyChannelActivity(btn, channel.activity);
+}
+// AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.18.
+function getChannelStatsNodes() {
+	var nodes = [];
+	simple.channels.forEach(function(channel) {
+		var node = String(channel.node);
+		var number = Number(node);
+		if(number >= 2000 && number < 3000000 && nodes.indexOf(node) < 0)
+			nodes.push(node);
+	});
+	return nodes;
+}
+
+function getChannelStats() {
+	var nodes = getChannelStatsNodes();
+	if(!nodes.length)
+		return;
+	if(simple.statsIndex >= nodes.length)
+		simple.statsIndex = 0;
+	var node = nodes[simple.statsIndex++];
+	simple.statsReq = new XMLHttpRequest();
+	simple.statsReq.onreadystatechange = function() {
+		if(simple.statsReq.readyState !== 4)
+			return;
+		var delay = Math.max(2000, Math.ceil(30000 / nodes.length));
+		var responseData = null;
+		if(simple.statsReq.status === 200) {
+			try {
+				var response = JSON.parse(simple.statsReq.responseText);
+				responseData = response.data || null;
+			} catch(e) {}
+		}
+		if(simple.statsReq.status === 429 || (responseData && responseData.retcode == 429)) {
+			simple.statsIndex = Math.max(0, simple.statsIndex - 1);
+			delay = 15000;
+		} else if(responseData && responseData.stats && String(responseData.stats.node) === node) {
+			updateChannelActivity(responseData.stats);
+		} else if(simple.statsReq.status !== 200 && simple.statsReq.status !== 0) {
+			delay = 15000;
+		} else if(responseData && responseData.retcode != 404) {
+			delay = 15000;
+		}
+		simple.statsTmr = setTimeout(getChannelStats, delay);
+	};
+	simple.statsReq.open('POST', simple.baseUrl + '/stats/stats.php', true);
+	simple.statsReq.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+	simple.statsReq.send('node=' + encodeURIComponent(node));
+}
+
+function closeChannelStats() {
+	if(simple.statsTmr !== null)
+		clearTimeout(simple.statsTmr);
+	if(simple.statsReq)
+		simple.statsReq.abort();
+}
+
+function updateChannelActivity(stats) {
+	var node = String(stats.node);
+	var now = Math.floor(Date.now() / 1000);
+	if(!simple.txCnt[node] || stats.keyups < simple.txCnt[node] || stats.txtime < simple.txTT[node]) {
+		simple.txCnt[node] = stats.keyups;
+		simple.txTim[node] = 0;
+		simple.txTT[node] = stats.txtime;
+		simple.txAvg[node] = 0;
+	}
+	var keyupDelta = stats.keyups - simple.txCnt[node];
+	var txDelta = stats.txtime - simple.txTT[node];
+	var elapsed = now - simple.txTim[node];
+	if(txDelta > 2 * elapsed || keyupDelta > elapsed / 3)
+		keyupDelta = txDelta = 0;
+	simple.txTim[node] = now;
+	var txPercent = elapsed ? Math.min(100, Math.round(100 * txDelta / elapsed)) : 0;
+	if(stats.keyed == 1)
+		simple.txAvg[node] = 100;
+	else if(simple.txAvg[node] + txPercent > 2)
+		simple.txAvg[node] = Math.round(simple.txAvg[node] / 2 + txPercent / 2);
+	else
+		simple.txAvg[node] = 0;
+	simple.txCnt[node] = stats.keyups;
+	simple.txTT[node] = stats.txtime;
+	var channel = simple.channelByNode[node];
+	if(!channel)
+		return;
+	channel.activity = {active: stats.active == 1, wt: stats.wt == 1, txAverage: simple.txAvg[node], rxPct: stats.busyPct, linkCnt: stats.linkCnt};
+	var button = simple.channelsGrid.querySelector('[data-node="' + node + '"]');
+	if(button)
+		applyChannelActivity(button, channel.activity);
+}
+
+function applyChannelActivity(button, activity) {
+	var keyed = activity.txAverage > 5;
+	var txColor = 'hsl(0,100%,' + convertActivityRange(activity.txAverage, 15, 29) + '%)';
+	var activeColor = activity.wt ? 'hsl(150,50%,20%)' : 'hsl(150,50%,15%)';
+	var rxPct = Number(activity.rxPct);
+	var linkCount = Number(activity.linkCnt);
+	var hasRx = activity.rxPct !== undefined && activity.rxPct !== null && activity.rxPct !== '-' && isFinite(rxPct);
+	var hasLinks = activity.linkCnt !== undefined && activity.linkCnt !== null && activity.linkCnt !== '-' && isFinite(linkCount);
+	var rxColor = hasRx && rxPct > 2 ? 'hsl(125,40%,' + convertActivityRange(2 * rxPct, 10, 30) + '%)' : '';
+	var linkColor = hasLinks && linkCount > 2 ? 'hsl(240,40%,' + convertActivityRange(3 * linkCount, 15, 30) + '%)' : '';
+	var index = button.querySelector('.channel-index');
+	var rx = button.querySelector('.channel-rx');
+	var links = button.querySelector('.channel-lcnt');
+	if(index)
+		index.style.backgroundColor = keyed ? txColor : (activity.active ? activeColor : 'transparent');
+	if(rx)
+		rx.textContent = hasRx ? String(activity.rxPct) + '%' : '—';
+	if(rx)
+		rx.style.backgroundColor = rxColor;
+	if(links)
+		links.textContent = activity.linkCnt === undefined || activity.linkCnt === null ? '—' : String(activity.linkCnt);
+	if(links)
+		links.style.backgroundColor = linkColor;
+	button.dataset.activity = keyed ? 'keyed' : (activity.active ? (activity.wt ? 'active-wt' : 'active') : 'idle');
+	button.style.backgroundColor = '';
+}
+
+function convertActivityRange(value, min, max) {
+	if(value > 100)
+		value = 100;
+	else if(value < 0)
+		value = 0;
+	return Math.round(value * (max - min) / 100 + min);
+}
+
+// AllScan Mods: TouchGUI matching callsign removal v1.18.
+function channelLabel(channel) {
+	var callsign = channel.call ? String(channel.call).trim() : '';
+	function cleanLabel(text) {
+		text = String(text || '');
+		if(channel.node) {
+			var nodePat = new RegExp('(^|[\\s,;:-]+)' + escapeRegExp(channel.node) + '([\\s,;:-]*$|(?=[\\s,;:-]+))', 'g');
+			text = text.replace(nodePat, function(match, prefix) {
+				return prefix && prefix.trim() ? prefix : '';
+			});
+		}
+		if(callsign) {
+			var callPat = new RegExp('(^|[\\s,;:.()]+)' + escapeRegExp(callsign) + '(?=$|[\\s,;:.()]+)', 'gi');
+			text = text.replace(callPat, function(match, prefix) {
+				return prefix && prefix.trim() ? prefix : '';
+			});
+		}
+		return text.replace(/\s{2,}/g, ' ').replace(/^[\s,;:.()]+|[\s,;:.()]+$/g, '').trim();
+	}
+	var label = cleanLabel(channel.label || channel.name || '');
+	if(!label)
+		label = cleanLabel(channel.desc);
+	if(!label)
+		label = cleanLabel(channel.loc);
+	return label || channel.node || '';
+}
+// AllScan Mods: TouchGUI three-row card styling v1.52.
+function fitChannelMeta(button) {
+	var meta = button.querySelector('.channel-meta');
+	if(!meta || !meta.clientWidth)
+		return;
+	meta.style.fontSize = '';
+	meta.style.transform = '';
+	var textWidth = meta.scrollWidth;
+	if(textWidth > meta.clientWidth) {
+		var fontSize = parseFloat(window.getComputedStyle(meta).fontSize);
+		var isPortrait = window.matchMedia && window.matchMedia('(orientation: portrait)').matches;
+		var minFontSize = isPortrait ? 10 : Math.max(12, fontSize * 0.9);
+		meta.style.fontSize = Math.max(minFontSize, fontSize * meta.clientWidth / textWidth) + 'px';
+		textWidth = meta.scrollWidth;
+		if(textWidth > meta.clientWidth) {
+			var scaleFactor = isPortrait ? 0.90 : 0.96;
+			meta.style.transform = 'scaleX(' + (meta.clientWidth / textWidth * scaleFactor) + ')';
+		}
+	}
+}
+
+function fitChannelText(element, maxLines) {
+	var label = element;
+	if(!label || !label.clientWidth)
+		return;
+	label.style.fontSize = '';
+	label.style.transform = '';
+	label.style.whiteSpace = '';
+	label.style.overflowWrap = '';
+	label.style.display = '';
+	label.style.maxHeight = '';
+	label.style.overflow = '';
+	var textWidth = label.scrollWidth;
+	if(textWidth > label.clientWidth) {
+		var fontSize = parseFloat(window.getComputedStyle(label).fontSize);
+		var isSmallScreen = window.matchMedia && window.matchMedia('(max-width:700px)').matches;
+		var minFontSize = isSmallScreen ? 12 : 14;
+		label.style.fontSize = Math.max(minFontSize, fontSize * label.clientWidth / textWidth) + 'px';
+		if(label.scrollWidth > label.clientWidth) {
+			label.style.whiteSpace = 'normal';
+			label.style.overflowWrap = 'anywhere';
+			label.style.display = 'block';
+			label.style.maxHeight = (1.12 * maxLines) + 'em';
+			label.style.overflow = 'hidden';
+		}
+	}
+}
+function fitChannelDescription(button) {
+	fitChannelText(button.querySelector('.channel-description'), 2);
+}
+// AllScan Mods: TouchGUI adaptive title fit v1.45.
+function fitChannelLabel(button) {
+	fitChannelText(button.querySelector('.channel-note'), 2);
+}
+function fitTouchguiCardText() {
+	document.querySelectorAll('.channel-btn').forEach(function(button) {
+		fitChannelMeta(button);
+		fitChannelDescription(button);
+		fitChannelLabel(button);
+	});
+}
+window.addEventListener('resize', fitTouchguiCardText);
+function channelDescription(channel) {
+	return String(channel.desc || '').trim();
+}
+function channelNote(channel) {
+	var text = String(channel.label || '');
+	var fields = [channel.node, channel.call, channel.desc, channel.loc]
+		.filter(function(value) { return value !== undefined && value !== null && String(value).trim() && String(value).trim() !== '-'; })
+		.map(function(value) { return String(value).trim(); })
+		.sort(function(a, b) { return b.length - a.length; });
+	fields.forEach(function(value) {
+		var fieldPat = new RegExp('(^|[\\s,;:-]+)' + escapeRegExp(value) + '(?=$|[\\s,;:-]+)', 'gi');
+		text = text.replace(fieldPat, function(match, prefix) {
+			return prefix && prefix.trim() ? prefix : '';
+		});
+	});
+	text = text.replace(/\s{2,}/g, ' ').replace(/^[\s,;:.()]+|[\s,;:.()]+$/g, '').trim();
+	return text || String(channel.loc || '').trim();
+}
+
+function handleConnectionEvent(event) {}
