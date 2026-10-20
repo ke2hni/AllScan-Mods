@@ -74,7 +74,9 @@ def main():
             and "TouchGUI measured aqua row fit v1.57" in js
             and "TouchGUI note separation v1.56" in css
             and "TouchGUI aqua near-fit migration v1.59" in js
+            and "TouchGUI near-fit overflow visibility v1.60" in js
             and "TouchGUI bottom-aligned note row v1.58" in css
+            and "TouchGUI raised white note row v1.60" in css
             and "function fitChannelLabel(button)" in js
             and "@media (orientation: portrait)" in css
             and "display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-1.5ch; overflow:visible;" in css
@@ -1119,6 +1121,17 @@ top:-2px;
         else:
             raise SystemExit("ERROR: Existing TouchGUI text wrapping block is unexpected; no files changed.")
 
+    overflow_fit_marker = "// AllScan Mods: TouchGUI near-fit overflow visibility v1.60."
+    if overflow_fit_marker not in js:
+        scale_line = "\t\t\t\tlabel.style.transform = 'scaleX(' + (label.clientWidth / label.scrollWidth * 0.98) + ')';"
+        if js.count(scale_line) != 1:
+            raise SystemExit("ERROR: Existing TouchGUI near-fit scaling line is unexpected; no files changed.")
+        js = js.replace(
+            scale_line,
+            scale_line + "\n\t\t\t\tlabel.style.overflow = 'visible';\n\t\t\t\t" + overflow_fit_marker,
+            1,
+        )
+
     note_spacing_css = '''/* AllScan Mods: TouchGUI note separation v1.56. */
 .channel-note { margin-top:3px; }
 '''
@@ -1133,6 +1146,15 @@ padding-top:3px;
 '''
     if "TouchGUI bottom-aligned note row v1.58" not in css:
         css = css.rstrip() + "\n" + note_alignment_css
+
+    note_raise_css = '''/* AllScan Mods: TouchGUI raised white note row v1.60. */
+.channel-note {
+position:relative;
+top:-3px;
+}
+'''
+    if "TouchGUI raised white note row v1.60" not in css:
+        css = css.rstrip() + "\n" + note_raise_css
 
     if "TouchGUI responsive description sizing v1.55" not in js:
         fit_function = re.compile(r"(?ms)^function fitChannelText\(element\) \{.*?^}")
@@ -1178,11 +1200,15 @@ padding-top:3px;
             or "TouchGUI centered node line v1.55" not in css
             or "TouchGUI measured aqua row fit v1.57" not in js
             or "TouchGUI aqua near-fit migration v1.59" not in js
+            or "TouchGUI near-fit overflow visibility v1.60" not in js
+            or "label.style.overflow = 'visible';" not in js
             or "label.scrollWidth <= label.clientWidth * 1.12" not in js
             or "TouchGUI note separation v1.56" not in css
             or ".channel-note { margin-top:3px; }" not in css
             or "TouchGUI bottom-aligned note row v1.58" not in css
             or "margin-top:auto;\npadding-top:3px;" not in css
+            or "TouchGUI raised white note row v1.60" not in css
+            or "position:relative;\ntop:-3px;" not in css
             or "calc(180px + 5ch)" not in css
             or "color:#00f5f5;" not in css
             or "@media (orientation: portrait)" not in css
