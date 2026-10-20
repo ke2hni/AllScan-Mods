@@ -351,15 +351,11 @@ function channelNote(channel) {
 	return text || String(channel.loc || '').trim();
 }'''
     if "function channelNote(channel)" not in js:
-        marker = "// AllScan Mods: TouchGUI matching callsign removal v1.18."
-        if js.count(marker) != 1:
-            raise SystemExit("ERROR: Expected the TouchGUI label helper marker exactly once; no files changed.")
-        label_start = js.find(marker)
-        label_end = js.find("\n}", js.find("function channelLabel(channel)", label_start))
-        if label_end < 0:
+        label_functions = list(channel_label_pattern.finditer(js))
+        if len(label_functions) != 1:
             raise SystemExit("ERROR: Existing TouchGUI label helper is incomplete; no files changed.")
-        label_end += 2
-        js = js[:label_end] + "\n" + card_field_funcs + "\n" + js[label_end:]
+        label_end = label_functions[0].end()
+        js = js[:label_end] + "\n" + card_field_funcs + js[label_end:]
 
     card_text_fit_funcs = r'''function fitChannelMeta(button) {
 	var meta = button.querySelector('.channel-meta');

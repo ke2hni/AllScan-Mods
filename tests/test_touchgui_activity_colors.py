@@ -128,6 +128,7 @@ def main():
         assert "white-space:nowrap;\noverflow:hidden;\ntext-overflow:clip;" in patched_css
         assert ".channel-label, .channel-meta {\nwidth:100%;\nmin-width:0;" in patched_css
         assert ".channel-label {\nfont-size:16px;\noverflow-wrap:anywhere;" in patched_css
+
         assert ".channel-btn { min-height:82px; padding:7px; }" in patched_css
         assert "height:100vh;\nheight:100dvh" in patched_css
         assert "@media (max-height:430px) {\n.simple-footer { display:grid; }\n}" in patched_css
@@ -794,6 +795,20 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         subprocess.run(["python3", str(PATCHER), str(v117_js), str(v117_css)], check=True)
         assert upgraded_v117 == (v117_js.read_bytes(), v117_css.read_bytes()), "v1.17 upgrade was not idempotent"
 
+    with tempfile.TemporaryDirectory(prefix="touchgui-orphan-marker-") as temp:
+        temp = Path(temp)
+        js = temp / "simple.js"
+        css = temp / "simple.css"
+        shutil.copy2(FIXTURES / "touchgui-base.js", js)
+        shutil.copy2(FIXTURES / "touchgui-base.css", css)
+        marker = "// AllScan Mods: TouchGUI matching callsign removal v1.18.\n"
+        js.write_text(js.read_text(encoding="utf-8") + "\n" + marker, encoding="utf-8")
+        subprocess.run(["python3", str(PATCHER), str(js), str(css)], check=True)
+        repaired_js = js.read_text(encoding="utf-8")
+        assert repaired_js.count("function channelLabel(channel)") == 1
+        assert "function channelDescription(channel)" in repaired_js
+        assert "function channelNote(channel)" in repaired_js
+        subprocess.run(["node", "--check", str(js)], check=True)
     with tempfile.TemporaryDirectory(prefix="touchgui-v149-upgrade-") as temp:
         v149_js = Path(temp) / "simple.js"
         v149_css = Path(temp) / "simple.css"
