@@ -69,7 +69,8 @@ def main():
             and "TouchGUI row text width fit v1.53" in js
             and "TouchGUI aqua row spacing v1.53" in css
             and "TouchGUI aqua description font size v1.54" in css
-            and "TouchGUI aqua font fit floor v1.54" in js
+            and "TouchGUI responsive description sizing v1.55" in js
+            and "TouchGUI centered node line v1.55" in css
             and "function fitChannelLabel(button)" in js
             and "@media (orientation: portrait)" in css
             and "display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-1.5ch; overflow:visible;" in css
@@ -381,7 +382,8 @@ function channelNote(channel) {
 	}
 }
 
-function fitChannelText(element) {
+// AllScan Mods: TouchGUI responsive description sizing v1.55.
+function fitChannelText(element, maxFontSize, minFontSize) {
 	var label = element;
 	if(!label || !label.clientWidth)
 		return;
@@ -393,13 +395,16 @@ function fitChannelText(element) {
 	label.style.maxHeight = '';
 	label.style.overflow = '';
 	label.style.whiteSpace = 'nowrap';
+	var fontSize = parseFloat(window.getComputedStyle(label).fontSize);
+	var targetFontSize = maxFontSize ? Math.max(fontSize, maxFontSize) : fontSize;
+	if(maxFontSize)
+		label.style.fontSize = targetFontSize + 'px';
 	var textWidth = label.scrollWidth;
 	if(textWidth > label.clientWidth) {
-		var fontSize = parseFloat(window.getComputedStyle(label).fontSize);
 		var isSmallScreen = window.matchMedia && window.matchMedia('(max-width:700px)').matches;
-		// AllScan Mods: TouchGUI aqua font fit floor v1.54.
-		var minFontSize = Math.min(isSmallScreen ? 12 : 14, fontSize);
-		label.style.fontSize = Math.max(minFontSize, fontSize * label.clientWidth / textWidth) + 'px';
+		// v1.54 kept the aqua row from growing past its base; v1.55 bounds its new auto-fit range.
+		var minSize = minFontSize || Math.min(isSmallScreen ? 12 : 14, fontSize);
+		label.style.fontSize = Math.max(minSize, targetFontSize * label.clientWidth / textWidth) + 'px';
 		if(label.scrollWidth > label.clientWidth) {
 			label.style.whiteSpace = 'normal';
 			label.style.overflowWrap = 'anywhere';
@@ -410,7 +415,7 @@ function fitChannelText(element) {
 	}
 }
 function fitChannelDescription(button) {
-	fitChannelText(button.querySelector('.channel-description'));
+	fitChannelText(button.querySelector('.channel-description'), 18, 13);
 }
 // AllScan Mods: TouchGUI adaptive title fit v1.45.
 function fitChannelLabel(button) {
@@ -1053,19 +1058,31 @@ top:-2px;
     if "TouchGUI aqua description font size v1.54" not in css:
         css = css.rstrip() + "\n" + aqua_font_css
 
-    if "TouchGUI aqua font fit floor v1.54" not in js:
+    centered_node_css = '''/* AllScan Mods: TouchGUI centered node line v1.55. */
+@media (orientation: portrait) {
+.channel-meta { left:-0.75ch; }
+}
+'''
+    if "TouchGUI centered node line v1.55" not in css:
+        css = css.rstrip() + "\n" + centered_node_css
+
+    if "TouchGUI responsive description sizing v1.55" not in js:
         fit_function = re.compile(r"(?ms)^function fitChannelText\(element\) \{.*?^}")
         fit_matches = list(fit_function.finditer(js))
-        old_floor = "\t\tvar minFontSize = isSmallScreen ? 12 : 14;"
-        if len(fit_matches) != 1 or fit_matches[0].group(0).count(old_floor) != 1:
-            raise SystemExit("ERROR: Existing TouchGUI row text sizing floor is unexpected; no files changed.")
-        updated_fit = fit_matches[0].group(0).replace(
-            old_floor,
-            "\t\t// AllScan Mods: TouchGUI aqua font fit floor v1.54.\n"
-            "\t\tvar minFontSize = Math.min(isSmallScreen ? 12 : 14, fontSize);",
-            1,
+        helper_definition = re.search(
+            r"(?ms)^// AllScan Mods: TouchGUI responsive description sizing v1\.55\.\nfunction fitChannelText\(element, maxFontSize, minFontSize\) \{.*?^}",
+            card_text_fit_funcs,
         )
+        if len(fit_matches) != 1 or helper_definition is None:
+            raise SystemExit("ERROR: Existing TouchGUI row text sizing floor is unexpected; no files changed.")
+        updated_fit = helper_definition.group(0)
         js = js[:fit_matches[0].start()] + updated_fit + js[fit_matches[0].end():]
+        description_function = re.compile(r"(?ms)^function fitChannelDescription\(button\) \{.*?^}")
+        description_matches = list(description_function.finditer(js))
+        if len(description_matches) != 1:
+            raise SystemExit("ERROR: Existing TouchGUI description sizing function is unexpected; no files changed.")
+        updated_description = "function fitChannelDescription(button) {\n\tfitChannelText(button.querySelector('.channel-description'), 18, 13);\n}"
+        js = js[:description_matches[0].start()] + updated_description + js[description_matches[0].end():]
 
     if ("simple.statsTmr = setTimeout(getChannelStats" not in js
             or "active-wt" not in js
@@ -1089,11 +1106,13 @@ top:-2px;
             or "TouchGUI aqua row spacing v1.53" not in css
             or "TouchGUI aqua description font size v1.54" not in css
             or ".channel-description { font-size:13px; }" not in css
-            or "TouchGUI aqua font fit floor v1.54" not in js
+            or "TouchGUI responsive description sizing v1.55" not in js
+            or "TouchGUI centered node line v1.55" not in css
             or "calc(180px + 5ch)" not in css
             or "color:#00f5f5;" not in css
             or "@media (orientation: portrait)" not in css
             or "display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-1.5ch; overflow:visible;" not in css
+            or ".channel-meta { left:-0.75ch; }" not in css
             or "left:-1.5ch;" not in css):
         raise SystemExit("ERROR: TouchGUI activity patch validation failed; no files changed.")
     js_path.write_text(js, encoding="utf-8")
