@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.56
+# TouchGUI activity colors mod version: v1.57
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -348,7 +348,7 @@ touchgui_activity_present() {
     grep -Fq 'TouchGUI aqua description font size v1.54' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'TouchGUI responsive description sizing v1.55' "$SIMPLE_JS_FILE" &&
     grep -Fq 'TouchGUI centered node line v1.55' "$SIMPLE_CSS_FILE" &&
-    grep -Fq 'TouchGUI aqua fit safety margin v1.56' "$SIMPLE_JS_FILE" &&
+    grep -Fq 'TouchGUI measured aqua row fit v1.57' "$SIMPLE_JS_FILE" &&
     grep -Fq 'TouchGUI note separation v1.56' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'font-size:13px;' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'function fitTouchguiCardText()' "$SIMPLE_JS_FILE" &&

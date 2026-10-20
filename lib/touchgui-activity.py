@@ -71,7 +71,7 @@ def main():
             and "TouchGUI aqua description font size v1.54" in css
             and "TouchGUI responsive description sizing v1.55" in js
             and "TouchGUI centered node line v1.55" in css
-            and "TouchGUI aqua fit safety margin v1.56" in js
+            and "TouchGUI measured aqua row fit v1.57" in js
             and "TouchGUI note separation v1.56" in css
             and "function fitChannelLabel(button)" in js
             and "@media (orientation: portrait)" in css
@@ -406,9 +406,8 @@ function fitChannelText(element, maxFontSize, minFontSize) {
 		var isSmallScreen = window.matchMedia && window.matchMedia('(max-width:700px)').matches;
 		// v1.54 kept the aqua row from growing past its base; v1.55 bounds its new auto-fit range.
 		var minSize = minFontSize || Math.min(isSmallScreen ? 12 : 14, fontSize);
-		// AllScan Mods: TouchGUI aqua fit safety margin v1.56.
-		var fitMargin = maxFontSize ? 0.94 : 1;
-		label.style.fontSize = Math.max(minSize, targetFontSize * label.clientWidth / textWidth * fitMargin) + 'px';
+		// AllScan Mods: TouchGUI measured aqua row fit v1.57.
+		label.style.fontSize = Math.max(minSize, targetFontSize * label.clientWidth / textWidth) + 'px';
 		if(label.scrollWidth > label.clientWidth) {
 			if(maxFontSize && label.scrollWidth <= label.clientWidth * 1.04) {
 				label.style.transform = 'scaleX(' + (label.clientWidth / label.scrollWidth * 0.98) + ')';
@@ -418,7 +417,7 @@ function fitChannelText(element, maxFontSize, minFontSize) {
 				label.style.display = 'block';
 			}
 		}
-	} else {
+	} else if(!maxFontSize) {
 		label.style.whiteSpace = '';
 	}
 }
@@ -1074,18 +1073,28 @@ top:-2px;
     if "TouchGUI centered node line v1.55" not in css:
         css = css.rstrip() + "\n" + centered_node_css
 
-    aqua_fit_margin_js = "// AllScan Mods: TouchGUI aqua fit safety margin v1.56."
-    if aqua_fit_margin_js not in js:
-        fit_line = "\t\tlabel.style.fontSize = Math.max(minSize, targetFontSize * label.clientWidth / textWidth) + 'px';"
-        if js.count(fit_line) != 1:
-            raise SystemExit("ERROR: Existing TouchGUI responsive fitting line is unexpected; no files changed.")
-        js = js.replace(
-            fit_line,
+    measured_fit_marker = "// AllScan Mods: TouchGUI measured aqua row fit v1.57."
+    if measured_fit_marker not in js:
+        fit_margin_block = (
             "\t\t// AllScan Mods: TouchGUI aqua fit safety margin v1.56.\n"
             "\t\tvar fitMargin = maxFontSize ? 0.94 : 1;\n"
-            "\t\tlabel.style.fontSize = Math.max(minSize, targetFontSize * label.clientWidth / textWidth * fitMargin) + 'px';",
-            1,
+            "\t\tlabel.style.fontSize = Math.max(minSize, targetFontSize * label.clientWidth / textWidth * fitMargin) + 'px';"
         )
+        measured_fit_block = (
+            "\t\t// AllScan Mods: TouchGUI measured aqua row fit v1.57.\n"
+            "\t\tlabel.style.fontSize = Math.max(minSize, targetFontSize * label.clientWidth / textWidth) + 'px';"
+        )
+        if js.count(fit_margin_block) == 1:
+            js = js.replace(fit_margin_block, measured_fit_block, 1)
+        else:
+            fit_line = "\t\tlabel.style.fontSize = Math.max(minSize, targetFontSize * label.clientWidth / textWidth) + 'px';"
+            if js.count(fit_line) != 1:
+                raise SystemExit("ERROR: Existing TouchGUI responsive fitting line is unexpected; no files changed.")
+            js = js.replace(fit_line, measured_fit_block, 1)
+
+    no_overflow_reset = "\t} else {\n\t\tlabel.style.whiteSpace = '';\n\t}"
+    if no_overflow_reset in js:
+        js = js.replace(no_overflow_reset, "\t} else if(!maxFontSize) {\n\t\tlabel.style.whiteSpace = '';\n\t}", 1)
 
     if "label.scrollWidth <= label.clientWidth * 1.04" not in js:
         old_wrap = "\t\tif(label.scrollWidth > label.clientWidth) {\n\t\t\tlabel.style.whiteSpace = 'normal';\n\t\t\tlabel.style.overflowWrap = 'anywhere';\n\t\t\tlabel.style.display = 'block';\n\t\t}"
@@ -1142,8 +1151,7 @@ top:-2px;
             or ".channel-description { font-size:13px; }" not in css
             or "TouchGUI responsive description sizing v1.55" not in js
             or "TouchGUI centered node line v1.55" not in css
-            or "TouchGUI aqua fit safety margin v1.56" not in js
-            or "var fitMargin = maxFontSize ? 0.94 : 1;" not in js
+            or "TouchGUI measured aqua row fit v1.57" not in js
             or "label.scrollWidth <= label.clientWidth * 1.04" not in js
             or "TouchGUI note separation v1.56" not in css
             or ".channel-note { margin-top:3px; }" not in css
