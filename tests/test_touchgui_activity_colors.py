@@ -14,7 +14,7 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.63" in text, installer
+        assert "TouchGUI activity colors mod version: v1.64" in text, installer
         assert "TouchGUI connected banner callsign v1.51" in text
         assert "TouchGUI three-row card data v1.52" in text
         assert "TouchGUI three-row card styling v1.52" in text
@@ -30,7 +30,9 @@ def main():
         assert "TouchGUI raised white note row v1.60" in text
         assert "TouchGUI aqua row alignment and note clearance v1.61" in text
         assert "TouchGUI white note glyph clearance v1.62" in text
+        assert "TouchGUI name/description similarity v1.64" in text
         assert "TouchGUI name and location card rows v1.63" in text
+        assert "TouchGUI name/description similarity v1.64" in text
         assert "TouchGUI name/location row fit v1.63" in text
         assert "TouchGUI name/location card row styling v1.63" in text
         assert "Responsive TouchGUI label auto-fit v1.37" in text, installer
@@ -119,6 +121,7 @@ def main():
         assert "function channelLocation(channel)" in patched_js
         assert "function channelNameMatchesDescription(name, description)" in patched_js
         assert "TouchGUI name and location card rows v1.63" in patched_js
+        assert "TouchGUI name/description similarity v1.64" in patched_js
         assert "TouchGUI name/location row fit v1.63" in patched_js
         channel_markup = re.search(r"btn\.innerHTML = [\s\S]*?;", patched_js).group(0)
         assert channel_markup.index('class="channel-meta"') < channel_markup.index('class="channel-description"') < channel_markup.index('class="channel-note-name"') < channel_markup.index('class="channel-location"')
@@ -248,6 +251,12 @@ if(channelNote({node: '54318', desc: '430.9125 +7.6MHz', loc: 'Wigan, Greater Ma
 	throw new Error('TouchGUI did not replace a redundant Name with Location');
 if(channelNote({node: '54318', desc: '430.9125 +7.6MHz', loc: 'Wigan, Greater Manchester', label: 'Regional net meets nightly'}) !== 'Regional net meets nightly')
 	throw new Error('TouchGUI removed a nonredundant favorite Name');
+if(channelNote({node: '42235', call: 'K4JDR', desc: '441.725+RF-BBone HUB', loc: 'Raleigh, NC', label: 'K4JDR 441.725+Backbone HUB 42235'}) !== 'Raleigh, NC')
+	throw new Error('TouchGUI did not match the shared frequency and label text on card 6');
+if(channelNote({node: '47970', call: 'W3QV/R', desc: '147.03/63 PMRC', loc: 'Roxborough Philadelphia PA', label: 'W3QV/R 147.03 PMRC 47970'}) !== 'Roxborough Philadelphia PA')
+	throw new Error('TouchGUI did not match the shared frequency and descriptor on card 27');
+if(channelNote({node: '47970', call: 'W3QV/R', desc: '147.03/63 PMRC', loc: 'Roxborough Philadelphia PA', label: 'W3QV/R 147.03 Volunteer emergency net support 47970'}) !== '147.03 Volunteer emergency net support')
+	throw new Error('TouchGUI discarded a Name with additional nonmatching information');
 simple.channelByNode['672000'] = {node: '672000', call: 'W2NJR', label: 'W2NJR Chillin with Bill Everyday 10am 672000'};
 if(channelTitle('672000') !== 'Chillin with Bill Everyday 10am (672000 - W2NJR)')
 	throw new Error('Connected banner did not show the node and callsign after the description: ' + channelTitle('672000'));
@@ -1160,7 +1169,7 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         assert upgraded_v158 == (v158_js.read_bytes(), v158_css.read_bytes()), "v1.58 upgrade was not idempotent"
 
     print("PASS: installers include the TouchGUI activity patch path.")
-    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, text fitting and spacing, connected-banner callsign, compatibility upgrades, syntax, repeat application, and v1.49-v1.52 migrations and v1.53-v1.63 sizing and card-data upgrades.")
+    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, text fitting and spacing, connected-banner callsign, compatibility upgrades, syntax, repeat application, and v1.49-v1.52 migrations and v1.53-v1.64 sizing, card-data, and similarity upgrades.")
 
 
 if __name__ == "__main__":

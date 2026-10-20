@@ -80,6 +80,7 @@ def main():
             and "TouchGUI aqua row alignment and note clearance v1.61" in css
             and "TouchGUI white note glyph clearance v1.62" in css
             and "TouchGUI name and location card rows v1.63" in js
+            and "TouchGUI name/description similarity v1.64" in js
             and "TouchGUI name/location row fit v1.63" in js
             and "TouchGUI name/location card row styling v1.63" in css
             and "function channelLocation(channel)" in js
@@ -357,12 +358,26 @@ function channelDescription(channel) {
 function channelLocation(channel) {
 	return String(channel.loc || '').trim();
 }
+// AllScan Mods: TouchGUI name/description similarity v1.64.
 function channelNameMatchesDescription(name, description) {
 	var normalizedName = String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 	var normalizedDescription = String(description || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 	if(normalizedName.length < 6 || normalizedDescription.length < 6)
 		return false;
-	return normalizedName.indexOf(normalizedDescription) >= 0 || normalizedDescription.indexOf(normalizedName) >= 0;
+	if(normalizedName.indexOf(normalizedDescription) >= 0 || normalizedDescription.indexOf(normalizedName) >= 0)
+		return true;
+	var previous = new Array(normalizedDescription.length + 1).fill(0);
+	for(var i = 0; i < normalizedName.length; i++) {
+		var current = [0];
+		for(var j = 0; j < normalizedDescription.length; j++) {
+			current[j + 1] = normalizedName.charAt(i) === normalizedDescription.charAt(j)
+				? previous[j] + 1
+				: Math.max(previous[j + 1], current[j]);
+		}
+		previous = current;
+	}
+	var sharedLength = previous[normalizedDescription.length];
+	return sharedLength >= 6 && sharedLength / normalizedName.length >= 0.75;
 }
 function channelNote(channel) {
 	var text = String(channel.label || '');
@@ -397,6 +412,14 @@ function channelNote(channel) {
         raise SystemExit("ERROR: Existing TouchGUI card field helpers are unexpected; no files changed.")
     if "TouchGUI name and location card rows v1.63" not in js:
         raise SystemExit("ERROR: TouchGUI name/location helper migration failed; no files changed.")
+    if "TouchGUI name/description similarity v1.64" not in js:
+        similarity_pattern = re.compile(r"(?ms)^function channelNameMatchesDescription\(name, description\) \{.*?^}")
+        similarity_matches = list(similarity_pattern.finditer(js))
+        if len(similarity_matches) != 1:
+            raise SystemExit("ERROR: Existing TouchGUI Name/Description comparison is unexpected; no files changed.")
+        similarity_function = card_field_funcs.split("// AllScan Mods: TouchGUI name/description similarity v1.64.\n", 1)[1]
+        similarity_function = "// AllScan Mods: TouchGUI name/description similarity v1.64.\n" + similarity_function.split("\nfunction channelNote(channel)", 1)[0]
+        js = similarity_pattern.sub(lambda _: similarity_function, js, count=1)
 
     card_text_fit_funcs = r'''function fitChannelMeta(button) {
 	var meta = button.querySelector('.channel-meta');
@@ -1296,6 +1319,7 @@ width:100%;
             or "TouchGUI white note glyph clearance v1.62" not in css
             or ".channel-note { overflow:visible; }" not in css
             or "TouchGUI name and location card rows v1.63" not in js
+            or "TouchGUI name/description similarity v1.64" not in js
             or "TouchGUI name/location row fit v1.63" not in js
             or "TouchGUI name/location card row styling v1.63" not in css
             or "function channelLocation(channel)" not in js
