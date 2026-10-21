@@ -14,7 +14,7 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.69" in text, installer
+        assert "TouchGUI activity colors mod version: v1.70" in text, installer
         assert "TouchGUI connected banner callsign v1.51" in text
         assert "TouchGUI three-row card data v1.52" in text
         assert "TouchGUI three-row card styling v1.52" in text
@@ -34,6 +34,7 @@ def main():
         assert "TouchGUI description/location duplicate cleanup v1.68" in text
         assert "TouchGUI adjacent card-row overlap cleanup v1.68" in text
         assert "TouchGUI US/USA note-location collapse v1.69" in text
+        assert "TouchGUI aqua descender clearance v1.70" in text
         assert "TouchGUI row centering and descender clearance v1.65" in text
         assert "TouchGUI name and location card rows v1.63" in text
         assert "TouchGUI name/description similarity v1.64" in text
@@ -151,6 +152,8 @@ def main():
         assert "TouchGUI landscape callsign fit v1.50" in patched_css
         assert "@media (orientation: landscape) {\n.channel-meta { display:block; width:calc(100% + 1.5ch); max-width:none; min-width:0; position:relative; left:-0.75ch; overflow:visible; }\n}" in patched_css
         assert "TouchGUI three-row card styling v1.52" in patched_css
+        assert "TouchGUI aqua descender clearance v1.70" in patched_css
+        assert ".channel-description { line-height:1.2; margin-bottom:-2px; }" in patched_css
         assert "TouchGUI aqua row spacing v1.53" in patched_css
         assert "TouchGUI aqua description font size v1.54" in patched_css
         assert "TouchGUI centered node line v1.55" in patched_css
@@ -1197,7 +1200,7 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         assert upgraded_v158 == (v158_js.read_bytes(), v158_css.read_bytes()), "v1.58 upgrade was not idempotent"
 
     print("PASS: installers include the TouchGUI activity patch path.")
-    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, text fitting and spacing, connected-banner callsign, compatibility upgrades, syntax, repeat application, and v1.49-v1.52 migrations and v1.53-v1.69 sizing, card-data, and duplicate-cleanup upgrades.")
+    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, text fitting and spacing, connected-banner callsign, compatibility upgrades, syntax, repeat application, and v1.49-v1.52 migrations and v1.53-v1.70 sizing, card-data, duplicate-cleanup, and descender-clearance upgrades.")
 
 
 if __name__ == "__main__":

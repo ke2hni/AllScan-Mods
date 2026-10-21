@@ -1346,6 +1346,12 @@ width:100%;
     if "TouchGUI row centering and descender clearance v1.65" not in css:
         css = css.rstrip() + "\n" + row_alignment_css
 
+    aqua_descender_css = '''/* AllScan Mods: TouchGUI aqua descender clearance v1.70. */
+.channel-description { line-height:1.2; margin-bottom:-2px; }
+'''
+    if "TouchGUI aqua descender clearance v1.70" not in css:
+        css = css.rstrip() + "\n" + aqua_descender_css
+
     if "TouchGUI responsive description sizing v1.55" not in js:
         fit_function = re.compile(r"(?ms)^function fitChannelText\(element\) \{.*?^}")
         fit_matches = list(fit_function.finditer(js))
@@ -1412,6 +1418,8 @@ width:100%;
             or "TouchGUI adjacent card-row overlap cleanup v1.68" not in js
             or "TouchGUI US/USA note-location collapse v1.69" not in js
             or "TouchGUI row centering and descender clearance v1.65" not in css
+            or "TouchGUI aqua descender clearance v1.70" not in css
+            or ".channel-description { line-height:1.2; margin-bottom:-2px; }" not in css
             or "function channelLocation(channel)" not in js
             or "function channelNameMatchesDescription(name, description)" not in js
             or "calc(180px + 5ch)" not in css
