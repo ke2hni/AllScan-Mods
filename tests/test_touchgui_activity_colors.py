@@ -14,7 +14,7 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.79" in text, installer
+        assert "TouchGUI activity colors mod version: v1.80" in text, installer
         assert "TouchGUI connected banner callsign v1.51" in text
         assert "TouchGUI three-row card data v1.52" in text
         assert "TouchGUI three-row card styling v1.52" in text
@@ -41,7 +41,7 @@ def main():
         assert ".channel-note { line-height:1.05; margin-bottom:0; }" in text
         assert "TouchGUI white name/location spacing v1.76" in text
         assert "TouchGUI white text descender line-box clearance v1.77" in text
-        assert "TouchGUI bold text vertical raster scale test v1.79" in text
+        assert "TouchGUI bold text zoom raster test v1.80" in text
         assert ".channel-note-name + .channel-location { position:relative; top:2px; }" in text
         assert "fitChannelText(button.querySelector('.channel-description'), 18, 13);" in text
         assert "TouchGUI row centering and descender clearance v1.65" in text
@@ -119,8 +119,9 @@ def main():
         assert ".channel-note-name + .channel-location { position:relative; top:2px; }" in patched_css
         assert "TouchGUI white text descender line-box clearance v1.77" in patched_css
         assert ".channel-note-name,\n.channel-location { line-height:1.25; margin-bottom:-0.2em; }" in patched_css
-        assert "TouchGUI bold text vertical raster scale test v1.79" in patched_css
-        assert ".channel-note-name,\n.channel-location { font-weight:bold; transform:scaleY(1.05); transform-origin:center; }" in patched_css
+        assert "TouchGUI bold text zoom raster test v1.80" in patched_css
+        assert ".channel-note-name,\n.channel-location { font-weight:bold; zoom:1.05; }" in patched_css
+        assert "TouchGUI bold text vertical raster scale test v1.79" not in patched_css
         assert "TouchGUI white card text regular-weight test v1.78" not in patched_css
         assert "TouchGUI aqua description 14.3px test v1.74" not in patched_css
         assert "TouchGUI card text 14.3px test v1.75" not in patched_css
@@ -1287,7 +1288,7 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         assert upgraded_v175 == (v175_js.read_bytes(), v175_css.read_bytes()), "v1.75 upgrade was not idempotent"
 
     print("PASS: installers include the TouchGUI activity patch path.")
-    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, text fitting and spacing, connected-banner callsign, compatibility upgrades, syntax, repeat application, recovery of missing incremental descender rules, and v1.49-v1.52 migrations and v1.53-v1.79 sizing, card-data, duplicate-cleanup, descender-clearance, and bold-text raster-scale upgrades.")
+    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, text fitting and spacing, connected-banner callsign, compatibility upgrades, syntax, repeat application, recovery of missing incremental descender rules, and v1.49-v1.52 migrations and v1.53-v1.80 sizing, card-data, duplicate-cleanup, descender-clearance, and bold-text zoom-raster upgrades.")
 
 
 if __name__ == "__main__":

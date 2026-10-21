@@ -96,8 +96,8 @@ def main():
             and ".channel-note-name + .channel-location { position:relative; top:2px; }" in css
             and "TouchGUI white text descender line-box clearance v1.77" in css
             and ".channel-note-name,\n.channel-location { line-height:1.25; margin-bottom:-0.2em; }" in css
-            and "TouchGUI bold text vertical raster scale test v1.79" in css
-            and ".channel-note-name,\n.channel-location { font-weight:bold; transform:scaleY(1.05); transform-origin:center; }" in css
+            and "TouchGUI bold text zoom raster test v1.80" in css
+            and ".channel-note-name,\n.channel-location { font-weight:bold; zoom:1.05; }" in css
             and "fitChannelText(button.querySelector('.channel-description'), 18, 13);" in js
             and "TouchGUI aqua description 14.3px test v1.74" not in css
             and "TouchGUI card text 14.3px test v1.75" not in css
@@ -1443,12 +1443,17 @@ width:100%;
         "\n",
         css,
     )
-    white_text_scale_css = '''/* AllScan Mods: TouchGUI bold text vertical raster scale test v1.79. */
+    css = re.sub(
+        r"\n?/\* AllScan Mods: TouchGUI bold text vertical raster scale test v1\.79\. \*/\n\.channel-note-name,\n\.channel-location \{ font-weight:bold; transform:scaleY\(1\.05\); transform-origin:center; \}\n?",
+        "\n",
+        css,
+    )
+    white_text_zoom_css = '''/* AllScan Mods: TouchGUI bold text zoom raster test v1.80. */
 .channel-note-name,
-.channel-location { font-weight:bold; transform:scaleY(1.05); transform-origin:center; }
+.channel-location { font-weight:bold; zoom:1.05; }
 '''
-    if "TouchGUI bold text vertical raster scale test v1.79" not in css:
-        css = css.rstrip() + "\n" + white_text_scale_css
+    if "TouchGUI bold text zoom raster test v1.80" not in css:
+        css = css.rstrip() + "\n" + white_text_zoom_css
 
     if ("simple.statsTmr = setTimeout(getChannelStats" not in js
             or "active-wt" not in js
@@ -1509,8 +1514,8 @@ width:100%;
             or ".channel-note-name + .channel-location { position:relative; top:2px; }" not in css
             or "TouchGUI white text descender line-box clearance v1.77" not in css
             or ".channel-note-name,\n.channel-location { line-height:1.25; margin-bottom:-0.2em; }" not in css
-            or "TouchGUI bold text vertical raster scale test v1.79" not in css
-            or ".channel-note-name,\n.channel-location { font-weight:bold; transform:scaleY(1.05); transform-origin:center; }" not in css
+            or "TouchGUI bold text zoom raster test v1.80" not in css
+            or ".channel-note-name,\n.channel-location { font-weight:bold; zoom:1.05; }" not in css
             or "fitChannelText(button.querySelector('.channel-description'), 18, 13);" not in js
             or "TouchGUI aqua description 14.3px test v1.74" in css
             or "TouchGUI card text 14.3px test v1.75" in css
