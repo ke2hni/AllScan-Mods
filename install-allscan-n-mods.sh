@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.73
+# TouchGUI activity colors mod version: v1.74
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -364,6 +364,8 @@ touchgui_activity_present() {
     grep -Fq 'TouchGUI aqua descender clearance v1.70' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'TouchGUI card text descender clearance v1.71' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'TouchGUI card-edge descender visibility v1.73' "$SIMPLE_CSS_FILE" &&
+    grep -Fq 'TouchGUI aqua description 14.3px test v1.74' "$SIMPLE_CSS_FILE" &&
+    grep -Fq 'TouchGUI aqua description maximum 14.3px v1.74' "$SIMPLE_JS_FILE" &&
     grep -Fq '.channel-btn { overflow:visible; }' "$SIMPLE_CSS_FILE" &&
     grep -Fq '.channel-note { line-height:1.05; margin-bottom:0; }' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'TouchGUI row centering and descender clearance v1.65' "$SIMPLE_CSS_FILE" &&
