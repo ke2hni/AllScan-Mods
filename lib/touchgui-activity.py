@@ -92,12 +92,11 @@ def main():
             and "TouchGUI card-edge descender visibility v1.73" in css
             and ".channel-btn { overflow:visible; }" in css
             and ".channel-note { line-height:1.05; margin-bottom:0; }" in css
-            and "TouchGUI aqua description 14.3px test v1.74" in css
-            and ".channel-description { font-size:14.3px; }" in css
-            and "TouchGUI aqua description maximum 14.3px v1.74" in js
-            and "fitChannelText(button.querySelector('.channel-description'), 14.3, 13);" in js
-            and "TouchGUI card text 14.3px test v1.75" in css
-            and ".channel-note-name,\n.channel-location { font-size:14.3px; }" in css
+            and "TouchGUI white name/location spacing v1.76" in css
+            and ".channel-note-name + .channel-location { position:relative; top:2px; }" in css
+            and "fitChannelText(button.querySelector('.channel-description'), 18, 13);" in js
+            and "TouchGUI aqua description 14.3px test v1.74" not in css
+            and "TouchGUI card text 14.3px test v1.75" not in css
             and "TouchGUI name/location row fit v1.63" in js
             and "TouchGUI name/location card row styling v1.63" in css
             and "function channelLocation(channel)" in js
@@ -557,7 +556,7 @@ function fitChannelText(element, maxFontSize, minFontSize) {
 	}
 }
 function fitChannelDescription(button) {
-	fitChannelText(button.querySelector('.channel-description'), 14.3, 13);
+	fitChannelText(button.querySelector('.channel-description'), 18, 13);
 }
 // AllScan Mods: TouchGUI adaptive title fit v1.45.
 // AllScan Mods: TouchGUI name/location row fit v1.63.
@@ -1394,12 +1393,12 @@ width:100%;
         description_matches = list(description_function.finditer(js))
         if len(description_matches) != 1:
             raise SystemExit("ERROR: Existing TouchGUI description sizing function is unexpected; no files changed.")
-        updated_description = "// AllScan Mods: TouchGUI aqua description maximum 14.3px v1.74.\nfunction fitChannelDescription(button) {\n\tfitChannelText(button.querySelector('.channel-description'), 14.3, 13);\n}"
+        updated_description = "function fitChannelDescription(button) {\n\tfitChannelText(button.querySelector('.channel-description'), 18, 13);\n}"
         js = js[:description_matches[0].start()] + updated_description + js[description_matches[0].end():]
 
     description_function = re.compile(r"(?ms)^(?:// AllScan Mods: TouchGUI aqua description maximum 14\.3px v1\.74\.\n)?function fitChannelDescription\(button\) \{.*?^}")
     description_matches = list(description_function.finditer(js))
-    expected_description = "// AllScan Mods: TouchGUI aqua description maximum 14.3px v1.74.\nfunction fitChannelDescription(button) {\n\tfitChannelText(button.querySelector('.channel-description'), 14.3, 13);\n}"
+    expected_description = "function fitChannelDescription(button) {\n\tfitChannelText(button.querySelector('.channel-description'), 18, 13);\n}"
     if len(description_matches) != 1:
         raise SystemExit("ERROR: Existing TouchGUI description sizing function is unexpected; no files changed.")
     current_description = description_matches[0].group(0)
@@ -1412,18 +1411,21 @@ width:100%;
             raise SystemExit("ERROR: Existing TouchGUI description size is unexpected; no files changed.")
         js = js[:description_matches[0].start()] + expected_description + js[description_matches[0].end():]
 
-    aqua_test_css = '''/* AllScan Mods: TouchGUI aqua description 14.3px test v1.74. */
-.channel-description { font-size:14.3px; }
+    css = re.sub(
+        r"\n?/\* AllScan Mods: TouchGUI aqua description 14\.3px test v1\.74\. \*/\n\.channel-description \{ font-size:14\.3px; \}\n?",
+        "\n",
+        css,
+    )
+    css = re.sub(
+        r"\n?/\* AllScan Mods: TouchGUI card text 14\.3px test v1\.75\. \*/\n\.channel-note-name,\n\.channel-location \{ font-size:14\.3px; \}\n?",
+        "\n",
+        css,
+    )
+    white_row_spacing_css = '''/* AllScan Mods: TouchGUI white name/location spacing v1.76. */
+.channel-note-name + .channel-location { position:relative; top:2px; }
 '''
-    if "TouchGUI aqua description 14.3px test v1.74" not in css:
-        css = css.rstrip() + "\n" + aqua_test_css
-
-    card_text_14_3_css = '''/* AllScan Mods: TouchGUI card text 14.3px test v1.75. */
-.channel-note-name,
-.channel-location { font-size:14.3px; }
-'''
-    if "TouchGUI card text 14.3px test v1.75" not in css:
-        css = css.rstrip() + "\n" + card_text_14_3_css
+    if "TouchGUI white name/location spacing v1.76" not in css:
+        css = css.rstrip() + "\n" + white_row_spacing_css
 
     if ("simple.statsTmr = setTimeout(getChannelStats" not in js
             or "active-wt" not in js
@@ -1480,12 +1482,11 @@ width:100%;
             or "TouchGUI card-edge descender visibility v1.73" not in css
             or ".channel-btn { overflow:visible; }" not in css
             or ".channel-note { line-height:1.05; margin-bottom:0; }" not in css
-            or "TouchGUI aqua description 14.3px test v1.74" not in css
-            or ".channel-description { font-size:14.3px; }" not in css
-            or "TouchGUI aqua description maximum 14.3px v1.74" not in js
-            or "fitChannelText(button.querySelector('.channel-description'), 14.3, 13);" not in js
-            or "TouchGUI card text 14.3px test v1.75" not in css
-            or ".channel-note-name,\n.channel-location { font-size:14.3px; }" not in css
+            or "TouchGUI white name/location spacing v1.76" not in css
+            or ".channel-note-name + .channel-location { position:relative; top:2px; }" not in css
+            or "fitChannelText(button.querySelector('.channel-description'), 18, 13);" not in js
+            or "TouchGUI aqua description 14.3px test v1.74" in css
+            or "TouchGUI card text 14.3px test v1.75" in css
             or "function channelLocation(channel)" not in js
             or "function channelNameMatchesDescription(name, description)" not in js
             or "calc(180px + 5ch)" not in css
