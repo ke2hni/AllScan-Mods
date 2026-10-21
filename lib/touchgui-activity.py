@@ -101,10 +101,9 @@ def main():
             and "TouchGUI white row breathing room v1.83" in css
             and ".channel-note { top:-1px; }" in css
             and ".channel-note-name + .channel-location { margin-top:4px; top:0; }" in css
-            and "TouchGUI white card Arial font test v1.84" in css
-            and ".channel-note-name,\n.channel-location { font-family:Arial, Helvetica, sans-serif; }" in css
-            and "TouchGUI white card Tahoma font test v1.85" in css
-            and ".channel-note-name,\n.channel-location { font-family:Tahoma, Arial, Helvetica, sans-serif; }" in css
+            and "TouchGUI original white text font restored v1.86" in css
+            and "TouchGUI white card Arial font test v1.84" not in css
+            and "TouchGUI white card Tahoma font test v1.85" not in css
             and all(marker not in css for marker in (
                 "TouchGUI white text descender line-box clearance v1.77",
                 "TouchGUI white card text regular-weight test v1.78",
@@ -1461,19 +1460,14 @@ width:100%;
     if "TouchGUI white row breathing room v1.83" not in css:
         css = css.rstrip() + "\n" + white_row_breathing_css
 
-    white_font_test_css = '''/* AllScan Mods: TouchGUI white card Arial font test v1.84. */
-.channel-note-name,
-.channel-location { font-family:Arial, Helvetica, sans-serif; }
-'''
-    if "TouchGUI white card Arial font test v1.84" not in css:
-        css = css.rstrip() + "\n" + white_font_test_css
-
-    white_tahoma_test_css = '''/* AllScan Mods: TouchGUI white card Tahoma font test v1.85. */
-.channel-note-name,
-.channel-location { font-family:Tahoma, Arial, Helvetica, sans-serif; }
-'''
-    if "TouchGUI white card Tahoma font test v1.85" not in css:
-        css = css.rstrip() + "\n" + white_tahoma_test_css
+    for experimental_font_css in (
+        r"\n?/\* AllScan Mods: TouchGUI white card Arial font test v1\.84\. \*/\n\.channel-note-name,\n\.channel-location \{ font-family:Arial, Helvetica, sans-serif; \}\n?",
+        r"\n?/\* AllScan Mods: TouchGUI white card Tahoma font test v1\.85\. \*/\n\.channel-note-name,\n\.channel-location \{ font-family:Tahoma, Arial, Helvetica, sans-serif; \}\n?",
+    ):
+        css = re.sub(experimental_font_css, "\n", css)
+    original_font_marker = "/* AllScan Mods: TouchGUI original white text font restored v1.86. */"
+    if original_font_marker not in css:
+        css = css.rstrip() + "\n" + original_font_marker + "\n"
 
     for experimental_css in (
         r"\n?/\* AllScan Mods: TouchGUI white text descender line-box clearance v1\.77\. \*/\n\.channel-note-name,\n\.channel-location \{ line-height:1\.25; margin-bottom:-0\.2em; \}\n?",
@@ -1547,10 +1541,9 @@ width:100%;
             or "TouchGUI white row breathing room v1.83" not in css
             or ".channel-note { top:-1px; }" not in css
             or ".channel-note-name + .channel-location { margin-top:4px; top:0; }" not in css
-            or "TouchGUI white card Arial font test v1.84" not in css
-            or ".channel-note-name,\n.channel-location { font-family:Arial, Helvetica, sans-serif; }" not in css
-            or "TouchGUI white card Tahoma font test v1.85" not in css
-            or ".channel-note-name,\n.channel-location { font-family:Tahoma, Arial, Helvetica, sans-serif; }" not in css
+            or "TouchGUI original white text font restored v1.86" not in css
+            or "TouchGUI white card Arial font test v1.84" in css
+            or "TouchGUI white card Tahoma font test v1.85" in css
             or "TouchGUI white text descender line-box clearance v1.77" in css
             or "TouchGUI white card text regular-weight test v1.78" in css
             or "TouchGUI bold text vertical raster scale test v1.79" in css

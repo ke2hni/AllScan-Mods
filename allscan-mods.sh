@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.85
+# TouchGUI activity colors mod version: v1.86
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -196,8 +196,9 @@ touchgui_activity_present() {
     grep -Fq '.channel-note-name + .channel-location { position:relative; top:2px; }' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'TouchGUI card row spacing balance v1.82' "$SIMPLE_CSS_FILE" &&
     grep -Fq 'TouchGUI white row breathing room v1.83' "$SIMPLE_CSS_FILE" &&
-    grep -Fq 'TouchGUI white card Arial font test v1.84' "$SIMPLE_CSS_FILE" &&
-    grep -Fq 'TouchGUI white card Tahoma font test v1.85' "$SIMPLE_CSS_FILE" &&
+    grep -Fq 'TouchGUI original white text font restored v1.86' "$SIMPLE_CSS_FILE" &&
+    ! grep -Fq 'TouchGUI white card Arial font test v1.84' "$SIMPLE_CSS_FILE" &&
+    ! grep -Fq 'TouchGUI white card Tahoma font test v1.85' "$SIMPLE_CSS_FILE" &&
     ! grep -Fq 'TouchGUI aqua description 14.3px test v1.74' "$SIMPLE_CSS_FILE" &&
     ! grep -Fq 'TouchGUI card text 14.3px test v1.75' "$SIMPLE_CSS_FILE" &&
     grep -Fq "fitChannelText(button.querySelector('.channel-description'), 18, 13);" "$SIMPLE_JS_FILE" &&
