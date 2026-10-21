@@ -83,6 +83,7 @@ def main():
             and "TouchGUI name/description similarity v1.64" in js
             and "TouchGUI description/location duplicate cleanup v1.68" in js
             and "TouchGUI adjacent card-row overlap cleanup v1.68" in js
+            and "TouchGUI US/USA note-location collapse v1.69" in js
             and "TouchGUI row centering and descender clearance v1.65" in css
             and "TouchGUI name/location row fit v1.63" in js
             and "TouchGUI name/location card row styling v1.63" in css
@@ -558,8 +559,16 @@ function fitChannelLabel(button) {
 	location.style.position = 'absolute';
 	location.style.visibility = 'hidden';
 	fitChannelText(location);
+	// AllScan Mods: TouchGUI US/USA note-location collapse v1.69.
 	var noteText = String(note.textContent || '').trim().toLowerCase();
 	var locationText = String(location.textContent || '').trim().toLowerCase();
+	var normalizedNote = noteText.replace(/[^a-z0-9]/g, '');
+	var normalizedLocation = locationText.replace(/[^a-z0-9]/g, '');
+	if((normalizedNote === 'us' && normalizedLocation === 'usa') || (normalizedNote === 'usa' && normalizedLocation === 'us')) {
+		note.textContent = location.textContent;
+		fitChannelText(note);
+		noteText = locationText;
+	}
 	if(!note.clientWidth || !noteText || !locationText || noteText === locationText || note.style.whiteSpace === 'normal')
 		return;
 	location.style.position = 'static';
@@ -589,6 +598,13 @@ window.addEventListener('resize', fitTouchguiCardText);'''
         js = old_text_fit_pattern.sub(lambda _: card_text_fit_funcs, js, count=1)
     elif js.count("function fitChannelLabel(button)") != 1 or "function fitTouchguiCardText()" not in js:
         raise SystemExit("ERROR: TouchGUI card title sizing helper is ambiguous; no files changed.")
+    if "TouchGUI US/USA note-location collapse v1.69" not in js:
+        title_pattern = re.compile(r"(?ms)^function fitChannelLabel\(button\) \{.*?^}")
+        title_matches = list(title_pattern.finditer(js))
+        title_template = re.search(r"(?ms)^function fitChannelLabel\(button\) \{.*?^}", card_text_fit_funcs)
+        if len(title_matches) != 1 or title_template is None:
+            raise SystemExit("ERROR: Existing TouchGUI Name/Location row helper is unexpected; no files changed.")
+        js = title_pattern.sub(lambda _: title_template.group(0), js, count=1)
     if "TouchGUI row text width fit v1.53" not in js:
         fit_block_pattern = re.compile(
             r"(?s)function fitChannelMeta\(button\) \{.*?window\.addEventListener\('resize', fitTouchguiCardText\);"
@@ -1394,6 +1410,7 @@ width:100%;
             or "TouchGUI name/location card row styling v1.63" not in css
             or "TouchGUI description/location duplicate cleanup v1.68" not in js
             or "TouchGUI adjacent card-row overlap cleanup v1.68" not in js
+            or "TouchGUI US/USA note-location collapse v1.69" not in js
             or "TouchGUI row centering and descender clearance v1.65" not in css
             or "function channelLocation(channel)" not in js
             or "function channelNameMatchesDescription(name, description)" not in js

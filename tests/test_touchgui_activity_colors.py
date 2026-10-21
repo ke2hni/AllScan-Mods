@@ -14,7 +14,7 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.68" in text, installer
+        assert "TouchGUI activity colors mod version: v1.69" in text, installer
         assert "TouchGUI connected banner callsign v1.51" in text
         assert "TouchGUI three-row card data v1.52" in text
         assert "TouchGUI three-row card styling v1.52" in text
@@ -33,6 +33,7 @@ def main():
         assert "TouchGUI name/description similarity v1.64" in text
         assert "TouchGUI description/location duplicate cleanup v1.68" in text
         assert "TouchGUI adjacent card-row overlap cleanup v1.68" in text
+        assert "TouchGUI US/USA note-location collapse v1.69" in text
         assert "TouchGUI row centering and descender clearance v1.65" in text
         assert "TouchGUI name and location card rows v1.63" in text
         assert "TouchGUI name/description similarity v1.64" in text
@@ -317,6 +318,18 @@ var shortButton = {style: {}, querySelector: function(selector) {
 fitChannelLabel(shortButton);
 if(shortTitle.style.fontSize !== '' || shortTitle.style.transform !== '' || shortLocation.style.position !== 'static' || shortLocation.style.visibility !== 'visible')
 	throw new Error('One-line TouchGUI Name did not show Location beneath it: ' + JSON.stringify({note: shortTitle.style, location: shortLocation.style}));
+var usName = makeFitElement('US', 120, 20);
+var usaLocation = makeFitElement('USA', 120, 30);
+usaLocation.style.position = 'absolute';
+usaLocation.style.visibility = 'hidden';
+var countryButton = {style: {}, querySelector: function(selector) {
+	if(selector === '.channel-note-name') return usName;
+	if(selector === '.channel-location') return usaLocation;
+	return null;
+}};
+fitChannelLabel(countryButton);
+if(usName.textContent !== 'USA' || usaLocation.style.visibility !== 'hidden')
+	throw new Error('Equivalent US/USA note and location rows were not collapsed: ' + JSON.stringify({name: usName.textContent, location: usaLocation.style}));
 var longTitle = makeFitElement('A very long favorite label that wraps', 80, 200);
 var longLocation = makeFitElement('Wigan, Greater Manchester', 80, 125);
 longLocation.style.position = 'absolute';
@@ -1184,7 +1197,7 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         assert upgraded_v158 == (v158_js.read_bytes(), v158_css.read_bytes()), "v1.58 upgrade was not idempotent"
 
     print("PASS: installers include the TouchGUI activity patch path.")
-    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, text fitting and spacing, connected-banner callsign, compatibility upgrades, syntax, repeat application, and v1.49-v1.52 migrations and v1.53-v1.68 sizing, card-data, and duplicate-cleanup upgrades.")
+    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, text fitting and spacing, connected-banner callsign, compatibility upgrades, syntax, repeat application, and v1.49-v1.52 migrations and v1.53-v1.69 sizing, card-data, and duplicate-cleanup upgrades.")
 
 
 if __name__ == "__main__":
