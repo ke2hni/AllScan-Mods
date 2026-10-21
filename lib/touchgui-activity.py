@@ -81,8 +81,8 @@ def main():
             and "TouchGUI white note glyph clearance v1.62" in css
             and "TouchGUI name and location card rows v1.63" in js
             and "TouchGUI name/description similarity v1.64" in js
-            and "TouchGUI description/location duplicate cleanup v1.66" in js
-            and "TouchGUI adjacent card-row overlap cleanup v1.66" in js
+            and "TouchGUI description/location duplicate cleanup v1.67" in js
+            and "TouchGUI adjacent card-row overlap cleanup v1.67" in js
             and "TouchGUI row centering and descender clearance v1.65" in css
             and "TouchGUI name/location row fit v1.63" in js
             and "TouchGUI name/location card row styling v1.63" in css
@@ -355,17 +355,17 @@ function channelLabel(channel) {
         raise SystemExit("ERROR: Expected the TouchGUI channel-label function exactly once; no files changed.")
 
     card_field_funcs = r'''// AllScan Mods: TouchGUI name and location card rows v1.63.
-// AllScan Mods: TouchGUI description/location duplicate cleanup v1.66.
+// AllScan Mods: TouchGUI description/location duplicate cleanup v1.67.
 function channelDescription(channel) {
 	var description = String(channel.desc || '').trim();
 	var location = String(channel.loc || '').trim();
 	var country = function(value) { return String(value || '').replace(/[^a-z]/gi, '').toUpperCase(); };
-	var descMatch = description.match(/(?:^|[\s,;:-])([A-Z.]+)$/i);
-	var locationMatch = location.match(/(?:^|[\s,;:-])([A-Z.]+)$/i);
+	var descMatch = description.match(/(?:^|[^a-z])(U\.?S\.?A?\.?)\.?$/i);
+	var locationMatch = location.match(/(?:^|[^a-z])(U\.?S\.?A?\.?)\.?($|[^a-z])/i);
 	var descCountry = descMatch ? country(descMatch[1]) : '';
 	var locationCountry = locationMatch ? country(locationMatch[1]) : '';
 	if ((descCountry === 'US' || descCountry === 'USA') && (locationCountry === 'US' || locationCountry === 'USA'))
-		description = description.replace(/[\s,;:-]*[A-Z.]+$/i, '');
+		description = description.replace(/[\s,;:-]*U\.?S\.?A?\.?\.?$/i, '');
 	return description.replace(/\s{2,}/g, ' ').replace(/^[\s,;:.()]+|[\s,;:.()]+$/g, '').trim();
 }
 function channelLocation(channel) {
@@ -394,7 +394,7 @@ function channelNameMatchesDescription(name, description) {
 	var sharedLength = previous[normalizedDescription.length];
 	return sharedLength >= 6 && sharedLength / normalizedName.length >= 0.75;
 }
-// AllScan Mods: TouchGUI adjacent card-row overlap cleanup v1.66.
+// AllScan Mods: TouchGUI adjacent card-row overlap cleanup v1.67.
 function channelNote(channel) {
 	var text = String(channel.label || '');
 	var fields = [channel.node, channel.call, channel.desc, channel.loc]
@@ -457,24 +457,24 @@ function channelNote(channel) {
         similarity_function = card_field_funcs.split("// AllScan Mods: TouchGUI name/description similarity v1.64.\n", 1)[1]
         similarity_function = "// AllScan Mods: TouchGUI name/description similarity v1.64.\n" + similarity_function.split("\nfunction channelNote(channel)", 1)[0]
         js = similarity_pattern.sub(lambda _: similarity_function, js, count=1)
-    if "TouchGUI description/location duplicate cleanup v1.66" not in js:
+    if "TouchGUI description/location duplicate cleanup v1.67" not in js:
         description_pattern = re.compile(r"(?ms)^function channelDescription\(channel\) \{.*?^}")
         description_matches = list(description_pattern.finditer(js))
         if len(description_matches) != 1:
             raise SystemExit("ERROR: Existing TouchGUI Description helper is unexpected; no files changed.")
-        description_function = card_field_funcs.split("// AllScan Mods: TouchGUI description/location duplicate cleanup v1.66.\n", 1)[1].split("\nfunction channelLocation(channel)", 1)[0]
-        description_function = "// AllScan Mods: TouchGUI description/location duplicate cleanup v1.66.\n" + description_function
+        description_function = card_field_funcs.split("// AllScan Mods: TouchGUI description/location duplicate cleanup v1.67.\n", 1)[1].split("\nfunction channelLocation(channel)", 1)[0]
+        description_function = "// AllScan Mods: TouchGUI description/location duplicate cleanup v1.67.\n" + description_function
         js = description_pattern.sub(lambda _: description_function, js, count=1)
         note_pattern = re.compile(r"(?ms)^function channelNote\(channel\) \{.*?^}")
         note_matches = list(note_pattern.finditer(js))
         if len(note_matches) != 1:
             raise SystemExit("ERROR: Existing TouchGUI Name helper is unexpected; no files changed.")
-        note_match = re.search(r"(?ms)^// AllScan Mods: TouchGUI adjacent card-row overlap cleanup v1\.66\.\nfunction channelNote\(channel\) \{.*?^}", card_field_funcs)
+        note_match = re.search(r"(?ms)^// AllScan Mods: TouchGUI adjacent card-row overlap cleanup v1\.67\.\nfunction channelNote\(channel\) \{.*?^}", card_field_funcs)
         if note_match is None:
             raise SystemExit("ERROR: TouchGUI Name helper template is unexpected; no files changed.")
         note_function = note_match.group(0)
         js = note_pattern.sub(lambda _: note_function, js, count=1)
-    if "TouchGUI adjacent card-row overlap cleanup v1.66" not in js:
+    if "TouchGUI adjacent card-row overlap cleanup v1.67" not in js:
         raise SystemExit("ERROR: TouchGUI adjacent row-overlap migration failed; no files changed.")
 
     card_text_fit_funcs = r'''function fitChannelMeta(button) {
@@ -1385,8 +1385,8 @@ width:100%;
             or "TouchGUI name/description similarity v1.64" not in js
             or "TouchGUI name/location row fit v1.63" not in js
             or "TouchGUI name/location card row styling v1.63" not in css
-            or "TouchGUI description/location duplicate cleanup v1.66" not in js
-            or "TouchGUI adjacent card-row overlap cleanup v1.66" not in js
+            or "TouchGUI description/location duplicate cleanup v1.67" not in js
+            or "TouchGUI adjacent card-row overlap cleanup v1.67" not in js
             or "TouchGUI row centering and descender clearance v1.65" not in css
             or "function channelLocation(channel)" not in js
             or "function channelNameMatchesDescription(name, description)" not in js

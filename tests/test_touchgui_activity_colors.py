@@ -14,7 +14,7 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.66" in text, installer
+        assert "TouchGUI activity colors mod version: v1.67" in text, installer
         assert "TouchGUI connected banner callsign v1.51" in text
         assert "TouchGUI three-row card data v1.52" in text
         assert "TouchGUI three-row card styling v1.52" in text
@@ -31,8 +31,8 @@ def main():
         assert "TouchGUI aqua row alignment and note clearance v1.61" in text
         assert "TouchGUI white note glyph clearance v1.62" in text
         assert "TouchGUI name/description similarity v1.64" in text
-        assert "TouchGUI description/location duplicate cleanup v1.66" in text
-        assert "TouchGUI adjacent card-row overlap cleanup v1.66" in text
+        assert "TouchGUI description/location duplicate cleanup v1.67" in text
+        assert "TouchGUI adjacent card-row overlap cleanup v1.67" in text
         assert "TouchGUI row centering and descender clearance v1.65" in text
         assert "TouchGUI name and location card rows v1.63" in text
         assert "TouchGUI name/description similarity v1.64" in text
@@ -250,6 +250,8 @@ if(channelDescription({desc: 'SOUTHCARS HUB US', loc: 'USA'}) !== 'SOUTHCARS HUB
 	throw new Error('TouchGUI did not remove the repeated US country suffix from the description');
 if(channelDescription({desc: 'SOUTHCARS HUB USA', loc: 'US'}) !== 'SOUTHCARS HUB')
 	throw new Error('TouchGUI did not normalize the alternate USA country suffix');
+if(channelDescription({desc: 'SOUTHCARS HUB U.S.', loc: 'USA, North America'}) !== 'SOUTHCARS HUB')
+	throw new Error('TouchGUI did not remove a punctuated country suffix when Location contains additional text');
 if(channelNote({node: '672000', call: 'W2NJR', desc: 'System Main Hub', loc: 'Somewhere', label: 'W2NJR Chillin with Bill Everyday 10am 672000'}) !== 'Chillin with Bill Everyday 10am')
 	throw new Error('TouchGUI note did not retain only the user label text');
 if(channelNote({node: '54318', call: 'GB3EG', desc: '430.9125', loc: 'Wigan, Greater Manchester', label: 'GB3EG 430.9125, Wigan, Greater Manchester 54318'}) !== 'Wigan, Greater Manchester')
@@ -1182,7 +1184,7 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         assert upgraded_v158 == (v158_js.read_bytes(), v158_css.read_bytes()), "v1.58 upgrade was not idempotent"
 
     print("PASS: installers include the TouchGUI activity patch path.")
-    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, text fitting and spacing, connected-banner callsign, compatibility upgrades, syntax, repeat application, and v1.49-v1.52 migrations and v1.53-v1.64 sizing, card-data, and similarity upgrades.")
+    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, text fitting and spacing, connected-banner callsign, compatibility upgrades, syntax, repeat application, and v1.49-v1.52 migrations and v1.53-v1.67 sizing, card-data, and duplicate-cleanup upgrades.")
 
 
 if __name__ == "__main__":
