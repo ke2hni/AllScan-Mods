@@ -14,7 +14,7 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.67" in text, installer
+        assert "TouchGUI activity colors mod version: v1.68" in text, installer
         assert "TouchGUI connected banner callsign v1.51" in text
         assert "TouchGUI three-row card data v1.52" in text
         assert "TouchGUI three-row card styling v1.52" in text
@@ -31,8 +31,8 @@ def main():
         assert "TouchGUI aqua row alignment and note clearance v1.61" in text
         assert "TouchGUI white note glyph clearance v1.62" in text
         assert "TouchGUI name/description similarity v1.64" in text
-        assert "TouchGUI description/location duplicate cleanup v1.67" in text
-        assert "TouchGUI adjacent card-row overlap cleanup v1.67" in text
+        assert "TouchGUI description/location duplicate cleanup v1.68" in text
+        assert "TouchGUI adjacent card-row overlap cleanup v1.68" in text
         assert "TouchGUI row centering and descender clearance v1.65" in text
         assert "TouchGUI name and location card rows v1.63" in text
         assert "TouchGUI name/description similarity v1.64" in text
@@ -1184,7 +1184,7 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         assert upgraded_v158 == (v158_js.read_bytes(), v158_css.read_bytes()), "v1.58 upgrade was not idempotent"
 
     print("PASS: installers include the TouchGUI activity patch path.")
-    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, text fitting and spacing, connected-banner callsign, compatibility upgrades, syntax, repeat application, and v1.49-v1.52 migrations and v1.53-v1.67 sizing, card-data, and duplicate-cleanup upgrades.")
+    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, text fitting and spacing, connected-banner callsign, compatibility upgrades, syntax, repeat application, and v1.49-v1.52 migrations and v1.53-v1.68 sizing, card-data, and duplicate-cleanup upgrades.")
 
 
 if __name__ == "__main__":

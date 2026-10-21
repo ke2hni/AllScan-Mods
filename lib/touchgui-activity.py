@@ -81,8 +81,8 @@ def main():
             and "TouchGUI white note glyph clearance v1.62" in css
             and "TouchGUI name and location card rows v1.63" in js
             and "TouchGUI name/description similarity v1.64" in js
-            and "TouchGUI description/location duplicate cleanup v1.67" in js
-            and "TouchGUI adjacent card-row overlap cleanup v1.67" in js
+            and "TouchGUI description/location duplicate cleanup v1.68" in js
+            and "TouchGUI adjacent card-row overlap cleanup v1.68" in js
             and "TouchGUI row centering and descender clearance v1.65" in css
             and "TouchGUI name/location row fit v1.63" in js
             and "TouchGUI name/location card row styling v1.63" in css
@@ -355,7 +355,7 @@ function channelLabel(channel) {
         raise SystemExit("ERROR: Expected the TouchGUI channel-label function exactly once; no files changed.")
 
     card_field_funcs = r'''// AllScan Mods: TouchGUI name and location card rows v1.63.
-// AllScan Mods: TouchGUI description/location duplicate cleanup v1.67.
+// AllScan Mods: TouchGUI description/location duplicate cleanup v1.68.
 function channelDescription(channel) {
 	var description = String(channel.desc || '').trim();
 	var location = String(channel.loc || '').trim();
@@ -394,7 +394,7 @@ function channelNameMatchesDescription(name, description) {
 	var sharedLength = previous[normalizedDescription.length];
 	return sharedLength >= 6 && sharedLength / normalizedName.length >= 0.75;
 }
-// AllScan Mods: TouchGUI adjacent card-row overlap cleanup v1.67.
+// AllScan Mods: TouchGUI adjacent card-row overlap cleanup v1.68.
 function channelNote(channel) {
 	var text = String(channel.label || '');
 	var fields = [channel.node, channel.call, channel.desc, channel.loc]
@@ -434,12 +434,19 @@ function channelNote(channel) {
 		return location;
 	return text;
 }'''
-    card_field_pattern = re.compile(r"(?ms)^function channelDescription\(channel\) \{.*?^}\nfunction channelNote\(channel\) \{.*?^}")
-    card_field_matches = list(card_field_pattern.finditer(js))
-    if len(card_field_matches) == 1:
+    description_pattern = re.compile(r"(?ms)^function channelDescription\(channel\) \{.*?^}")
+    note_pattern = re.compile(r"(?ms)^function channelNote\(channel\) \{.*?^}")
+    description_matches = list(description_pattern.finditer(js))
+    note_matches = list(note_pattern.finditer(js))
+    if len(description_matches) == 1 and len(note_matches) == 1:
         if "TouchGUI name and location card rows v1.63" not in js:
-            js = card_field_pattern.sub(lambda _: card_field_funcs, js, count=1)
-    elif not card_field_matches and "function channelNote(channel)" not in js:
+            description_template = re.search(r"(?ms)^function channelDescription\(channel\) \{.*?^}", card_field_funcs)
+            note_template = re.search(r"(?ms)^function channelNote\(channel\) \{.*?^}", card_field_funcs)
+            if description_template is None or note_template is None:
+                raise SystemExit("ERROR: TouchGUI card field helper templates are unexpected; no files changed.")
+            js = description_pattern.sub(lambda _: description_template.group(0), js, count=1)
+            js = note_pattern.sub(lambda _: note_template.group(0), js, count=1)
+    elif not description_matches and not note_matches:
         label_functions = list(channel_label_pattern.finditer(js))
         if len(label_functions) != 1:
             raise SystemExit("ERROR: Existing TouchGUI label helper is incomplete; no files changed.")
@@ -457,24 +464,24 @@ function channelNote(channel) {
         similarity_function = card_field_funcs.split("// AllScan Mods: TouchGUI name/description similarity v1.64.\n", 1)[1]
         similarity_function = "// AllScan Mods: TouchGUI name/description similarity v1.64.\n" + similarity_function.split("\nfunction channelNote(channel)", 1)[0]
         js = similarity_pattern.sub(lambda _: similarity_function, js, count=1)
-    if "TouchGUI description/location duplicate cleanup v1.67" not in js:
+    if "TouchGUI description/location duplicate cleanup v1.68" not in js:
         description_pattern = re.compile(r"(?ms)^function channelDescription\(channel\) \{.*?^}")
         description_matches = list(description_pattern.finditer(js))
         if len(description_matches) != 1:
             raise SystemExit("ERROR: Existing TouchGUI Description helper is unexpected; no files changed.")
-        description_function = card_field_funcs.split("// AllScan Mods: TouchGUI description/location duplicate cleanup v1.67.\n", 1)[1].split("\nfunction channelLocation(channel)", 1)[0]
-        description_function = "// AllScan Mods: TouchGUI description/location duplicate cleanup v1.67.\n" + description_function
+        description_function = card_field_funcs.split("// AllScan Mods: TouchGUI description/location duplicate cleanup v1.68.\n", 1)[1].split("\nfunction channelLocation(channel)", 1)[0]
+        description_function = "// AllScan Mods: TouchGUI description/location duplicate cleanup v1.68.\n" + description_function
         js = description_pattern.sub(lambda _: description_function, js, count=1)
         note_pattern = re.compile(r"(?ms)^function channelNote\(channel\) \{.*?^}")
         note_matches = list(note_pattern.finditer(js))
         if len(note_matches) != 1:
             raise SystemExit("ERROR: Existing TouchGUI Name helper is unexpected; no files changed.")
-        note_match = re.search(r"(?ms)^// AllScan Mods: TouchGUI adjacent card-row overlap cleanup v1\.67\.\nfunction channelNote\(channel\) \{.*?^}", card_field_funcs)
+        note_match = re.search(r"(?ms)^// AllScan Mods: TouchGUI adjacent card-row overlap cleanup v1\.68\.\nfunction channelNote\(channel\) \{.*?^}", card_field_funcs)
         if note_match is None:
             raise SystemExit("ERROR: TouchGUI Name helper template is unexpected; no files changed.")
         note_function = note_match.group(0)
         js = note_pattern.sub(lambda _: note_function, js, count=1)
-    if "TouchGUI adjacent card-row overlap cleanup v1.67" not in js:
+    if "TouchGUI adjacent card-row overlap cleanup v1.68" not in js:
         raise SystemExit("ERROR: TouchGUI adjacent row-overlap migration failed; no files changed.")
 
     card_text_fit_funcs = r'''function fitChannelMeta(button) {
@@ -1385,8 +1392,8 @@ width:100%;
             or "TouchGUI name/description similarity v1.64" not in js
             or "TouchGUI name/location row fit v1.63" not in js
             or "TouchGUI name/location card row styling v1.63" not in css
-            or "TouchGUI description/location duplicate cleanup v1.67" not in js
-            or "TouchGUI adjacent card-row overlap cleanup v1.67" not in js
+            or "TouchGUI description/location duplicate cleanup v1.68" not in js
+            or "TouchGUI adjacent card-row overlap cleanup v1.68" not in js
             or "TouchGUI row centering and descender clearance v1.65" not in css
             or "function channelLocation(channel)" not in js
             or "function channelNameMatchesDescription(name, description)" not in js
