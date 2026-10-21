@@ -94,6 +94,10 @@ def main():
             and ".channel-note { line-height:1.05; margin-bottom:0; }" in css
             and "TouchGUI white name/location spacing v1.76" in css
             and ".channel-note-name + .channel-location { position:relative; top:2px; }" in css
+            and "TouchGUI card row spacing balance v1.82" in css
+            and ".channel-meta { margin-bottom:3px; }" in css
+            and ".channel-note { top:-3px; }" in css
+            and ".channel-note-name + .channel-location { margin-top:2px; top:0; }" in css
             and all(marker not in css for marker in (
                 "TouchGUI white text descender line-box clearance v1.77",
                 "TouchGUI white card text regular-weight test v1.78",
@@ -1435,6 +1439,14 @@ width:100%;
     if "TouchGUI white name/location spacing v1.76" not in css:
         css = css.rstrip() + "\n" + white_row_spacing_css
 
+    balanced_row_spacing_css = '''/* AllScan Mods: TouchGUI card row spacing balance v1.82. */
+.channel-meta { margin-bottom:3px; }
+.channel-note { top:-3px; }
+.channel-note-name + .channel-location { margin-top:2px; top:0; }
+'''
+    if "TouchGUI card row spacing balance v1.82" not in css:
+        css = css.rstrip() + "\n" + balanced_row_spacing_css
+
     for experimental_css in (
         r"\n?/\* AllScan Mods: TouchGUI white text descender line-box clearance v1\.77\. \*/\n\.channel-note-name,\n\.channel-location \{ line-height:1\.25; margin-bottom:-0\.2em; \}\n?",
         r"\n?/\* AllScan Mods: TouchGUI white card text regular-weight test v1\.78\. \*/\n\.channel-note-name,\n\.channel-location \{ font-weight:normal; \}\n?",
@@ -1500,6 +1512,10 @@ width:100%;
             or ".channel-note { line-height:1.05; margin-bottom:0; }" not in css
             or "TouchGUI white name/location spacing v1.76" not in css
             or ".channel-note-name + .channel-location { position:relative; top:2px; }" not in css
+            or "TouchGUI card row spacing balance v1.82" not in css
+            or ".channel-meta { margin-bottom:3px; }" not in css
+            or ".channel-note { top:-3px; }" not in css
+            or ".channel-note-name + .channel-location { margin-top:2px; top:0; }" not in css
             or "TouchGUI white text descender line-box clearance v1.77" in css
             or "TouchGUI white card text regular-weight test v1.78" in css
             or "TouchGUI bold text vertical raster scale test v1.79" in css

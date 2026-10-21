@@ -14,7 +14,7 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.81" in text, installer
+        assert "TouchGUI activity colors mod version: v1.82" in text, installer
         assert "TouchGUI connected banner callsign v1.51" in text
         assert "TouchGUI three-row card data v1.52" in text
         assert "TouchGUI three-row card styling v1.52" in text
@@ -40,6 +40,7 @@ def main():
         assert ".channel-btn { overflow:visible; }" in text
         assert ".channel-note { line-height:1.05; margin-bottom:0; }" in text
         assert "TouchGUI white name/location spacing v1.76" in text
+        assert "TouchGUI card row spacing balance v1.82" in text
         assert "TouchGUI white text descender line-box clearance v1.77" not in text
         assert "TouchGUI bold text zoom raster test v1.80" not in text
         assert ".channel-note-name + .channel-location { position:relative; top:2px; }" in text
@@ -116,6 +117,10 @@ def main():
         assert "TouchGUI responsive description sizing v1.55" in patched_js
         assert "fitChannelText(button.querySelector('.channel-description'), 18, 13);" in patched_js
         assert "TouchGUI white name/location spacing v1.76" in patched_css
+        assert "TouchGUI card row spacing balance v1.82" in patched_css
+        assert ".channel-meta { margin-bottom:3px; }" in patched_css
+        assert ".channel-note { top:-3px; }" in patched_css
+        assert ".channel-note-name + .channel-location { margin-top:2px; top:0; }" in patched_css
         assert ".channel-note-name + .channel-location { position:relative; top:2px; }" in patched_css
         assert "TouchGUI white text descender line-box clearance v1.77" not in patched_css
         assert "line-height:1.25; margin-bottom:-0.2em;" not in patched_css
