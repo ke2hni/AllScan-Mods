@@ -85,6 +85,10 @@ def main():
             and "TouchGUI adjacent card-row overlap cleanup v1.68" in js
             and "TouchGUI US/USA note-location collapse v1.69" in js
             and "TouchGUI row centering and descender clearance v1.65" in css
+            and "TouchGUI aqua descender clearance v1.70" in css
+            and ".channel-description { line-height:1.2; margin-bottom:-2px; }" in css
+            and "TouchGUI card text descender clearance v1.71" in css
+            and ".channel-description,\n.channel-note { line-height:1.2; margin-bottom:-2px; }" in css
             and "TouchGUI name/location row fit v1.63" in js
             and "TouchGUI name/location card row styling v1.63" in css
             and "function channelLocation(channel)" in js

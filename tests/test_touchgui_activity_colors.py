@@ -14,7 +14,7 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.71" in text, installer
+        assert "TouchGUI activity colors mod version: v1.72" in text, installer
         assert "TouchGUI connected banner callsign v1.51" in text
         assert "TouchGUI three-row card data v1.52" in text
         assert "TouchGUI three-row card styling v1.52" in text
@@ -44,6 +44,10 @@ def main():
         assert "Responsive TouchGUI label auto-fit v1.37" in text, installer
         assert "window.matchMedia && window.matchMedia('(orientation: portrait)').matches" in text, installer
         assert "apply_touchgui_activity_live" in text, installer
+        assert 'Existing TouchGUI features detected; checking for incremental updates.' in text, installer
+        install_body = re.search(r"apply_touchgui_activity_live\(\) \{(.*?)\n\}", text, re.S)
+        assert install_body, installer
+        assert install_body.group(1).index('python3 "$TOUCHGUI_ACTIVITY_PATCH"') < install_body.group(1).index("return 0"), installer
         assert "TOUCHGUI_ACTIVITY_PATCH" in text, installer
         assert "activity.rxPct" in text and "activity.linkCnt" in text, installer
         assert "rx.textContent = hasRx ? String(activity.rxPct) + '%' : '—';" in text, installer
@@ -1171,6 +1175,25 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         subprocess.run(["python3", str(PATCHER), str(v157_js), str(v157_css)], check=True)
         assert upgraded_v157 == (v157_js.read_bytes(), v157_css.read_bytes()), "v1.57 upgrade was not idempotent"
 
+    with tempfile.TemporaryDirectory(prefix="touchgui-missing-descender-fix-") as temp:
+        missing_fix_js = Path(temp) / "simple.js"
+        missing_fix_css = Path(temp) / "simple.css"
+        shutil.copy2(FIXTURES / "touchgui-installed-v1.57.js", missing_fix_js)
+        shutil.copy2(FIXTURES / "touchgui-installed-v1.57.css", missing_fix_css)
+        subprocess.run(["python3", str(PATCHER), str(missing_fix_js), str(missing_fix_css)], check=True)
+        missing_fix_block = (
+            "/* AllScan Mods: TouchGUI card text descender clearance v1.71. */\n"
+            ".channel-description,\n.channel-note { line-height:1.2; margin-bottom:-2px; }\n"
+        )
+        css_source = missing_fix_css.read_text(encoding="utf-8")
+        assert css_source.count(missing_fix_block) == 1
+        missing_fix_css.write_text(css_source.replace(missing_fix_block, "", 1), encoding="utf-8")
+        subprocess.run(["python3", str(PATCHER), str(missing_fix_js), str(missing_fix_css)], check=True)
+        repaired_css = missing_fix_css.read_text(encoding="utf-8")
+        assert repaired_css.count(missing_fix_block) == 1
+        assert "TouchGUI card text descender clearance v1.71" in repaired_css
+        subprocess.run(["node", "--check", str(missing_fix_js)], check=True)
+
     with tempfile.TemporaryDirectory(prefix="touchgui-v158-upgrade-") as temp:
         v158_js = Path(temp) / "simple.js"
         v158_css = Path(temp) / "simple.css"
@@ -1203,7 +1226,7 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         assert upgraded_v158 == (v158_js.read_bytes(), v158_css.read_bytes()), "v1.58 upgrade was not idempotent"
 
     print("PASS: installers include the TouchGUI activity patch path.")
-    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, text fitting and spacing, connected-banner callsign, compatibility upgrades, syntax, repeat application, and v1.49-v1.52 migrations and v1.53-v1.71 sizing, card-data, duplicate-cleanup, and descender-clearance upgrades.")
+    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, text fitting and spacing, connected-banner callsign, compatibility upgrades, syntax, repeat application, recovery of a missing incremental descender rule, and v1.49-v1.52 migrations and v1.53-v1.71 sizing, card-data, duplicate-cleanup, and descender-clearance upgrades.")
 
 
 if __name__ == "__main__":

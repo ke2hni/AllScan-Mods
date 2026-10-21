@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.71
+# TouchGUI activity colors mod version: v1.72
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -228,8 +228,7 @@ touchgui_activity_present() {
 
 apply_touchgui_activity_live() {
     if touchgui_activity_present; then
-        echo "TouchGUI activity, statistics, and card layout are already present. No changes made."
-        return 0
+        echo "Existing TouchGUI features detected; checking for incremental updates."
     fi
     local work_dir stage_js stage_css timestamp js_backup css_backup
     work_dir=$(mktemp -d /tmp/allscan-touchgui-activity.XXXXXX)
