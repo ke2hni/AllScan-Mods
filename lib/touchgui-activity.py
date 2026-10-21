@@ -102,6 +102,9 @@ def main():
             and ".channel-note { top:-1px; }" in css
             and ".channel-note-name + .channel-location { margin-top:4px; top:0; }" in css
             and "TouchGUI original white text font restored v1.86" in css
+            and "TouchGUI balanced white text line spacing v1.87" in css
+            and ".channel-note-name,\n.channel-location { line-height:16px; }" in css
+            and ".channel-note-name + .channel-location { margin-top:1px; }" in css
             and "TouchGUI white card Arial font test v1.84" not in css
             and "TouchGUI white card Tahoma font test v1.85" not in css
             and all(marker not in css for marker in (
@@ -1469,6 +1472,14 @@ width:100%;
     if original_font_marker not in css:
         css = css.rstrip() + "\n" + original_font_marker + "\n"
 
+    white_line_spacing_css = '''/* AllScan Mods: TouchGUI balanced white text line spacing v1.87. */
+.channel-note-name,
+.channel-location { line-height:16px; }
+.channel-note-name + .channel-location { margin-top:1px; }
+'''
+    if "TouchGUI balanced white text line spacing v1.87" not in css:
+        css = css.rstrip() + "\n" + white_line_spacing_css
+
     for experimental_css in (
         r"\n?/\* AllScan Mods: TouchGUI white text descender line-box clearance v1\.77\. \*/\n\.channel-note-name,\n\.channel-location \{ line-height:1\.25; margin-bottom:-0\.2em; \}\n?",
         r"\n?/\* AllScan Mods: TouchGUI white card text regular-weight test v1\.78\. \*/\n\.channel-note-name,\n\.channel-location \{ font-weight:normal; \}\n?",
@@ -1542,6 +1553,9 @@ width:100%;
             or ".channel-note { top:-1px; }" not in css
             or ".channel-note-name + .channel-location { margin-top:4px; top:0; }" not in css
             or "TouchGUI original white text font restored v1.86" not in css
+            or "TouchGUI balanced white text line spacing v1.87" not in css
+            or ".channel-note-name,\n.channel-location { line-height:16px; }" not in css
+            or ".channel-note-name + .channel-location { margin-top:1px; }" not in css
             or "TouchGUI white card Arial font test v1.84" in css
             or "TouchGUI white card Tahoma font test v1.85" in css
             or "TouchGUI white text descender line-box clearance v1.77" in css

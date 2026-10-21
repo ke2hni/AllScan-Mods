@@ -14,7 +14,7 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.86" in text, installer
+        assert "TouchGUI activity colors mod version: v1.87" in text, installer
         assert "TouchGUI connected banner callsign v1.51" in text
         assert "TouchGUI three-row card data v1.52" in text
         assert "TouchGUI three-row card styling v1.52" in text
@@ -42,6 +42,7 @@ def main():
         assert "TouchGUI white name/location spacing v1.76" in text
         assert "TouchGUI card row spacing balance v1.82" in text
         assert "TouchGUI original white text font restored v1.86" in text
+        assert "TouchGUI balanced white text line spacing v1.87" in text
         assert "! grep -Fq 'TouchGUI white card Arial font test v1.84'" in text
         assert "! grep -Fq 'TouchGUI white card Tahoma font test v1.85'" in text
         assert "TouchGUI white text descender line-box clearance v1.77" not in text
@@ -128,6 +129,9 @@ def main():
         assert ".channel-note { top:-1px; }" in patched_css
         assert ".channel-note-name + .channel-location { margin-top:4px; top:0; }" in patched_css
         assert "TouchGUI original white text font restored v1.86" in patched_css
+        assert "TouchGUI balanced white text line spacing v1.87" in patched_css
+        assert ".channel-note-name,\n.channel-location { line-height:16px; }" in patched_css
+        assert ".channel-note-name + .channel-location { margin-top:1px; }" in patched_css
         assert "TouchGUI white card Arial font test v1.84" not in patched_css
         assert "TouchGUI white card Tahoma font test v1.85" not in patched_css
         assert ".channel-note-name,\n.channel-location { font-family:" not in patched_css
@@ -1340,14 +1344,15 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         assert "TouchGUI white row breathing room v1.83" in cleaned_css
         assert ".channel-note-name + .channel-location { margin-top:4px; top:0; }" in cleaned_css
         assert "TouchGUI original white text font restored v1.86" in cleaned_css
+        assert "TouchGUI balanced white text line spacing v1.87" in cleaned_css
         assert "TouchGUI white card Arial font test v1.84" not in cleaned_css
         assert "TouchGUI white card Tahoma font test v1.85" not in cleaned_css
         stable_css = old_css.read_bytes()
         subprocess.run(["python3", str(PATCHER), str(old_js), str(old_css)], check=True)
-        assert stable_css == old_css.read_bytes(), "v1.82-v1.86 migration was not idempotent"
+        assert stable_css == old_css.read_bytes(), "v1.82-v1.87 migration was not idempotent"
 
     print("PASS: installers include the TouchGUI activity patch path.")
-    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, text fitting and spacing, restoration of the original white-text font, connected-banner callsign, compatibility upgrades, syntax, repeat application, v1.49-v1.52 migrations, v1.53-v1.86 migrations, and cleanup of temporary font and v1.77-v1.80 experiments.")
+    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, text fitting and spacing, restoration of the original white-text font, connected-banner callsign, compatibility upgrades, syntax, repeat application, v1.49-v1.52 migrations, v1.53-v1.87 migrations, and cleanup of temporary font and v1.77-v1.80 experiments.")
 
 
 if __name__ == "__main__":
