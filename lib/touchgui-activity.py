@@ -89,6 +89,9 @@ def main():
             and ".channel-description { line-height:1.2; margin-bottom:-2px; }" in css
             and "TouchGUI card text descender clearance v1.71" in css
             and ".channel-description,\n.channel-note { line-height:1.2; margin-bottom:-2px; }" in css
+            and "TouchGUI card-edge descender visibility v1.73" in css
+            and ".channel-btn { overflow:visible; }" in css
+            and ".channel-note { line-height:1.05; margin-bottom:0; }" in css
             and "TouchGUI name/location row fit v1.63" in js
             and "TouchGUI name/location card row styling v1.63" in css
             and "function channelLocation(channel)" in js
@@ -1363,6 +1366,13 @@ width:100%;
     if "TouchGUI card text descender clearance v1.71" not in css:
         css = css.rstrip() + "\n" + text_descender_css
 
+    card_edge_descender_css = '''/* AllScan Mods: TouchGUI card-edge descender visibility v1.73. */
+.channel-btn { overflow:visible; }
+.channel-note { line-height:1.05; margin-bottom:0; }
+'''
+    if "TouchGUI card-edge descender visibility v1.73" not in css:
+        css = css.rstrip() + "\n" + card_edge_descender_css
+
     if "TouchGUI responsive description sizing v1.55" not in js:
         fit_function = re.compile(r"(?ms)^function fitChannelText\(element\) \{.*?^}")
         fit_matches = list(fit_function.finditer(js))
@@ -1433,6 +1443,9 @@ width:100%;
             or ".channel-description { line-height:1.2; margin-bottom:-2px; }" not in css
             or "TouchGUI card text descender clearance v1.71" not in css
             or ".channel-description,\n.channel-note { line-height:1.2; margin-bottom:-2px; }" not in css
+            or "TouchGUI card-edge descender visibility v1.73" not in css
+            or ".channel-btn { overflow:visible; }" not in css
+            or ".channel-note { line-height:1.05; margin-bottom:0; }" not in css
             or "function channelLocation(channel)" not in js
             or "function channelNameMatchesDescription(name, description)" not in js
             or "calc(180px + 5ch)" not in css
