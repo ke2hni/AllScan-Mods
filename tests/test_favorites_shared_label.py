@@ -13,7 +13,7 @@ def main() -> None:
     )
     for filename in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         source = (ROOT / filename).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.87" in source
+        assert "TouchGUI activity colors mod version: v1.88" in source
         assert "favoriteEditHint" in source
         assert "Favorites editor call-sign hint v1.43." in source
         assert "apply_favorite_editor_label_live" in source
@@ -33,7 +33,7 @@ def main() -> None:
 
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "single shared Friendly Name/Label field" in readme
-    assert "call-sign-free view of that same field with a 33-character limit" in readme
+    assert "separate call-sign-free view of the shared Favorites editor label, with the 33-character limit and help text" in readme
     assert "optional TouchGUI card label overrides" not in readme
 
     helper = (ROOT / "lib/favorite-editor-label.py").read_text(encoding="utf-8")
@@ -43,7 +43,7 @@ def main() -> None:
     assert 'maxlength="33"' in helper
     assert "substr($name, 0, 33)" in helper
     assert "newLabel.length > 33" in helper
-    print("PASS: v1.04 keeps one shared, call-sign-free, 33-character Favorites label.")
+    print("PASS: v1.04/v1.05 keep one shared, call-sign-free, 33-character Favorites label.")
     print("PASS: TouchGUI title fitting keeps card widths uniform and applies readable size floors before wrapping.")
     print("PASS: Rx%/LCnt sorting and PR #37 editor detection remain in both installers.")
 

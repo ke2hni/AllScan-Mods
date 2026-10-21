@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.87
+# TouchGUI activity colors mod version: v1.88
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -51,13 +51,13 @@ done
 allscan_version=$(sed -nE 's/^\$AllScanVersion = "(v[0-9.]+)";.*/\1/p' "$COMMON_FILE")
 case "$allscan_version" in
     v1.01) favs_source=$INDEX_FILE ;;
-    v1.02|v1.03|v1.04)
+    v1.02|v1.03|v1.04|v1.05)
         [[ -f $SIMPLE_INDEX_FILE && -f $SIMPLE_JS_FILE ]] || { echo "ERROR: Required TouchGUI files are missing. No files changed." >&2; exit 1; }
         [[ -f $FAVS_UTILS_FILE ]] || { echo "ERROR: Required AllScan file not found: $FAVS_UTILS_FILE" >&2; exit 1; }
         [[ -f $SIMPLE_CSS_FILE ]] || { echo "ERROR: Required AllScan file not found: $SIMPLE_CSS_FILE" >&2; exit 1; }
         favs_source=$FAVS_UTILS_FILE
         ;;
-    *) echo "ERROR: Supports AllScan v1.01-v1.04; found ${allscan_version:-unknown}. No files changed." >&2; exit 1 ;;
+    *) echo "ERROR: Supports AllScan v1.01-v1.05; found ${allscan_version:-unknown}. No files changed." >&2; exit 1 ;;
 esac
 
 # PR #37 upstream integration guard. Check the complete feature set rather than
@@ -80,7 +80,7 @@ previous_favorite_label_mod_present() {
 }
 
 if previous_favorite_label_mod_present; then
-    echo "ERROR: This installation contains the earlier Mods-only Favorites label edits. Reinstall the unmodified AllScan v1.04 files, then rerun AllScan Mods v1.36. No files changed." >&2
+    echo "ERROR: This installation contains the earlier Mods-only Favorites label edits. Reinstall the matching unmodified official AllScan files, then rerun AllScan Mods. No files changed." >&2
     exit 1
 fi
 
@@ -279,7 +279,7 @@ apply_touchgui_activity_live() {
 }
 
 upstream_features_present() {
-    [[ $allscan_version == v1.03 || $allscan_version == v1.04 ]] || return 1
+    [[ $allscan_version == v1.03 || $allscan_version == v1.04 || $allscan_version == v1.05 ]] || return 1
     grep -Fq 'case "Edit Favorite":' "$INDEX_FILE" &&
     grep -Fq 'sortFavStats(5)' "$INDEX_FILE" &&
     grep -Fq 'sortFavStats(6)' "$INDEX_FILE" &&
@@ -296,16 +296,29 @@ upstream_features_present() {
       grep -Fq '$favList[] = [$n, $f->node, $name, $desc, $loc, NBSP, NBSP, $editName];' "$FAVS_UTILS_FILE" ||
       grep -Fq '$favList[] = [$n, $f->node, $name, $desc, $loc, NBSP, NBSP, $f->label];' "$FAVS_UTILS_FILE"; }
 }
-# v1.04 includes PR #37 upstream. Never run legacy patch transformations on
-# v1.04 even if feature markers change; stop until compatibility is reviewed.
+# v1.04 includes PR #37; v1.05 includes PR #37 and PR #38. Require the
+# reviewed feature sets before applying any Mods changes to these releases.
+upstream_v105_features_present() {
+    [[ $allscan_version == v1.05 ]] && upstream_features_present && touchgui_activity_present
+}
+
 if [[ $allscan_version == v1.04 ]] && ! upstream_features_present; then
     echo "ERROR: AllScan v1.04 did not match the reviewed PR #37 feature layout. No Mods patches or backups made. Review the upstream files before proceeding." >&2
     exit 1
 fi
+if [[ $allscan_version == v1.05 ]] && ! upstream_v105_features_present; then
+    echo "ERROR: AllScan v1.05 did not match the reviewed PR #37 and PR #38 feature layout. No Mods patches or backups made. Review the upstream files before proceeding." >&2
+    exit 1
+fi
 if upstream_features_present; then
-    echo "AllScan already includes the integrated enhancements (PR #37). Applying/checking the shared Favorites editor label and independent TouchGUI activity/text-layout features."
+    echo "AllScan already includes the integrated enhancements (PR #37). Applying/checking the shared Favorites editor label."
     apply_favorite_editor_label_live
-    apply_touchgui_activity_live
+    if [[ $allscan_version == v1.05 ]]; then
+        echo "TouchGUI activity, statistics, and card layout are already integrated upstream (PR #38). No TouchGUI changes made."
+    else
+        echo "Checking the independent TouchGUI activity, statistics, and card-layout features."
+        apply_touchgui_activity_live
+    fi
     exit 0
 fi
 
