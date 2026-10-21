@@ -14,7 +14,7 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.74" in text, installer
+        assert "TouchGUI activity colors mod version: v1.75" in text, installer
         assert "TouchGUI connected banner callsign v1.51" in text
         assert "TouchGUI three-row card data v1.52" in text
         assert "TouchGUI three-row card styling v1.52" in text
@@ -41,6 +41,7 @@ def main():
         assert ".channel-note { line-height:1.05; margin-bottom:0; }" in text
         assert "TouchGUI aqua description 14.3px test v1.74" in text
         assert "TouchGUI aqua description maximum 14.3px v1.74" in text
+        assert "TouchGUI card text 14.3px test v1.75" in text
         assert "TouchGUI row centering and descender clearance v1.65" in text
         assert "TouchGUI name and location card rows v1.63" in text
         assert "TouchGUI name/description similarity v1.64" in text
@@ -112,6 +113,8 @@ def main():
         assert "TouchGUI row text width fit v1.53" in patched_js
         assert "TouchGUI responsive description sizing v1.55" in patched_js
         assert "fitChannelText(button.querySelector('.channel-description'), 14.3, 13);" in patched_js
+        assert "TouchGUI card text 14.3px test v1.75" in patched_css
+        assert ".channel-note-name,\n.channel-location { font-size:14.3px; }" in patched_css
         assert "TouchGUI measured aqua row fit v1.57" in patched_js
         assert "Math.max(minSize, targetFontSize * label.clientWidth / textWidth)" in patched_js
         assert "TouchGUI aqua near-fit migration v1.59" in patched_js
@@ -1241,7 +1244,7 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
         assert upgraded_v158 == (v158_js.read_bytes(), v158_css.read_bytes()), "v1.58 upgrade was not idempotent"
 
     print("PASS: installers include the TouchGUI activity patch path.")
-    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, text fitting and spacing, connected-banner callsign, compatibility upgrades, syntax, repeat application, recovery of missing incremental descender rules, and v1.49-v1.52 migrations and v1.53-v1.74 sizing, card-data, duplicate-cleanup, and descender-clearance upgrades.")
+    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, text fitting and spacing, connected-banner callsign, compatibility upgrades, syntax, repeat application, recovery of missing incremental descender rules, and v1.49-v1.52 migrations and v1.53-v1.75 sizing, card-data, duplicate-cleanup, and descender-clearance upgrades.")
 
 
 if __name__ == "__main__":

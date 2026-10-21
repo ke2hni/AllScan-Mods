@@ -96,6 +96,8 @@ def main():
             and ".channel-description { font-size:14.3px; }" in css
             and "TouchGUI aqua description maximum 14.3px v1.74" in js
             and "fitChannelText(button.querySelector('.channel-description'), 14.3, 13);" in js
+            and "TouchGUI card text 14.3px test v1.75" in css
+            and ".channel-note-name,\n.channel-location { font-size:14.3px; }" in css
             and "TouchGUI name/location row fit v1.63" in js
             and "TouchGUI name/location card row styling v1.63" in css
             and "function channelLocation(channel)" in js
@@ -1416,6 +1418,13 @@ width:100%;
     if "TouchGUI aqua description 14.3px test v1.74" not in css:
         css = css.rstrip() + "\n" + aqua_test_css
 
+    card_text_14_3_css = '''/* AllScan Mods: TouchGUI card text 14.3px test v1.75. */
+.channel-note-name,
+.channel-location { font-size:14.3px; }
+'''
+    if "TouchGUI card text 14.3px test v1.75" not in css:
+        css = css.rstrip() + "\n" + card_text_14_3_css
+
     if ("simple.statsTmr = setTimeout(getChannelStats" not in js
             or "active-wt" not in js
             or "simple.txTim[node] = now" not in js
@@ -1475,6 +1484,8 @@ width:100%;
             or ".channel-description { font-size:14.3px; }" not in css
             or "TouchGUI aqua description maximum 14.3px v1.74" not in js
             or "fitChannelText(button.querySelector('.channel-description'), 14.3, 13);" not in js
+            or "TouchGUI card text 14.3px test v1.75" not in css
+            or ".channel-note-name,\n.channel-location { font-size:14.3px; }" not in css
             or "function channelLocation(channel)" not in js
             or "function channelNameMatchesDescription(name, description)" not in js
             or "calc(180px + 5ch)" not in css
