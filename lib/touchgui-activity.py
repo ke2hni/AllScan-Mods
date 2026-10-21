@@ -96,6 +96,8 @@ def main():
             and ".channel-note-name + .channel-location { position:relative; top:2px; }" in css
             and "TouchGUI white text descender line-box clearance v1.77" in css
             and ".channel-note-name,\n.channel-location { line-height:1.25; margin-bottom:-0.2em; }" in css
+            and "TouchGUI white card text regular-weight test v1.78" in css
+            and ".channel-note-name,\n.channel-location { font-weight:normal; }" in css
             and "fitChannelText(button.querySelector('.channel-description'), 18, 13);" in js
             and "TouchGUI aqua description 14.3px test v1.74" not in css
             and "TouchGUI card text 14.3px test v1.75" not in css
@@ -1436,6 +1438,13 @@ width:100%;
     if "TouchGUI white text descender line-box clearance v1.77" not in css:
         css = css.rstrip() + "\n" + white_text_descender_css
 
+    white_text_weight_css = '''/* AllScan Mods: TouchGUI white card text regular-weight test v1.78. */
+.channel-note-name,
+.channel-location { font-weight:normal; }
+'''
+    if "TouchGUI white card text regular-weight test v1.78" not in css:
+        css = css.rstrip() + "\n" + white_text_weight_css
+
     if ("simple.statsTmr = setTimeout(getChannelStats" not in js
             or "active-wt" not in js
             or "simple.txTim[node] = now" not in js
@@ -1495,6 +1504,8 @@ width:100%;
             or ".channel-note-name + .channel-location { position:relative; top:2px; }" not in css
             or "TouchGUI white text descender line-box clearance v1.77" not in css
             or ".channel-note-name,\n.channel-location { line-height:1.25; margin-bottom:-0.2em; }" not in css
+            or "TouchGUI white card text regular-weight test v1.78" not in css
+            or ".channel-note-name,\n.channel-location { font-weight:normal; }" not in css
             or "fitChannelText(button.querySelector('.channel-description'), 18, 13);" not in js
             or "TouchGUI aqua description 14.3px test v1.74" in css
             or "TouchGUI card text 14.3px test v1.75" in css
