@@ -94,10 +94,14 @@ def main():
             and ".channel-note { line-height:1.05; margin-bottom:0; }" in css
             and "TouchGUI white name/location spacing v1.76" in css
             and ".channel-note-name + .channel-location { position:relative; top:2px; }" in css
-            and "TouchGUI white text descender line-box clearance v1.77" in css
-            and ".channel-note-name,\n.channel-location { line-height:1.25; margin-bottom:-0.2em; }" in css
-            and "TouchGUI bold text zoom raster test v1.80" in css
-            and ".channel-note-name,\n.channel-location { font-weight:bold; zoom:1.05; }" in css
+            and all(marker not in css for marker in (
+                "TouchGUI white text descender line-box clearance v1.77",
+                "TouchGUI white card text regular-weight test v1.78",
+                "TouchGUI bold text vertical raster scale test v1.79",
+                "TouchGUI bold text zoom raster test v1.80",
+            ))
+            and "TouchGUI white name/location spacing v1.76" in css
+            and ".channel-note-name + .channel-location { position:relative; top:2px; }" in css
             and "fitChannelText(button.querySelector('.channel-description'), 18, 13);" in js
             and "TouchGUI aqua description 14.3px test v1.74" not in css
             and "TouchGUI card text 14.3px test v1.75" not in css
@@ -1431,29 +1435,13 @@ width:100%;
     if "TouchGUI white name/location spacing v1.76" not in css:
         css = css.rstrip() + "\n" + white_row_spacing_css
 
-    white_text_descender_css = '''/* AllScan Mods: TouchGUI white text descender line-box clearance v1.77. */
-.channel-note-name,
-.channel-location { line-height:1.25; margin-bottom:-0.2em; }
-'''
-    if "TouchGUI white text descender line-box clearance v1.77" not in css:
-        css = css.rstrip() + "\n" + white_text_descender_css
-
-    css = re.sub(
+    for experimental_css in (
+        r"\n?/\* AllScan Mods: TouchGUI white text descender line-box clearance v1\.77\. \*/\n\.channel-note-name,\n\.channel-location \{ line-height:1\.25; margin-bottom:-0\.2em; \}\n?",
         r"\n?/\* AllScan Mods: TouchGUI white card text regular-weight test v1\.78\. \*/\n\.channel-note-name,\n\.channel-location \{ font-weight:normal; \}\n?",
-        "\n",
-        css,
-    )
-    css = re.sub(
         r"\n?/\* AllScan Mods: TouchGUI bold text vertical raster scale test v1\.79\. \*/\n\.channel-note-name,\n\.channel-location \{ font-weight:bold; transform:scaleY\(1\.05\); transform-origin:center; \}\n?",
-        "\n",
-        css,
-    )
-    white_text_zoom_css = '''/* AllScan Mods: TouchGUI bold text zoom raster test v1.80. */
-.channel-note-name,
-.channel-location { font-weight:bold; zoom:1.05; }
-'''
-    if "TouchGUI bold text zoom raster test v1.80" not in css:
-        css = css.rstrip() + "\n" + white_text_zoom_css
+        r"\n?/\* AllScan Mods: TouchGUI bold text zoom raster test v1\.80\. \*/\n\.channel-note-name,\n\.channel-location \{ font-weight:bold; zoom:1\.05; \}\n?",
+    ):
+        css = re.sub(experimental_css, "\n", css)
 
     if ("simple.statsTmr = setTimeout(getChannelStats" not in js
             or "active-wt" not in js
@@ -1512,10 +1500,12 @@ width:100%;
             or ".channel-note { line-height:1.05; margin-bottom:0; }" not in css
             or "TouchGUI white name/location spacing v1.76" not in css
             or ".channel-note-name + .channel-location { position:relative; top:2px; }" not in css
-            or "TouchGUI white text descender line-box clearance v1.77" not in css
-            or ".channel-note-name,\n.channel-location { line-height:1.25; margin-bottom:-0.2em; }" not in css
-            or "TouchGUI bold text zoom raster test v1.80" not in css
-            or ".channel-note-name,\n.channel-location { font-weight:bold; zoom:1.05; }" not in css
+            or "TouchGUI white text descender line-box clearance v1.77" in css
+            or "TouchGUI white card text regular-weight test v1.78" in css
+            or "TouchGUI bold text vertical raster scale test v1.79" in css
+            or "TouchGUI bold text zoom raster test v1.80" in css
+            or "line-height:1.25; margin-bottom:-0.2em;" in css
+            or "zoom:1.05;" in css
             or "fitChannelText(button.querySelector('.channel-description'), 18, 13);" not in js
             or "TouchGUI aqua description 14.3px test v1.74" in css
             or "TouchGUI card text 14.3px test v1.75" in css
