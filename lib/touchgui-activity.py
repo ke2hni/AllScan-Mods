@@ -81,7 +81,8 @@ def main():
             and "TouchGUI white note glyph clearance v1.62" in css
             and "TouchGUI name and location card rows v1.63" in js
             and "TouchGUI name/description similarity v1.64" in js
-            and "TouchGUI description/location duplicate cleanup v1.65" in js
+            and "TouchGUI description/location duplicate cleanup v1.66" in js
+            and "TouchGUI adjacent card-row overlap cleanup v1.66" in js
             and "TouchGUI row centering and descender clearance v1.65" in css
             and "TouchGUI name/location row fit v1.63" in js
             and "TouchGUI name/location card row styling v1.63" in css
@@ -354,14 +355,17 @@ function channelLabel(channel) {
         raise SystemExit("ERROR: Expected the TouchGUI channel-label function exactly once; no files changed.")
 
     card_field_funcs = r'''// AllScan Mods: TouchGUI name and location card rows v1.63.
-// AllScan Mods: TouchGUI description/location duplicate cleanup v1.65.
+// AllScan Mods: TouchGUI description/location duplicate cleanup v1.66.
 function channelDescription(channel) {
 	var description = String(channel.desc || '').trim();
 	var location = String(channel.loc || '').trim();
-	if (/\bUSA\b/i.test(location))
-		description = description.replace(/(^|[\s,;:-]+)U\.?S\.?(?=$|[\s,;:-]+)/gi, '$1');
-	else if (/\bU\.?S\.?\b/i.test(location))
-		description = description.replace(/(^|[\s,;:-]+)USA(?=$|[\s,;:-]+)/gi, '$1');
+	var country = function(value) { return String(value || '').replace(/[^a-z]/gi, '').toUpperCase(); };
+	var descMatch = description.match(/(?:^|[\s,;:-])([A-Z.]+)$/i);
+	var locationMatch = location.match(/(?:^|[\s,;:-])([A-Z.]+)$/i);
+	var descCountry = descMatch ? country(descMatch[1]) : '';
+	var locationCountry = locationMatch ? country(locationMatch[1]) : '';
+	if ((descCountry === 'US' || descCountry === 'USA') && (locationCountry === 'US' || locationCountry === 'USA'))
+		description = description.replace(/[\s,;:-]*[A-Z.]+$/i, '');
 	return description.replace(/\s{2,}/g, ' ').replace(/^[\s,;:.()]+|[\s,;:.()]+$/g, '').trim();
 }
 function channelLocation(channel) {
@@ -390,6 +394,7 @@ function channelNameMatchesDescription(name, description) {
 	var sharedLength = previous[normalizedDescription.length];
 	return sharedLength >= 6 && sharedLength / normalizedName.length >= 0.75;
 }
+// AllScan Mods: TouchGUI adjacent card-row overlap cleanup v1.66.
 function channelNote(channel) {
 	var text = String(channel.label || '');
 	var fields = [channel.node, channel.call, channel.desc, channel.loc]
@@ -403,6 +408,27 @@ function channelNote(channel) {
 		});
 	});
 	text = text.replace(/\s{2,}/g, ' ').replace(/^[\s,;:.()]+|[\s,;:.()]+$/g, '').trim();
+	var descriptionWords = String(channel.desc || '').match(/[a-z0-9]+/gi) || [];
+	var noteWords = [];
+	var wordPattern = /[a-z0-9]+/gi;
+	var wordMatch;
+	while((wordMatch = wordPattern.exec(text)) !== null)
+		noteWords.push({value: wordMatch[0], end: wordPattern.lastIndex});
+	var overlap = 0;
+	for(var count = Math.min(3, descriptionWords.length, noteWords.length); count > 0; count--) {
+		var matches = true;
+		for(var i = 0; i < count; i++) {
+			var descWord = descriptionWords[descriptionWords.length - count + i].replace(/[^a-z0-9]/gi, '').toUpperCase();
+			var noteWord = noteWords[i].value.replace(/[^a-z0-9]/gi, '').toUpperCase();
+			if((descWord === 'US' || descWord === 'USA') && (noteWord === 'US' || noteWord === 'USA'))
+				continue;
+			if(descWord !== noteWord) { matches = false; break; }
+		}
+		if(matches) { overlap = count; break; }
+	}
+	if(overlap) {
+		text = text.slice(noteWords[overlap - 1].end).replace(/^[\s,;:.()/-]+/, '').trim();
+	}
 	var location = channelLocation(channel);
 	if(!text || channelNameMatchesDescription(text, channel.desc) || channelNameMatchesDescription(text, channel.loc))
 		return location;
@@ -431,23 +457,25 @@ function channelNote(channel) {
         similarity_function = card_field_funcs.split("// AllScan Mods: TouchGUI name/description similarity v1.64.\n", 1)[1]
         similarity_function = "// AllScan Mods: TouchGUI name/description similarity v1.64.\n" + similarity_function.split("\nfunction channelNote(channel)", 1)[0]
         js = similarity_pattern.sub(lambda _: similarity_function, js, count=1)
-    if "TouchGUI description/location duplicate cleanup v1.65" not in js:
+    if "TouchGUI description/location duplicate cleanup v1.66" not in js:
         description_pattern = re.compile(r"(?ms)^function channelDescription\(channel\) \{.*?^}")
         description_matches = list(description_pattern.finditer(js))
         if len(description_matches) != 1:
             raise SystemExit("ERROR: Existing TouchGUI Description helper is unexpected; no files changed.")
-        description_function = card_field_funcs.split("// AllScan Mods: TouchGUI description/location duplicate cleanup v1.65.\n", 1)[1].split("\nfunction channelLocation(channel)", 1)[0]
-        description_function = "// AllScan Mods: TouchGUI description/location duplicate cleanup v1.65.\n" + description_function
+        description_function = card_field_funcs.split("// AllScan Mods: TouchGUI description/location duplicate cleanup v1.66.\n", 1)[1].split("\nfunction channelLocation(channel)", 1)[0]
+        description_function = "// AllScan Mods: TouchGUI description/location duplicate cleanup v1.66.\n" + description_function
         js = description_pattern.sub(lambda _: description_function, js, count=1)
         note_pattern = re.compile(r"(?ms)^function channelNote\(channel\) \{.*?^}")
         note_matches = list(note_pattern.finditer(js))
         if len(note_matches) != 1:
             raise SystemExit("ERROR: Existing TouchGUI Name helper is unexpected; no files changed.")
-        note_match = re.search(r"(?ms)^function channelNote\(channel\) \{.*?^}", card_field_funcs)
+        note_match = re.search(r"(?ms)^// AllScan Mods: TouchGUI adjacent card-row overlap cleanup v1\.66\.\nfunction channelNote\(channel\) \{.*?^}", card_field_funcs)
         if note_match is None:
             raise SystemExit("ERROR: TouchGUI Name helper template is unexpected; no files changed.")
         note_function = note_match.group(0)
         js = note_pattern.sub(lambda _: note_function, js, count=1)
+    if "TouchGUI adjacent card-row overlap cleanup v1.66" not in js:
+        raise SystemExit("ERROR: TouchGUI adjacent row-overlap migration failed; no files changed.")
 
     card_text_fit_funcs = r'''function fitChannelMeta(button) {
 	var meta = button.querySelector('.channel-meta');
@@ -1357,7 +1385,8 @@ width:100%;
             or "TouchGUI name/description similarity v1.64" not in js
             or "TouchGUI name/location row fit v1.63" not in js
             or "TouchGUI name/location card row styling v1.63" not in css
-            or "TouchGUI description/location duplicate cleanup v1.65" not in js
+            or "TouchGUI description/location duplicate cleanup v1.66" not in js
+            or "TouchGUI adjacent card-row overlap cleanup v1.66" not in js
             or "TouchGUI row centering and descender clearance v1.65" not in css
             or "function channelLocation(channel)" not in js
             or "function channelNameMatchesDescription(name, description)" not in js
