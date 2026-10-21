@@ -14,7 +14,7 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.82" in text, installer
+        assert "TouchGUI activity colors mod version: v1.83" in text, installer
         assert "TouchGUI connected banner callsign v1.51" in text
         assert "TouchGUI three-row card data v1.52" in text
         assert "TouchGUI three-row card styling v1.52" in text
@@ -121,6 +121,9 @@ def main():
         assert ".channel-meta { margin-bottom:3px; }" in patched_css
         assert ".channel-note { top:-3px; }" in patched_css
         assert ".channel-note-name + .channel-location { margin-top:2px; top:0; }" in patched_css
+        assert "TouchGUI white row breathing room v1.83" in patched_css
+        assert ".channel-note { top:-1px; }" in patched_css
+        assert ".channel-note-name + .channel-location { margin-top:4px; top:0; }" in patched_css
         assert ".channel-note-name + .channel-location { position:relative; top:2px; }" in patched_css
         assert "TouchGUI white text descender line-box clearance v1.77" not in patched_css
         assert "line-height:1.25; margin-bottom:-0.2em;" not in patched_css
@@ -1320,12 +1323,15 @@ window.addEventListener('resize', fitTouchguiCardMeta);'''
             assert marker not in cleaned_css
         assert ".channel-note-name + .channel-location { position:relative; top:2px; }" in cleaned_css
         assert ".channel-note { line-height:1.05; margin-bottom:0; }" in cleaned_css
+        assert "TouchGUI card row spacing balance v1.82" in cleaned_css
+        assert "TouchGUI white row breathing room v1.83" in cleaned_css
+        assert ".channel-note-name + .channel-location { margin-top:4px; top:0; }" in cleaned_css
         stable_css = old_css.read_bytes()
         subprocess.run(["python3", str(PATCHER), str(old_js), str(old_css)], check=True)
-        assert stable_css == old_css.read_bytes(), "v1.77-v1.80 cleanup was not idempotent"
+        assert stable_css == old_css.read_bytes(), "v1.82-v1.83 spacing migration was not idempotent"
 
     print("PASS: installers include the TouchGUI activity patch path.")
-    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, text fitting and spacing, connected-banner callsign, compatibility upgrades, syntax, repeat application, v1.49-v1.52 migrations, v1.53-v1.80 migrations, and removal of experimental v1.77-v1.80 CSS.")
+    print("PASS: ordered polling, Tx/Rx/LCnt colors, card layout, text fitting and spacing, connected-banner callsign, compatibility upgrades, syntax, repeat application, v1.49-v1.52 migrations, v1.53-v1.83 migrations, and removal of experimental v1.77-v1.80 CSS.")
 
 
 if __name__ == "__main__":
