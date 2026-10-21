@@ -103,6 +103,8 @@ def main():
             and ".channel-note-name + .channel-location { margin-top:4px; top:0; }" in css
             and "TouchGUI white card Arial font test v1.84" in css
             and ".channel-note-name,\n.channel-location { font-family:Arial, Helvetica, sans-serif; }" in css
+            and "TouchGUI white card Tahoma font test v1.85" in css
+            and ".channel-note-name,\n.channel-location { font-family:Tahoma, Arial, Helvetica, sans-serif; }" in css
             and all(marker not in css for marker in (
                 "TouchGUI white text descender line-box clearance v1.77",
                 "TouchGUI white card text regular-weight test v1.78",
@@ -1466,6 +1468,13 @@ width:100%;
     if "TouchGUI white card Arial font test v1.84" not in css:
         css = css.rstrip() + "\n" + white_font_test_css
 
+    white_tahoma_test_css = '''/* AllScan Mods: TouchGUI white card Tahoma font test v1.85. */
+.channel-note-name,
+.channel-location { font-family:Tahoma, Arial, Helvetica, sans-serif; }
+'''
+    if "TouchGUI white card Tahoma font test v1.85" not in css:
+        css = css.rstrip() + "\n" + white_tahoma_test_css
+
     for experimental_css in (
         r"\n?/\* AllScan Mods: TouchGUI white text descender line-box clearance v1\.77\. \*/\n\.channel-note-name,\n\.channel-location \{ line-height:1\.25; margin-bottom:-0\.2em; \}\n?",
         r"\n?/\* AllScan Mods: TouchGUI white card text regular-weight test v1\.78\. \*/\n\.channel-note-name,\n\.channel-location \{ font-weight:normal; \}\n?",
@@ -1540,6 +1549,8 @@ width:100%;
             or ".channel-note-name + .channel-location { margin-top:4px; top:0; }" not in css
             or "TouchGUI white card Arial font test v1.84" not in css
             or ".channel-note-name,\n.channel-location { font-family:Arial, Helvetica, sans-serif; }" not in css
+            or "TouchGUI white card Tahoma font test v1.85" not in css
+            or ".channel-note-name,\n.channel-location { font-family:Tahoma, Arial, Helvetica, sans-serif; }" not in css
             or "TouchGUI white text descender line-box clearance v1.77" in css
             or "TouchGUI white card text regular-weight test v1.78" in css
             or "TouchGUI bold text vertical raster scale test v1.79" in css
