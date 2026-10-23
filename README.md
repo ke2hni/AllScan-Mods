@@ -436,7 +436,7 @@ AllScan is a separate GPL-3.0-licensed project created by David Gleason, NR9V. T
 **KE2HNI · AllScan Mods**
 
 </div>
-<img width="1600" height="852" alt="Screenshot 2026-09-22 185554" src="https://github.com/user-attachments/assets/a7f32979-f989-4c7d-98d4-c9d5d4922d65" />
-<img width="1600" height="852" alt="Screenshot 2026-09-22 185608" src="https://github.com/user-attachments/assets/bd629410-6efe-4439-af79-aab5379923ba" />
-<img width="1600" height="900" alt="Screenshot 2026-10-16 210859" src="https://github.com/user-attachments/assets/cb17c558-ef89-4a92-b19d-fe8c77addc8f" />
+<img width="1600" height="900" alt="Screenshot 2026-10-22 222351" src="https://github.com/user-attachments/assets/36e6eb76-3324-4d31-afcf-55b8b132f1ab" />
+<img width="1600" height="900" alt="Screenshot 2026-10-22 222410" src="https://github.com/user-attachments/assets/8e2630b8-829e-4543-b698-730f48817269" />
+<img width="1600" height="900" alt="Screenshot 2026-10-22 222831" src="https://github.com/user-attachments/assets/1c3955cd-5dcf-4b43-aee6-53fac4a8a307" />
 
