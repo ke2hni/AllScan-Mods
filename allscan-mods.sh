@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.89
+# TouchGUI activity colors mod version: v1.90
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -99,8 +99,8 @@ favorite_editor_label_present() {
 
 # Patch the upstream Favorites builder and table CSS without changing other columns.
 favorites_name_auto_width_present() {
-    grep -Fq 'AllScan Mods: Keep the complete callsign-prefixed Favorites Name visible v1.89.' "$FAVS_UTILS_FILE" &&
-    grep -Fq 'AllScan Mods: Let the complete Favorites Name determine its column width v1.89.' "$CSS_FILE"
+    grep -Fq 'AllScan Mods: Keep the complete callsign-prefixed Favorites Name visible v1.90.' "$FAVS_UTILS_FILE" &&
+    grep -Fq 'AllScan Mods: Let the complete Favorites Name determine its column width v1.90.' "$CSS_FILE"
 }
 
 apply_favorites_name_auto_width_live() {
@@ -120,34 +120,42 @@ favs_path, css_path = map(Path, sys.argv[1:3])
 favs = favs_path.read_text(encoding="utf-8")
 css = css_path.read_text(encoding="utf-8")
 old = "\t\t// Shorten long names\n\t\tif(strlen($name) > 33)\n\t\t\t$name = substr($name, 0, 33) . '&hellip;';"
-new = "\t\t// AllScan Mods: Keep the complete callsign-prefixed Favorites Name visible v1.89."
+new = "\t\t// AllScan Mods: Keep the complete callsign-prefixed Favorites Name visible v1.90."
+old_marker = "\t\t// AllScan Mods: Keep the complete callsign-prefixed Favorites Name visible v1.89."
 if old in favs:
     favs = favs.replace(old, new, 1)
+elif old_marker in favs:
+    favs = favs.replace(old_marker, new, 1)
 elif new not in favs:
-    raise SystemExit("ERROR: Expected the upstream 33-character Name truncation or its v1.89 replacement.")
+    raise SystemExit("ERROR: Expected upstream truncation or a supported v1.89/v1.90 Favorites Name marker.")
 
 marker = "td {\nmax-width:32em;\n}"
-addition = """td {
+old_css_marker = "/* AllScan Mods: Let the complete Favorites Name determine its column width v1.89. */"
+new_css_marker = "/* AllScan Mods: Let the complete Favorites Name determine its column width v1.90. */"
+addition = f"""td {{
 max-width:32em;
-}
-/* AllScan Mods: Let the complete Favorites Name determine its column width v1.89. */
-table.favs th:nth-child(3), table.favs td:nth-child(3) {
+}}
+{new_css_marker}
+table.favs th:nth-child(3), table.favs td:nth-child(3) {{
 width:max-content;
 max-width:none;
 white-space:nowrap;
-}"""
+}}"""
 if addition not in css:
-    if css.count(marker) != 1:
-        raise SystemExit("ERROR: Expected the shared table-cell width rule exactly once.")
-    css = css.replace(marker, addition, 1)
+    if old_css_marker in css:
+        css = css.replace(old_css_marker, new_css_marker, 1)
+    else:
+        if css.count(marker) != 1:
+            raise SystemExit("ERROR: Expected the shared table-cell width rule exactly once.")
+        css = css.replace(marker, addition, 1)
 
 favs_path.write_text(favs, encoding="utf-8")
 css_path.write_text(css, encoding="utf-8")
 PY
     if command -v php >/dev/null 2>&1; then php -l "$work_dir/favsUtils.php" >/dev/null; fi
     timestamp=$(date +%Y%m%d-%H%M%S)
-    favs_backup=$FAVS_UTILS_FILE.before-favorites-name-v1.89-$timestamp
-    css_backup=$CSS_FILE.before-favorites-name-v1.89-$timestamp
+    favs_backup=$FAVS_UTILS_FILE.before-favorites-name-v1.90-$timestamp
+    css_backup=$CSS_FILE.before-favorites-name-v1.90-$timestamp
     if ! cp -a -- "$FAVS_UTILS_FILE" "$favs_backup" || ! cp -a -- "$CSS_FILE" "$css_backup"; then
         rm -rf -- "$work_dir"
         echo "ERROR: Could not create Favorites Name recovery copies; no files changed." >&2
@@ -488,28 +496,36 @@ elif new_fav_row not in index:
 
 # Preserve the full callsign-prefixed Name in the Favorites table and remove
 # the upstream 33-character display truncation when favsUtils.php is present.
-favs_utils = favs_utils_path.read_text(encoding="utf-8") if has_favs_utils else ""
+if has_favs_utils and not has_v102_layout:
+    favs_utils = favs_utils_path.read_text(encoding="utf-8")
 old_name_truncation = "\t\t// Shorten long names\n\t\tif(strlen($name) > 33)\n\t\t\t$name = substr($name, 0, 33) . '&hellip;';"
-new_name_truncation = "\t\t// AllScan Mods: Keep the complete callsign-prefixed Favorites Name visible v1.89."
+new_name_truncation = "\t\t// AllScan Mods: Keep the complete callsign-prefixed Favorites Name visible v1.90."
 if has_favs_utils:
     if old_name_truncation in favs_utils:
         favs_utils = replace_once(favs_utils, old_name_truncation, new_name_truncation, "the upstream 33-character Favorites Name truncation")
+    elif "\t\t// AllScan Mods: Keep the complete callsign-prefixed Favorites Name visible v1.89." in favs_utils:
+        favs_utils = favs_utils.replace("\t\t// AllScan Mods: Keep the complete callsign-prefixed Favorites Name visible v1.89.", new_name_truncation, 1)
     elif new_name_truncation not in favs_utils:
-        raise SystemExit("ERROR: Expected the upstream Favorites Name truncation or its v1.89 replacement. No live files were changed.")
+        raise SystemExit("ERROR: Expected upstream truncation or a supported v1.89/v1.90 Favorites Name marker. No live files were changed.")
 
 # Let the Favorites Name cell use its content width instead of the shared 32em cap.
 name_width_marker = "td {\nmax-width:32em;\n}"
 name_width_rule = """td {
 max-width:32em;
 }
-/* AllScan Mods: Let the complete Favorites Name determine its column width v1.89. */
+/* AllScan Mods: Let the complete Favorites Name determine its column width v1.90. */
 table.favs th:nth-child(3), table.favs td:nth-child(3) {
 width:max-content;
 max-width:none;
 white-space:nowrap;
 }"""
 if name_width_rule not in css:
-    css = replace_once(css, name_width_marker, name_width_rule, "the shared table-cell width rule")
+    old_name_width_marker = "/* AllScan Mods: Let the complete Favorites Name determine its column width v1.89. */"
+    new_name_width_marker = "/* AllScan Mods: Let the complete Favorites Name determine its column width v1.90. */"
+    if old_name_width_marker in css:
+        css = css.replace(old_name_width_marker, new_name_width_marker, 1)
+    else:
+        css = replace_once(css, name_width_marker, name_width_rule, "the shared table-cell width rule")
 
 new_row_output = '''foreach($favList as $f) {
 	$favEditLabel = htmlspecialchars(array_pop($f), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
