@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.88
+# TouchGUI activity colors mod version: v1.89
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -95,6 +95,73 @@ favorite_editor_label_present() {
     grep -Fq 'maxlength="33"' "$VIEW_FILE" &&
     grep -Fq 'no more than 33 plain-text characters' "$INDEX_FILE" &&
     grep -Fq 'newLabel.length > 33' "$JS_FILE"
+}
+
+# Patch the upstream Favorites builder and table CSS without changing other columns.
+favorites_name_auto_width_present() {
+    grep -Fq 'AllScan Mods: Keep the complete callsign-prefixed Favorites Name visible v1.89.' "$FAVS_UTILS_FILE" &&
+    grep -Fq 'AllScan Mods: Let the complete Favorites Name determine its column width v1.89.' "$CSS_FILE"
+}
+
+apply_favorites_name_auto_width_live() {
+    if favorites_name_auto_width_present; then
+        echo "Favorites Name auto-width is already installed. No changes made."
+        return 0
+    fi
+    local work_dir timestamp favs_backup css_backup
+    work_dir=$(mktemp -d /tmp/allscan-favorites-name.XXXXXX)
+    cp -- "$FAVS_UTILS_FILE" "$work_dir/favsUtils.php"
+    cp -- "$CSS_FILE" "$work_dir/main.css"
+    python3 - "$work_dir/favsUtils.php" "$work_dir/main.css" <<'PY'
+from pathlib import Path
+import sys
+
+favs_path, css_path = map(Path, sys.argv[1:3])
+favs = favs_path.read_text(encoding="utf-8")
+css = css_path.read_text(encoding="utf-8")
+old = "\t\t// Shorten long names\n\t\tif(strlen($name) > 33)\n\t\t\t$name = substr($name, 0, 33) . '&hellip;';"
+new = "\t\t// AllScan Mods: Keep the complete callsign-prefixed Favorites Name visible v1.89."
+if old in favs:
+    favs = favs.replace(old, new, 1)
+elif new not in favs:
+    raise SystemExit("ERROR: Expected the upstream 33-character Name truncation or its v1.89 replacement.")
+
+marker = "td {\nmax-width:32em;\n}"
+addition = """td {
+max-width:32em;
+}
+/* AllScan Mods: Let the complete Favorites Name determine its column width v1.89. */
+table.favs th:nth-child(3), table.favs td:nth-child(3) {
+width:max-content;
+max-width:none;
+white-space:nowrap;
+}"""
+if addition not in css:
+    if css.count(marker) != 1:
+        raise SystemExit("ERROR: Expected the shared table-cell width rule exactly once.")
+    css = css.replace(marker, addition, 1)
+
+favs_path.write_text(favs, encoding="utf-8")
+css_path.write_text(css, encoding="utf-8")
+PY
+    if command -v php >/dev/null 2>&1; then php -l "$work_dir/favsUtils.php" >/dev/null; fi
+    timestamp=$(date +%Y%m%d-%H%M%S)
+    favs_backup=$FAVS_UTILS_FILE.before-favorites-name-v1.89-$timestamp
+    css_backup=$CSS_FILE.before-favorites-name-v1.89-$timestamp
+    if ! cp -a -- "$FAVS_UTILS_FILE" "$favs_backup" || ! cp -a -- "$CSS_FILE" "$css_backup"; then
+        rm -rf -- "$work_dir"
+        echo "ERROR: Could not create Favorites Name recovery copies; no files changed." >&2
+        return 1
+    fi
+    if ! cp -- "$work_dir/favsUtils.php" "$FAVS_UTILS_FILE" || ! cp -- "$work_dir/main.css" "$CSS_FILE"; then
+        cp -a -- "$favs_backup" "$FAVS_UTILS_FILE"
+        cp -a -- "$css_backup" "$CSS_FILE"
+        rm -rf -- "$work_dir"
+        echo "ERROR: Favorites Name update failed; original files were restored." >&2
+        return 1
+    fi
+    rm -rf -- "$work_dir"
+    echo "Favorites Name auto-width installed. Backups: $favs_backup and $css_backup"
 }
 
 apply_favorite_editor_label_live() {
@@ -313,6 +380,7 @@ fi
 if upstream_features_present; then
     echo "AllScan already includes the integrated enhancements (PR #37). Applying/checking the shared Favorites editor label."
     apply_favorite_editor_label_live
+    apply_favorites_name_auto_width_live
     if [[ $allscan_version == v1.05 ]]; then
         echo "TouchGUI activity, statistics, and card layout are already integrated upstream (PR #38). No TouchGUI changes made."
     else
@@ -364,7 +432,9 @@ cp -- "$VIEW_FILE" "$stage_view"
 cp -- "$JS_FILE" "$stage_js"
 cp -- "$CSS_FILE" "$stage_css"
 cp -- "$CONNECT_FILE" "$stage_connect"
-if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then cp -- "$FAVS_UTILS_FILE" "$stage_favs_utils"; fi
+has_favs_utils=false
+case "$allscan_version" in v1.02|v1.03|v1.04|v1.05) has_favs_utils=true ;; esac
+if [[ $has_favs_utils == true ]]; then cp -- "$FAVS_UTILS_FILE" "$stage_favs_utils"; fi
 if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then cp -- "$SIMPLE_CSS_FILE" "$stage_simple_css"; cp -- "$SIMPLE_INDEX_FILE" "$stage_simple_index"; cp -- "$SIMPLE_JS_FILE" "$stage_simple_js"; fi
 
 python3 - "$stage_index" "$stage_view" "$stage_js" "$stage_css" "$stage_connect" "$stage_favs_utils" "$stage_simple_css" "$stage_simple_index" "$stage_simple_js" "$allscan_version" <<'PY'
@@ -384,6 +454,7 @@ js = js_path.read_text(encoding="utf-8")
 css = css_path.read_text(encoding="utf-8")
 connect = connect_path.read_text(encoding="utf-8")
 has_v102_layout = allscan_version in ("v1.02", "v1.03")
+has_favs_utils = allscan_version in ("v1.02", "v1.03", "v1.04", "v1.05")
 simple_css = simple_css_path.read_text(encoding="utf-8") if has_v102_layout else ""
 simple_index = simple_index_path.read_text(encoding="utf-8") if has_v102_layout else ""
 simple_js = simple_js_path.read_text(encoding="utf-8") if has_v102_layout else ""
@@ -414,6 +485,31 @@ if has_v102_layout:
         raise SystemExit("ERROR: Expected the v1.02 Favorites row builder. No live files were changed.")
 elif new_fav_row not in index:
     index = replace_once(index, old_fav_row, new_fav_row, "the Favorites row builder")
+
+# Preserve the full callsign-prefixed Name in the Favorites table and remove
+# the upstream 33-character display truncation when favsUtils.php is present.
+favs_utils = favs_utils_path.read_text(encoding="utf-8") if has_favs_utils else ""
+old_name_truncation = "\t\t// Shorten long names\n\t\tif(strlen($name) > 33)\n\t\t\t$name = substr($name, 0, 33) . '&hellip;';"
+new_name_truncation = "\t\t// AllScan Mods: Keep the complete callsign-prefixed Favorites Name visible v1.89."
+if has_favs_utils:
+    if old_name_truncation in favs_utils:
+        favs_utils = replace_once(favs_utils, old_name_truncation, new_name_truncation, "the upstream 33-character Favorites Name truncation")
+    elif new_name_truncation not in favs_utils:
+        raise SystemExit("ERROR: Expected the upstream Favorites Name truncation or its v1.89 replacement. No live files were changed.")
+
+# Let the Favorites Name cell use its content width instead of the shared 32em cap.
+name_width_marker = "td {\nmax-width:32em;\n}"
+name_width_rule = """td {
+max-width:32em;
+}
+/* AllScan Mods: Let the complete Favorites Name determine its column width v1.89. */
+table.favs th:nth-child(3), table.favs td:nth-child(3) {
+width:max-content;
+max-width:none;
+white-space:nowrap;
+}"""
+if name_width_rule not in css:
+    css = replace_once(css, name_width_marker, name_width_rule, "the shared table-cell width rule")
 
 new_row_output = '''foreach($favList as $f) {
 	$favEditLabel = htmlspecialchars(array_pop($f), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
@@ -1072,6 +1168,8 @@ checks = {
     'Rx% live column': 'var busy = cells[5];' in js,
     'LCnt live column': 'var lcnt = cells[6];' in js,
     'Favorites label source': not has_v102_layout or new_fav_row in favs_utils,
+    'Favorites Name auto width': 'table.favs th:nth-child(3), table.favs td:nth-child(3)' in css and 'width:max-content;' in css,
+    'Complete Favorites Name': not has_favs_utils or new_name_truncation in favs_utils,
     'TouchGUI portrait header': not has_v102_layout or new_touch_header in simple_css,
     'TouchGUI disconnect toggle': (not has_v102_layout) or ('id="autodiscBtn"' in simple_index and 'function toggleAutodiscPreference()' in simple_js and "+ '&autodisc=' + simple.autodisc)" in simple_js),
     'Monitor checkbox': view.count('id="automondisc"') == 1,
@@ -1091,7 +1189,7 @@ view_path.write_text(view, encoding="utf-8")
 js_path.write_text(js, encoding="utf-8")
 css_path.write_text(css, encoding="utf-8")
 connect_path.write_text(connect, encoding="utf-8")
-if has_v102_layout: favs_utils_path.write_text(favs_utils, encoding="utf-8")
+if has_favs_utils: favs_utils_path.write_text(favs_utils, encoding="utf-8")
 if has_v102_layout: simple_css_path.write_text(simple_css, encoding="utf-8")
 if has_v102_layout: simple_index_path.write_text(simple_index, encoding="utf-8")
 if has_v102_layout: simple_js_path.write_text(simple_js, encoding="utf-8")
@@ -1105,7 +1203,8 @@ fi
 if cmp -s "$INDEX_FILE" "$stage_index" && cmp -s "$VIEW_FILE" "$stage_view" && \
    cmp -s "$JS_FILE" "$stage_js" && cmp -s "$CSS_FILE" "$stage_css" && \
    cmp -s "$CONNECT_FILE" "$stage_connect" && \
-   { [[ $allscan_version != v1.02 && $allscan_version != v1.03 ]] || { cmp -s "$FAVS_UTILS_FILE" "$stage_favs_utils" && cmp -s "$SIMPLE_CSS_FILE" "$stage_simple_css" && cmp -s "$SIMPLE_INDEX_FILE" "$stage_simple_index" && cmp -s "$SIMPLE_JS_FILE" "$stage_simple_js"; }; }; then
+   { [[ $has_favs_utils != true ]] || cmp -s "$FAVS_UTILS_FILE" "$stage_favs_utils"; } && \
+   { [[ $allscan_version != v1.02 && $allscan_version != v1.03 ]] || { cmp -s "$SIMPLE_CSS_FILE" "$stage_simple_css" && cmp -s "$SIMPLE_INDEX_FILE" "$stage_simple_index" && cmp -s "$SIMPLE_JS_FILE" "$stage_simple_js"; }; }; then
     echo "AllScan Mods are already installed. No changes made."
     report_apache_sqlite_status
     exit 0
@@ -1115,7 +1214,8 @@ if command -v php >/dev/null 2>&1; then
     php -l "$stage_index" >/dev/null
     php -l "$stage_view" >/dev/null
     php -l "$stage_connect" >/dev/null
-    if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then php -l "$stage_favs_utils" >/dev/null; php -l "$stage_simple_index" >/dev/null; fi
+    if [[ $has_favs_utils == true ]]; then php -l "$stage_favs_utils" >/dev/null; fi
+    if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then php -l "$stage_simple_index" >/dev/null; fi
 else
     echo "WARNING: php was not found; PHP syntax validation was skipped."
 fi
@@ -1132,14 +1232,14 @@ view_backup=$VIEW_FILE.before-allscan-mods-$timestamp
 js_backup=$JS_FILE.before-allscan-mods-$timestamp
 css_backup=$CSS_FILE.before-allscan-mods-$timestamp
 connect_backup=$CONNECT_FILE.before-allscan-mods-$timestamp
-if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then favs_utils_backup=$FAVS_UTILS_FILE.before-allscan-mods-$timestamp; fi
+if [[ $has_favs_utils == true ]]; then favs_utils_backup=$FAVS_UTILS_FILE.before-allscan-mods-$timestamp; fi
 if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then simple_css_backup=$SIMPLE_CSS_FILE.before-allscan-mods-$timestamp; simple_index_backup=$SIMPLE_INDEX_FILE.before-allscan-mods-$timestamp; simple_js_backup=$SIMPLE_JS_FILE.before-allscan-mods-$timestamp; fi
 cp -a -- "$INDEX_FILE" "$index_backup"
 cp -a -- "$VIEW_FILE" "$view_backup"
 cp -a -- "$JS_FILE" "$js_backup"
 cp -a -- "$CSS_FILE" "$css_backup"
 cp -a -- "$CONNECT_FILE" "$connect_backup"
-if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then cp -a -- "$FAVS_UTILS_FILE" "$favs_utils_backup"; fi
+if [[ $has_favs_utils == true ]]; then cp -a -- "$FAVS_UTILS_FILE" "$favs_utils_backup"; fi
 if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then cp -a -- "$SIMPLE_CSS_FILE" "$simple_css_backup"; cp -a -- "$SIMPLE_INDEX_FILE" "$simple_index_backup"; cp -a -- "$SIMPLE_JS_FILE" "$simple_js_backup"; fi
 
 installed=false
@@ -1150,7 +1250,7 @@ rollback() {
         cp -a -- "$js_backup" "$JS_FILE" 2>/dev/null || true
         cp -a -- "$css_backup" "$CSS_FILE" 2>/dev/null || true
         cp -a -- "$connect_backup" "$CONNECT_FILE" 2>/dev/null || true
-        if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then cp -a -- "$favs_utils_backup" "$FAVS_UTILS_FILE" 2>/dev/null || true; fi
+        if [[ $has_favs_utils == true ]]; then cp -a -- "$favs_utils_backup" "$FAVS_UTILS_FILE" 2>/dev/null || true; fi
         if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then cp -a -- "$simple_css_backup" "$SIMPLE_CSS_FILE" 2>/dev/null || true; cp -a -- "$simple_index_backup" "$SIMPLE_INDEX_FILE" 2>/dev/null || true; cp -a -- "$simple_js_backup" "$SIMPLE_JS_FILE" 2>/dev/null || true; fi
         echo "ERROR: Installation failed; the original files were restored." >&2
     fi
@@ -1162,7 +1262,7 @@ cp -- "$stage_view" "$VIEW_FILE"
 cp -- "$stage_js" "$JS_FILE"
 cp -- "$stage_css" "$CSS_FILE"
 cp -- "$stage_connect" "$CONNECT_FILE"
-if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then cp -- "$stage_favs_utils" "$FAVS_UTILS_FILE"; fi
+if [[ $has_favs_utils == true ]]; then cp -- "$stage_favs_utils" "$FAVS_UTILS_FILE"; fi
 if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then cp -- "$stage_simple_css" "$SIMPLE_CSS_FILE"; cp -- "$stage_simple_index" "$SIMPLE_INDEX_FILE"; cp -- "$stage_simple_js" "$SIMPLE_JS_FILE"; fi
 
 grep -Fq 'case "Edit Favorite":' "$INDEX_FILE"
@@ -1176,7 +1276,8 @@ if command -v php >/dev/null 2>&1; then
     php -l "$INDEX_FILE" >/dev/null
     php -l "$VIEW_FILE" >/dev/null
 php -l "$CONNECT_FILE" >/dev/null
-if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then php -l "$FAVS_UTILS_FILE" >/dev/null; php -l "$SIMPLE_INDEX_FILE" >/dev/null; fi
+if [[ $has_favs_utils == true ]]; then php -l "$FAVS_UTILS_FILE" >/dev/null; fi
+if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then php -l "$SIMPLE_INDEX_FILE" >/dev/null; fi
 fi
 if command -v node >/dev/null 2>&1; then
     node --check "$JS_FILE"
@@ -1194,6 +1295,6 @@ echo "  $view_backup"
 echo "  $js_backup"
 echo "  $css_backup"
 echo "  $connect_backup"
-if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then echo "  $favs_utils_backup"; fi
+if [[ $has_favs_utils == true ]]; then echo "  $favs_utils_backup"; fi
 if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then echo "  $simple_css_backup"; echo "  $simple_index_backup"; echo "  $simple_js_backup"; fi
 echo "Hard-refresh the AllScan page with Ctrl+F5."
