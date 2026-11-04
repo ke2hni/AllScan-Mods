@@ -1,4 +1,4 @@
-# AllScan standalone uninstaller v1
+# AllScan standalone uninstaller v2
 
 Built against the supplied AllScan source archive at commit `db1800c53515f9fddd079d1ec6968e686136d82b`, whose `include/common.php` identifies AllScan v1.05. The source archive has no branch metadata.
 
@@ -34,5 +34,5 @@ Replace the example archive name with the exact path printed by the script. Rest
 
 ## Version
 
-- `uninstall-allscan-v1.sh`: v1
-- `README-uninstall-allscan-v1.md`: v1
+- `uninstall-allscan-v1.sh`: v2
+- `README-uninstall-allscan-v1.md`: v2

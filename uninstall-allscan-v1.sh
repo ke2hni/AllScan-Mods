@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# AllScan standalone uninstaller version: v1
+# AllScan standalone uninstaller version: v2
 set -Eeuo pipefail
 umask 077
 
@@ -52,7 +52,7 @@ if ((EUID != 0)); then
     exit 1
 fi
 
-for command_name in realpath tar; do
+for command_name in realpath tar grep mktemp; do
     command -v "$command_name" >/dev/null 2>&1 || {
         echo "ERROR: Required command not found: $command_name" >&2
         exit 1
@@ -126,7 +126,7 @@ case "$BACKUP_DIR/" in
     "$APP_PATH/"*|"$APP_PARENT/"*) echo "ERROR: Backup directory must be outside the AllScan web root and installation." >&2; exit 1 ;;
 esac
 
-printf 'AllScan uninstaller v1\n'
+printf 'AllScan uninstaller v2\n'
 printf 'Instance: %s (%s)\n' "$APP_PATH" "$ALLSCAN_VERSION"
 printf 'Recovery archive directory: %s\n' "$BACKUP_DIR"
 printf 'Instance database: %s\n' "$DB_FILE"
@@ -164,11 +164,15 @@ if ! tar -czf "$ARCHIVE" -C / --numeric-owner "${archive_paths[@]}"; then
     echo 'ERROR: Recovery archive creation failed; the AllScan installation was not removed.' >&2
     exit 1
 fi
-if ! tar -tzf "$ARCHIVE" >/dev/null || ! tar -tzf "$ARCHIVE" | grep -Fq "${APP_PATH#/}/"; then
+ARCHIVE_LIST=$(mktemp "$BACKUP_DIR/.allscan-archive-list.XXXXXX")
+if ! tar -tzf "$ARCHIVE" > "$ARCHIVE_LIST" || \
+   { ! grep -Fxq -- "${APP_PATH#/}/" "$ARCHIVE_LIST" && ! grep -Fxq -- "${APP_PATH#/}" "$ARCHIVE_LIST"; }; then
+    rm -f -- "$ARCHIVE_LIST"
     rm -f -- "$ARCHIVE"
     echo 'ERROR: Recovery archive verification failed; the AllScan installation was not removed.' >&2
     exit 1
 fi
+rm -f -- "$ARCHIVE_LIST"
 chmod 600 -- "$ARCHIVE"
 echo "Verified recovery archive: $ARCHIVE"
 
