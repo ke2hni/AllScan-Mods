@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Ensure v1.92 edits one shared call-sign-free Favorites label."""
+"""Ensure v1.93 retains one shared call-sign-free Favorites label while adding optional Description editing."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -14,11 +14,13 @@ def main() -> None:
     # Both independent installers carry the current AllScan Mods release marker.
     for filename in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         source = (ROOT / filename).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.92" in source
+        assert "TouchGUI activity colors mod version: v1.93" in source
         assert "favoriteEditHint" in source
         assert "Favorites editor call-sign hint v1.43." in source
         assert "apply_favorite_editor_label_live" in source
         assert "favorite-editor-label.py" in source
+        assert "favorite-description.py" in source
+        assert "apply_favorite_description_live" in source
         for marker in forbidden:
             assert marker not in source, f"{filename} still contains {marker}"
         assert "sortFavStats(5)" in source
@@ -33,8 +35,8 @@ def main() -> None:
     assert "TouchGUI single-line label fit v1.37" in activity
 
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    assert "single shared Friendly Name/Label field" in readme
-    assert "separate call-sign-free view of the shared Favorites editor label, with a 50-character limit and callsign guidance" in readme
+    assert "shared Friendly Name/Label field" in readme
+    assert "50-character label view" in readme
     assert "optional TouchGUI card label overrides" not in readme
 
     helper = (ROOT / "lib/favorite-editor-label.py").read_text(encoding="utf-8")

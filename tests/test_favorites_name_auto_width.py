@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regression checks for v1.92 Favorites Name display and column sizing."""
+"""Regression checks for v1.92 Name display and v1.93 Description editing."""
 from pathlib import Path
 import re
 import subprocess
@@ -27,7 +27,7 @@ def main() -> None:
         assert "determine its column width v1.90." in source
         assert "Keep custom Favorites Names in the Name column v1.92." in source
         assert "Description remains sourced from AllStarLink database data." in source
-        assert "TouchGUI activity colors mod version: v1.92" in source
+        assert "TouchGUI activity colors mod version: v1.93" in source
 
         # Execute the same embedded patcher used by each installer on the upstream fallback.
         match = re.search(r"python3 - \"\$work_dir/favsUtils\.php\" \"\$work_dir/main\.css\" <<'PY'\n(.*?)\nPY", source, re.S)
@@ -48,8 +48,8 @@ def main() -> None:
             assert "Description remains sourced from AllStarLink database data." in updated
             subprocess.run(["python3", "-c", patcher, str(favs), str(css)], check=True)
 
-    assert "AllScan Mods v1.92" in (ROOT / "README.md").read_text(encoding="utf-8")
-    print("PASS: both installers keep a custom favorite label in Name and leave Description database-sourced.")
+    assert "AllScan Mods v1.93" in (ROOT / "README.md").read_text(encoding="utf-8")
+    print("PASS: both installers keep custom favorite labels in Name while Description can follow the database or use a favorite override.")
     print("PASS: full Favorites Names remain visible, Name auto-width remains enabled, and repeat patching is safe.")
 
 

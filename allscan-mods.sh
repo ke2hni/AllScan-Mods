@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.92
+# TouchGUI activity colors mod version: v1.93
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -67,6 +67,7 @@ esac
 MODS_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 TOUCHGUI_ACTIVITY_PATCH=$MODS_DIR/lib/touchgui-activity.py
 FAVORITE_EDITOR_PATCH=$MODS_DIR/lib/favorite-editor-label.py
+FAVORITE_DESCRIPTION_PATCH=$MODS_DIR/lib/favorite-description.py
 
 previous_favorite_label_mod_present() {
     local file
@@ -87,6 +88,8 @@ fi
 
 favorite_editor_label_present() {
     grep -Fq '<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.92. -->' "$VIEW_FILE" &&
+    grep -Fq 'favoriteEditDescription' "$VIEW_FILE" &&
+    grep -Fq 'Favorites Description editor v1.93.' "$INDEX_FILE" &&
     grep -Fq 'Call-sign-free Favorites editor value v1.43.' "$FAVS_UTILS_FILE" &&
     grep -Fq '<div class="favoriteEditHint">The callsign is added automatically.</div>' "$VIEW_FILE" &&
     grep -Fq 'Favorites editor call-sign hint v1.43.' "$CSS_FILE" &&
@@ -181,6 +184,41 @@ PY
     fi
     rm -rf -- "$work_dir"
     echo "Favorites Name auto-width installed. Backups: $favs_backup and $css_backup"
+}
+
+apply_favorite_description_live() {
+    if grep -Fq 'Favorites Description editor v1.93.' "$INDEX_FILE" &&
+       grep -Fq 'favoriteEditDescription' "$VIEW_FILE" &&
+       grep -Fq 'databaseDescription' "$FAVS_UTILS_FILE"; then
+        echo "Favorites Description editor is already installed. No changes made."
+        return 0
+    fi
+    local work_dir timestamp i
+    local -a originals staged backups
+    work_dir=$(mktemp -d /tmp/allscan-favorite-description.XXXXXX)
+    staged=("$work_dir/index.php" "$work_dir/viewUtils.php" "$work_dir/main.js" "$work_dir/favsUtils.php" "$work_dir/main.css")
+    originals=("$INDEX_FILE" "$VIEW_FILE" "$JS_FILE" "$FAVS_UTILS_FILE" "$CSS_FILE")
+    for i in "${!originals[@]}"; do cp -- "${originals[$i]}" "${staged[$i]}"; done
+    python3 "$FAVORITE_DESCRIPTION_PATCH" "${staged[0]}" "${staged[1]}" "${staged[2]}" "${staged[3]}" "${staged[4]}"
+    if command -v node >/dev/null 2>&1; then node --check "${staged[2]}"; fi
+    if command -v php >/dev/null 2>&1; then
+        php -l "${staged[0]}" >/dev/null
+        php -l "${staged[1]}" >/dev/null
+        php -l "${staged[3]}" >/dev/null
+    fi
+    for i in "${!originals[@]}"; do
+        if cmp -s "${originals[$i]}" "${staged[$i]}"; then continue; fi
+        timestamp=$(date +%Y%m%d-%H%M%S)
+        backups[$i]=${originals[$i]}.before-favorite-description-v1.93-$timestamp
+        [[ ! -e ${backups[$i]} ]] || { rm -rf -- "$work_dir"; echo "ERROR: Description backup path already exists; no files changed." >&2; return 1; }
+    done
+    for i in "${!originals[@]}"; do
+        [[ -n ${backups[$i]:-} ]] || continue
+        cp -a -- "${originals[$i]}" "${backups[$i]}"
+        cp -- "${staged[$i]}" "${originals[$i]}"
+    done
+    rm -rf -- "$work_dir"
+    echo "Favorites Description editor installed. Backups: ${backups[*]}"
 }
 
 apply_favorite_editor_label_live() {
@@ -400,6 +438,7 @@ if upstream_features_present; then
     echo "AllScan already includes the integrated enhancements (PR #37). Applying/checking the shared Favorites editor label."
     apply_favorite_editor_label_live
     apply_favorites_name_auto_width_live
+    apply_favorite_description_live
     if [[ $allscan_version == v1.05 ]]; then
         echo "TouchGUI activity, statistics, and card layout are already integrated upstream (PR #38). No TouchGUI changes made."
     else
@@ -556,7 +595,11 @@ if name_width_rule not in css:
 
 new_row_output = '''foreach($favList as $f) {
 	$favEditLabel = htmlspecialchars(array_pop($f), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+	// AllScan Mods: Attach Description values to the selectable row for v1.93 editor support.
+	$favEditDescription = htmlspecialchars((string)($f[3] ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+	$favDescriptionCustom = '0';
 	$nodeNumAttr = ['1' => 'class="nodeNum" data-fav-label="' . $favEditLabel
+		. '" data-fav-description="' . $favEditDescription . '" data-fav-database-description="' . $favEditDescription . '" data-fav-description-custom="' . $favDescriptionCustom
 		. '" onClick="selectFavorite(this)" onDblClick="connectNode(\\'connect\\')"'];'''
 if has_v102_layout:
     old_v102_row_output = '''foreach($favList as $f) {
@@ -833,6 +876,9 @@ edit_case = r'''	case "Edit Favorite":
 		$originalNode = isset($parms['originalnode']) ? trim($parms['originalnode']) : '';
 		$newLabel = isset($parms['editlabel']) ? trim($parms['editlabel']) : '';
 		$newOrder = isset($parms['editorder']) ? trim($parms['editorder']) : '';
+		$newDescription = isset($parms['editdesc']) ? trim($parms['editdesc']) : '';
+		$useDbDescription = isset($parms['editdescdb']) && $parms['editdescdb'] === '1';
+
 		$msg[] = "Edit Favorite node $originalNode requested";
 		if(!modifyOk()) {
 			$msg[] = error("Modify permission is required.");
@@ -859,6 +905,11 @@ edit_case = r'''	case "Edit Favorite":
 			strpos($newLabel, '"') !== false || strpos($newLabel, "\r") !== false ||
 			strpos($newLabel, "\n") !== false) {
 			$msg[] = error("Friendly label must be 1 to 120 plain-text characters and cannot contain double quotes or line breaks.");
+			break;
+		}
+		// AllScan Mods: Validate the optional single-line Description override.
+		if(!$useDbDescription && (strlen($newDescription) > 120 || !checkAscii($newDescription) || strpos($newDescription, '"') !== false || strpos($newDescription, "\r") !== false || strpos($newDescription, "\n") !== false)) {
+			$msg[] = error("Description must be 120 plain-text characters or fewer and cannot contain quotes or line breaks.");
 			break;
 		}
 		if(!preg_match('/^[1-9][0-9]*$/', $newOrder)) {
@@ -919,6 +970,12 @@ edit_case = r'''	case "Edit Favorite":
 			array_splice($remaining, (int)$newOrder - 1, 0, [$pair]);
 			foreach($favoritePairs as $k => $p) { $favs[$p[0]] = $remaining[$k][0]; $favs[$p[1]] = $remaining[$k][1]; }
 		}
+		// AllScan Mods: Save the Description override with its favorite, outside the shared ASTDB file.
+		$favs = array_values(array_filter($favs, function($line) use ($originalNode, $node) {
+			if(preg_match('/^; AllScan Mods Favorite Description v1\\.93 ([0-9]{4,8}) /', trim($line), $match) !== 1) return true;
+			return $match[1] !== $originalNode && $match[1] !== $node;
+		}));
+		if(!$useDbDescription) $favs[] = '; AllScan Mods Favorite Description v1.93 ' . $node . ' ' . ($newDescription === '' ? '-' : base64_encode($newDescription));
 		if(!writeFileLines($favsFile, $favs, $msg)) {
 			copy($backup, $favsFile);
 			break;
@@ -957,6 +1014,8 @@ if final_view_marker not in view:
     controls = '''<input type=hidden id="favsfile" name="favsfile" value="' . $favsFile .'">
 <input type=hidden id="originalnode" name="originalnode" value="">
 <input type=hidden id="editlabel" name="editlabel" value="">
+<input type=hidden id="editdesc" name="editdesc" value="">
+<input type=hidden id="editdescdb" name="editdescdb" value="1">
 <input type=hidden id="editorder" name="editorder" value="">
 <label for="node">Node#</label><input type="text" inputmode="tel" pattern="[0-9a-dA-D\\*#]*"
 	id="node" name="node" maxlength="10" value="' . $remNode . '">
@@ -981,6 +1040,9 @@ if final_view_marker not in view:
 <input type="number" min="1" step="1" id="favoriteEditOrder">
 <label for="favoriteEditLabel">Friendly Name/Label</label>
 <input type="text" id="favoriteEditLabel" maxlength="120">
+<label for="favoriteEditDescription">Description</label>
+<textarea id="favoriteEditDescription" maxlength="120" rows="3"></textarea>
+<div class="favEditDescriptionSource"><label><input type="checkbox" id="favoriteEditUseDatabase" checked onchange="toggleFavoriteDescriptionSource();"> Use AllStarLink database Description</label></div>
 <div class="favEditActions">
 <button type="submit" name="Submit" value="Edit Favorite" class="small"
 	onClick="return submitFavoriteEdit();">Save &amp; Close</button>
@@ -993,6 +1055,8 @@ if final_view_marker not in view:
 # Upgrade an already-installed editor dialog that predates the Order field.
 if 'id="editorder"' not in view:
     view = replace_once(view, '<input type=hidden id="editlabel" name="editlabel" value="">', '<input type=hidden id="editlabel" name="editlabel" value="">\n<input type=hidden id="editorder" name="editorder" value="">', "the existing edit hidden fields")
+if 'id="editdesc"' not in view:
+    view = replace_once(view, '<input type=hidden id="editlabel" name="editlabel" value=">', '<input type=hidden id="editlabel" name="editlabel" value=">\n<input type=hidden id="editdesc" name="editdesc" value=">\n<input type=hidden id="editdescdb" name="editdescdb" value="1">', "Description request hidden fields")
 if 'id="favoriteEditOrder"' not in view:
     view = replace_once(view, '<label for="favoriteEditLabel">Friendly Name/Label</label>', '<label for="favoriteEditOrder">Order</label>\n<input type="number" min="1" step="1" id="favoriteEditOrder">\n<label for="favoriteEditLabel">Friendly Name/Label</label>', "the existing Favorites editor fields")
 
@@ -1108,6 +1172,9 @@ function selectFavorite(cell) {
 	setNodeBox(node);
 	rnode.dataset.favoriteNode = node;
 	rnode.dataset.favoriteLabel = cell.getAttribute('data-fav-label') || '';
+	rnode.dataset.favoriteDescription = cell.getAttribute('data-fav-description') || '';
+	rnode.dataset.favoriteDatabaseDescription = cell.getAttribute('data-fav-database-description') || '';
+	rnode.dataset.favoriteDescriptionCustom = cell.getAttribute('data-fav-description-custom') || '0';
 }
 function findSelectedFavorite() {
 	var currentNode = rnode.value.trim();
@@ -1133,11 +1200,24 @@ function openFavoriteEditor() {
 	var orderInput = document.getElementById('favoriteEditOrder');
 	nodeInput.value = rnode.dataset.favoriteNode || '';
 	labelInput.value = rnode.dataset.favoriteLabel || '';
+	var descriptionInput = document.getElementById('favoriteEditDescription');
+	var useDatabaseDescription = document.getElementById('favoriteEditUseDatabase');
+	descriptionInput.dataset.databaseValue = rnode.dataset.favoriteDatabaseDescription || '';
+	descriptionInput.dataset.customValue = rnode.dataset.favoriteDescription || '';
+	useDatabaseDescription.checked = rnode.dataset.favoriteDescriptionCustom !== '1';
+	descriptionInput.value = useDatabaseDescription.checked ? descriptionInput.dataset.databaseValue : descriptionInput.dataset.customValue;
+	descriptionInput.disabled = useDatabaseDescription.checked;
 	var favCells = document.querySelectorAll('#favs td.nodeNum');
 	for(var oi = 0; oi < favCells.length; oi++) if(favCells[oi].textContent.trim() === (rnode.dataset.favoriteNode || '')) { orderInput.value = oi + 1; break; }
 	modal.hidden = false;
 	nodeInput.focus();
 	nodeInput.select();
+}
+function toggleFavoriteDescriptionSource() {
+	var field = document.getElementById('favoriteEditDescription');
+	var checkbox = document.getElementById('favoriteEditUseDatabase');
+	field.disabled = checkbox.checked;
+	field.value = checkbox.checked ? (field.dataset.databaseValue || '') : (field.dataset.customValue || '');
 }
 function closeFavoriteEditor() {
 	var modal = document.getElementById('favoriteEditModal');
@@ -1151,6 +1231,8 @@ function submitFavoriteEdit() {
 	var newNode = document.getElementById('favoriteEditNode').value.trim();
 	var newLabel = document.getElementById('favoriteEditLabel').value.trim();
 	var newOrder = document.getElementById('favoriteEditOrder').value.trim();
+	var newDescription = document.getElementById('favoriteEditDescription').value.trim();
+	var useDatabaseDescription = document.getElementById('favoriteEditUseDatabase').checked;
 	if(!/^[0-9]{4,8}$/.test(newNode)) {
 		alert('Node number must contain 4 to 8 digits.');
 		return false;
@@ -1159,9 +1241,12 @@ function submitFavoriteEdit() {
 		alert('Friendly label must be 1 to 120 characters and cannot contain double quotes or line breaks.');
 		return false;
 	}
+	if(!useDatabaseDescription && (newDescription.length > 120 || /[\"\r\n]/.test(newDescription) || /[^\x20-\x7e]/.test(newDescription))) { alert('Description must be 120 plain-text characters or fewer.'); return false; }
 	if(!/^[1-9][0-9]*$/.test(newOrder)) { alert('Order must be a positive number.'); return false; }
 	document.getElementById('originalnode').value = originalNode;
 	document.getElementById('editlabel').value = newLabel;
+	document.getElementById('editdesc').value = newDescription;
+	document.getElementById('editdescdb').value = useDatabaseDescription ? '1' : '0';
 	document.getElementById('editorder').value = newOrder;
 	rnode.value = newNode;
 	return true;
@@ -1197,11 +1282,14 @@ css_addition = r'''
 '''
 if css_marker not in css:
     css = css.rstrip() + css_addition + '\n'
+if 'Favorites Description editor styling v1.93.' not in css:
+    css += \"\n/* AllScan Mods: Favorites Description editor styling v1.93. */\n.favEditPanel {max-height:95vh;overflow-y:auto;}\n.favEditPanel textarea {box-sizing:border-box;width:100%;min-height:64px;resize:vertical;margin:2px 0 5px;padding:5px 7px;border:2px solid hsl(240,40%,60%);font:14px/1.3 Verdana,Arial,Helvetica,sans-serif;}\n.favEditPanel .favEditDescriptionSource label {display:flex;align-items:center;gap:6px;margin:2px 0 5px;font-size:11px;}\n.favEditPanel .favEditDescriptionSource input {width:auto;margin:0;}\n\"
 
 checks = {
     'Rx% header': 'onclick="sortFavStats(5); return false;"' in index,
     'LCnt header': 'onclick="sortFavStats(6); return false;"' in index,
     'Edit action': index.count(edit_case_marker) == 1,
+    'Editable favorite Description': 'favoriteEditDescription' in view and 'editdescdb' in index and ('databaseDescription' in favs_utils if has_favs_utils else 'Favorite Description override cleanup v1.93.' in index),
     'row selection': 'onClick="selectFavorite(this)"' in index,
     'friendly label does not render as extra cell': 'htmlspecialchars(array_pop($f)' in index,
     'Save & Close dialog': final_view_marker in view,
@@ -1242,6 +1330,10 @@ PY
 
 if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then
     python3 "$TOUCHGUI_ACTIVITY_PATCH" "$stage_simple_js" "$stage_simple_css"
+fi
+
+if [[ $has_favs_utils == true ]]; then
+    python3 "$FAVORITE_DESCRIPTION_PATCH" "$stage_index" "$stage_view" "$stage_js" "$stage_favs_utils" "$stage_css"
 fi
 
 if cmp -s "$INDEX_FILE" "$stage_index" && cmp -s "$VIEW_FILE" "$stage_view" && \
