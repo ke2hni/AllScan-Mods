@@ -26,7 +26,7 @@ def main() -> None:
     favs = favs_path.read_text(encoding="utf-8")
     css = css_path.read_text(encoding="utf-8")
 
-    view_marker = "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.43. -->"
+    view_marker = "<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.92. -->"
     view_markers_old = (
         "// AllScan Mods: 33-character call-sign-free Favorites editor label v1.37.",
         "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.38. -->",
@@ -34,6 +34,8 @@ def main() -> None:
         "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.40. -->",
         "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.41. -->",
         "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.42. -->",
+        "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.43. -->",
+        "<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.91. -->",
     )
     fav_marker = "// AllScan Mods: Call-sign-free Favorites editor value v1.43."
     fav_markers_old = (
@@ -64,8 +66,7 @@ def main() -> None:
         print("Favorites editor label and guidance are already applied.")
         return
 
-    # Keep the call-sign-free editor value on the pre-callsign name and before
-    # AllScan's existing 33-character table truncation.
+    # Keep up to 50 call-sign-free name characters in the editor's hidden value.
     insertion = "\t\t// Name is derived from favorites file text, but if that contained only redundant information to what\n"
     value_marker_present = any(marker in favs for marker in fav_markers_old) or fav_marker in favs
     if not value_marker_present:
@@ -73,13 +74,14 @@ def main() -> None:
             raise SystemExit("ERROR: Expected the v1.04 favorite-name cleanup block exactly once.")
         favs = favs.replace(
             insertion,
-            insertion + "\t\t" + fav_marker + "\n\t\t$editName = substr($name, 0, 33);\n",
+            insertion + "\t\t" + fav_marker + "\n\t\t$editName = substr($name, 0, 50);\n",
             1,
         )
     else:
         for old in fav_markers_old:
             if old in favs:
                 favs = replace_once(favs, old, fav_marker, "the previous editor value marker")
+        favs = favs.replace("$editName = substr($name, 0, 33);", "$editName = substr($name, 0, 50);")
     old_fav_row = "$favList[] = [$n, $f->node, $name, $desc, $loc, NBSP, NBSP, $name];"
     new_fav_row = "$favList[] = [$n, $f->node, $name, $desc, $loc, NBSP, NBSP, $editName];"
     if old_fav_row in favs:
@@ -91,9 +93,14 @@ def main() -> None:
     old_field = '<input type="text" id="favoriteEditLabel" maxlength="120">'
     if old_field in view:
         view = replace_once(view, old_field,
-                            '<input type="text" id="favoriteEditLabel" maxlength="33">',
+                            '<input type="text" id="favoriteEditLabel" maxlength="50">',
                             "the v1.04 Favorites editor label field")
-    elif '<input type="text" id="favoriteEditLabel" maxlength="33">' not in view:
+    elif '<input type="text" id="favoriteEditLabel" maxlength="33">' in view:
+        view = replace_once(view,
+                            '<input type="text" id="favoriteEditLabel" maxlength="33">',
+                            '<input type="text" id="favoriteEditLabel" maxlength="50">',
+                            "the existing 33-character Favorites editor label field")
+    elif '<input type="text" id="favoriteEditLabel" maxlength="50">' not in view:
         raise SystemExit("ERROR: Existing Favorites editor label field is unexpected.")
     old_help = '<small>Up to 33 characters. The callsign is added automatically.</small>'
     if old_help in view:
@@ -104,8 +111,8 @@ def main() -> None:
     elif hint_markup not in view:
         view = replace_once(
             view,
-            '<input type="text" id="favoriteEditLabel" maxlength="33">',
-            '<input type="text" id="favoriteEditLabel" maxlength="33">\n' + hint_markup,
+            '<input type="text" id="favoriteEditLabel" maxlength="50">',
+            '<input type="text" id="favoriteEditLabel" maxlength="50">\n' + hint_markup,
             "the v1.04 Favorites editor guidance insertion point",
         )
 
@@ -119,26 +126,34 @@ def main() -> None:
                                 view_marker + "\n<label for=\"favoriteEditLabel\">Friendly Name/Label</label>",
                                 "the v1.04 Favorites editor label")
 
-    old_validation = '''\tif(!newLabel || newLabel.length > 120 || /["\\r\\n]/.test(newLabel)) {
-\t\talert('Friendly label must be 1 to 120 characters and cannot contain double quotes or line breaks.');'''
-    new_validation = '''\tif(newLabel.length > 33 || /["\\r\\n]/.test(newLabel)) {
-\t\talert('Friendly label must be no more than 33 characters and cannot contain double quotes or line breaks.');'''
-    if old_validation in js:
-        js = replace_once(js, old_validation, new_validation, "the v1.04 editor validation")
-    elif "newLabel.length > 33" not in js:
-        raise SystemExit("ERROR: Existing browser-side Favorites validation is unexpected.")
+    # Upgrade recognized stock or previously patched browser validation to 50 characters.
+    if "newLabel.length > 50" not in js:
+        if "newLabel.length > 120" in js:
+            js = js.replace("!newLabel || newLabel.length > 120", "newLabel.length > 50")
+            js = js.replace("1 to 120 characters", "no more than 50 characters")
+        elif "newLabel.length > 33" in js:
+            js = js.replace("newLabel.length > 33", "newLabel.length > 50")
+            js = js.replace("no more than 33 characters", "no more than 50 characters")
+        else:
+            raise SystemExit("ERROR: Existing browser-side Favorites validation is unexpected.")
 
-    old_server_validation = '''\t\t\tif($newLabel === '' || strlen($newLabel) > 120 || !checkAscii($newLabel) ||'''
-    new_server_validation = '''\t\t\tif(strlen($newLabel) > 33 || !checkAscii($newLabel) ||'''
-    if old_server_validation in index:
-        index = replace_once(index, old_server_validation, new_server_validation,
-                             "the v1.04 server-side label validation")
-    elif "strlen($newLabel) > 33" not in index:
-        raise SystemExit("ERROR: Existing server-side Favorites validation is unexpected.")
+    # Upgrade server-side validation for the stock and prior 33-character states.
+    if "strlen($newLabel) > 50" not in index:
+        if "strlen($newLabel) > 120" in index:
+            index = index.replace("$newLabel === '' || strlen($newLabel) > 120", "strlen($newLabel) > 50")
+            index = index.replace("1 to 120 plain-text characters", "no more than 50 plain-text characters")
+        elif "strlen($newLabel) > 33" in index:
+            index = index.replace("strlen($newLabel) > 33", "strlen($newLabel) > 50")
+            index = index.replace("no more than 33 plain-text characters", "no more than 50 plain-text characters")
+        else:
+            raise SystemExit("ERROR: Existing server-side Favorites validation is unexpected.")
     old_message = 'Friendly label must be 1 to 120 plain-text characters and '
-    new_message = 'Friendly label must be no more than 33 plain-text characters and '
+    new_message = 'Friendly label must be no more than 50 plain-text characters and '
+    old_message_33 = 'Friendly label must be no more than 33 plain-text characters and '
     if old_message in index:
         index = replace_once(index, old_message, new_message, "the v1.04 label validation message")
+    elif old_message_33 in index:
+        index = replace_once(index, old_message_33, new_message, "the previous 33-character validation message")
 
     if css_marker not in css:
         old_hint_styles = (

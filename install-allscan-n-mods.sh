@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.90
+# TouchGUI activity colors mod version: v1.92
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -258,21 +258,24 @@ fi
 
 
 favorite_editor_label_present() {
-    grep -Fq '<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.43. -->' "$VIEW_FILE" &&
+    grep -Fq '<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.92. -->' "$VIEW_FILE" &&
     grep -Fq 'Call-sign-free Favorites editor value v1.43.' "$FAVS_UTILS_FILE" &&
     grep -Fq '<div class="favoriteEditHint">The callsign is added automatically.</div>' "$VIEW_FILE" &&
     grep -Fq 'Favorites editor call-sign hint v1.43.' "$CSS_FILE" &&
     grep -Fq '.favEditPanel label {display:block;margin-top:7px;color:#edc;font-size:12px;}' "$CSS_FILE" &&
     grep -Fq 'font-size:10px;font-weight:normal;' "$CSS_FILE" &&
-    grep -Fq 'maxlength="33"' "$VIEW_FILE" &&
-    grep -Fq 'no more than 33 plain-text characters' "$INDEX_FILE" &&
-    grep -Fq 'newLabel.length > 33' "$JS_FILE"
+    grep -Fq 'maxlength="50"' "$VIEW_FILE" &&
+    grep -Fq 'no more than 50 plain-text characters' "$INDEX_FILE" &&
+    grep -Fq 'newLabel.length > 50' "$JS_FILE" &&
+    grep -Fq 'strlen($newLabel) > 50' "$INDEX_FILE" &&
+    grep -Fq '$editName = substr($name, 0, 50);' "$FAVS_UTILS_FILE"
 }
 
 # Patch the upstream Favorites builder and table CSS without changing other columns.
 favorites_name_auto_width_present() {
     grep -Fq 'AllScan Mods: Keep the complete callsign-prefixed Favorites Name visible v1.90.' "$FAVS_UTILS_FILE" &&
-    grep -Fq 'AllScan Mods: Let the complete Favorites Name determine its column width v1.90.' "$CSS_FILE"
+    grep -Fq 'AllScan Mods: Let the complete Favorites Name determine its column width v1.90.' "$CSS_FILE" &&
+    grep -Fq 'AllScan Mods: Keep custom Favorites Names in the Name column v1.92.' "$FAVS_UTILS_FILE"
 }
 
 apply_favorites_name_auto_width_live() {
@@ -301,6 +304,14 @@ elif old_marker in favs:
 elif new not in favs:
     raise SystemExit("ERROR: Expected upstream truncation or a supported v1.89/v1.90 Favorites Name marker.")
 
+# Keep favorite labels in Name; upstream moves them into Description when ASTDB Description is empty.
+old_name_to_description = '// Many nodes in astdb have descriptive text in the name field but then a blank description. In this\n\t\t// case, to make the table look more consistent and clean move any text from the name (except for the\n\t\t// call sign) to the description column\n\t\tif(empty($desc) && strlen($name) > strlen($call) && strlen($call) > 2) {\n\t\t\tif(strpos($name, $call) === 0) {\n\t\t\t\t$desc = trim(substr($name, strlen($call)), $trimchars);\n\t\t\t\t$name = $call;\n\t\t\t}\n\t\t}'
+new_name_column = '// AllScan Mods: Keep custom Favorites Names in the Name column v1.92.\n\t\t// Description remains sourced from AllStarLink database data.'
+if old_name_to_description in favs:
+    favs = favs.replace(old_name_to_description, new_name_column, 1)
+elif new_name_column not in favs:
+    raise SystemExit("ERROR: Expected upstream Name-to-Description fallback or v1.92 marker.")
+
 marker = "td {\nmax-width:32em;\n}"
 old_css_marker = "/* AllScan Mods: Let the complete Favorites Name determine its column width v1.89. */"
 new_css_marker = "/* AllScan Mods: Let the complete Favorites Name determine its column width v1.90. */"
@@ -326,8 +337,8 @@ css_path.write_text(css, encoding="utf-8")
 PY
     if command -v php >/dev/null 2>&1; then php -l "$work_dir/favsUtils.php" >/dev/null; fi
     timestamp=$(date +%Y%m%d-%H%M%S)
-    favs_backup=$FAVS_UTILS_FILE.before-favorites-name-v1.90-$timestamp
-    css_backup=$CSS_FILE.before-favorites-name-v1.90-$timestamp
+    favs_backup=$FAVS_UTILS_FILE.before-favorites-name-v1.92-$timestamp
+    css_backup=$CSS_FILE.before-favorites-name-v1.92-$timestamp
     if ! cp -a -- "$FAVS_UTILS_FILE" "$favs_backup" || ! cp -a -- "$CSS_FILE" "$css_backup"; then
         rm -rf -- "$work_dir"
         echo "ERROR: Could not create Favorites Name recovery copies; no files changed." >&2
@@ -346,7 +357,7 @@ PY
 
 apply_favorite_editor_label_live() {
     if favorite_editor_label_present; then
-        echo "Favorites editor already uses the shared call-sign-free 33-character label. No changes made."
+        echo "Favorites editor already uses the shared call-sign-free 50-character label. No changes made."
         return 0
     fi
     local work_dir timestamp i
@@ -655,6 +666,22 @@ if has_favs_utils:
         favs_utils = favs_utils.replace("\t\t// AllScan Mods: Keep the complete callsign-prefixed Favorites Name visible v1.89.", new_name_truncation, 1)
     elif new_name_truncation not in favs_utils:
         raise SystemExit("ERROR: Expected upstream truncation or a supported v1.89/v1.90 Favorites Name marker. No files changed.")
+
+# Keep favorite labels in Name; upstream moves them into Description when ASTDB Description is empty.
+old_name_to_description = """\t\t// Many nodes in astdb have descriptive text in the name field but then a blank description. In this
+\t\t// case, to make the table look more consistent and clean move any text from the name (except for the
+\t\t// call sign) to the description column
+\t\tif(empty($desc) && strlen($name) > strlen($call) && strlen($call) > 2) {
+\t\t\tif(strpos($name, $call) === 0) {
+\t\t\t\t$desc = trim(substr($name, strlen($call)), $trimchars);
+\t\t\t\t$name = $call;
+\t\t\t}
+\t\t}"""
+new_name_column = "\t\t// AllScan Mods: Keep custom Favorites Names in the Name column v1.92.\n\t\t// Description remains sourced from AllStarLink database data."
+if old_name_to_description in favs_utils:
+    favs_utils = favs_utils.replace(old_name_to_description, new_name_column, 1)
+elif not has_v102_layout and new_name_column not in favs_utils:
+    raise SystemExit("ERROR: Expected upstream Name-to-Description fallback or v1.92 marker. No files changed.")
 
 name_width_marker = "td {\nmax-width:32em;\n}"
 name_width_rule = """td {
@@ -1324,6 +1351,7 @@ checks = {
     'Favorites label source': not has_v102_layout or new_fav_row in favs_utils,
     'Favorites Name auto width': 'table.favs th:nth-child(3), table.favs td:nth-child(3)' in css and 'width:max-content;' in css,
     'Complete Favorites Name': not has_favs_utils or new_name_truncation in favs_utils,
+    'Name stays separate from Description': has_v102_layout or not has_favs_utils or 'Keep custom Favorites Names in the Name column v1.92.' in favs_utils,
     'TouchGUI portrait header': not has_v102_layout or new_touch_header in simple_css,
     'TouchGUI disconnect toggle': (not has_v102_layout) or ('id="autodiscBtn"' in simple_index and 'function toggleAutodiscPreference()' in simple_js and "+ '&autodisc=' + simple.autodisc)" in simple_js),
     'Monitor checkbox': view.count('id="automondisc"') == 1,

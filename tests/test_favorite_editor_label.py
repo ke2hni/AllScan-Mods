@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check the shared Favorites label, hint hierarchy, and prior-version migrations."""
+"""Check the v1.92 shared 50-character Favorites label and prior migrations."""
 from pathlib import Path
 import subprocess
 import tempfile
@@ -71,16 +71,25 @@ def main() -> None:
         assert first_bytes == {name: (temp / name).read_bytes() for name in base}, "patch is not idempotent"
 
         view = current["viewUtils.php"]
-        assert 'maxlength="33"' in view and 'class="favoriteEditHint">The callsign is added automatically.' in view
+        assert 'maxlength="50"' in view and 'class="favoriteEditHint">The callsign is added automatically.' in view
         assert "Up to 33 characters." not in view
         assert "// AllScan Mods: 33-character" not in view
-        assert "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.43. -->" in view
+        assert "<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.92. -->" in view
         assert ".favEditPanel .favoriteEditHint {margin:2px 0 6px;color:hsl(240,30%,70%);font-size:10px;font-weight:normal;}" in current["main.css"]
         assert ".favEditPanel label {display:block;margin-top:7px;color:#edc;font-size:12px;}" in current["main.css"]
-        assert "strlen($newLabel) > 33" in current["index.php"] and "$newLabel === ''" not in current["index.php"]
-        assert "newLabel.length > 33" in current["main.js"] and "!newLabel" not in current["main.js"]
-        assert "$editName = substr($name, 0, 33);" in current["favsUtils.php"]
+        assert "strlen($newLabel) > 50" in current["index.php"] and "$newLabel === ''" not in current["index.php"]
+        assert "newLabel.length > 50" in current["main.js"] and "!newLabel" not in current["main.js"]
+        assert "$editName = substr($name, 0, 50);" in current["favsUtils.php"]
         assert "$favList[] = [$n, $f->node, $name, $desc, $loc, NBSP, NBSP, $editName];" in current["favsUtils.php"]
+
+        # Migrate the previously delivered v1.91 50-character field marker in place.
+        v191 = dict(current)
+        v191["viewUtils.php"] = v191["viewUtils.php"].replace(
+            "<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.92. -->",
+            "<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.91. -->", 1)
+        write_files(temp, v191)
+        run_patcher(temp)
+        assert "<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.92. -->" in (temp / "viewUtils.php").read_text(encoding="utf-8")
 
         # Upgrade previous marker/help combinations without altering label behavior.
         for old_version, old_marker, old_help in (
@@ -99,7 +108,7 @@ def main() -> None:
         ):
             legacy = dict(current)
             legacy["viewUtils.php"] = view.replace(
-                "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.43. -->",
+                "<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.92. -->",
                 old_marker, 1).replace(
                 '<div class="favoriteEditHint">The callsign is added automatically.</div>',
                 old_help, 1)
@@ -140,14 +149,14 @@ def main() -> None:
                 assert old_help not in migrated_view
             assert "Up to 33 characters." not in migrated_view
             assert '<div class="favoriteEditHint">The callsign is added automatically.</div>' in migrated_view
-            assert "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.43. -->" in migrated_view
+            assert "<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.92. -->" in migrated_view
             migrated_css = (temp / "main.css").read_text(encoding="utf-8")
             assert ".favEditPanel .favoriteEditHint {margin:2px 0 6px;color:hsl(240,30%,70%);font-size:10px;font-weight:normal;}" in migrated_css
             assert ".favEditPanel label {display:block;margin-top:7px;color:#edc;font-size:12px;}" in migrated_css
             assert (temp / "index.php").read_bytes() == before["index.php"]
             assert (temp / "main.js").read_bytes() == before["main.js"]
 
-    print("PASS: one shared call-sign-free label is capped at 33 characters.")
+    print("PASS: one shared call-sign-free label is capped at 50 characters.")
     print("PASS: the 10px hint uses the Edit Favorite heading color; field labels increase to 12px.")
     print("PASS: clean install, repeat install, and v1.37-v1.42 editor migrations.")
 
