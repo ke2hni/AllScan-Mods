@@ -16,6 +16,43 @@
 > [!NOTE]
 > This is an unofficial modification. AllScan is created by **David Gleason, NR9V**. The official upstream project is [davidgsd/AllScan](https://github.com/davidgsd/AllScan) and remains the source of truth.
 
+## Installation
+
+On the AllStarLink node, choose the command for your situation. The commands below clone the repository for a new checkout. If it is already cloned, run the selected installer from `/home/asl/AllScan-Mods` instead; use the Upgrade section first if you need the latest Mods.
+
+- **Install AllScan and Mods, or update AllScan before applying Mods:**
+
+  ```bash
+  cd /home/asl && git clone https://github.com/ke2hni/AllScan-Mods.git && cd AllScan-Mods && sudo ./install-allscan-n-mods.sh
+  ```
+
+  This runs David's official installer/updater, checks Apache PHP SQLite support, then applies the Mods. Review its prompts; accept the optional OS/package upgrade or DTMF-file replacement only if you want those actions.
+
+- **AllScan is already installed; apply Mods without running David's updater:**
+
+  ```bash
+  cd /home/asl && git clone https://github.com/ke2hni/AllScan-Mods.git && cd AllScan-Mods && sudo ./allscan-mods.sh
+  ```
+
+  For a custom AllScan directory, add `--allscan-dir PATH`; AllScan must already be installed there.
+
+The repository includes both scripts and the TouchGUI and Favorites editor helpers. After installation, open AllScan and press **Ctrl+F5** (or clear the browser cache on a phone) to reload the page, JavaScript, and CSS.
+
+## Upgrade
+
+To update the Mods repository on a node where it is already cloned, run this from its directory. It saves the current commit on a local backup branch, stashes local changes, and updates `main` from GitHub. It does not commit or push changes.
+
+```bash
+cd /home/asl/AllScan-Mods && git fetch origin && backup="pre-update-$(date +%Y%m%d-%H%M%S)-$$" && git branch "$backup" HEAD && git stash push -u -m "Pre-update $backup" && git switch -C main origin/main
+```
+
+Then choose **one** installer:
+
+- Apply or reapply the Mods to the currently installed AllScan version: `sudo ./allscan-mods.sh`
+- Run David's official AllScan installer/updater first, then apply the Mods: `sudo ./install-allscan-n-mods.sh`
+
+The combined installer can update AllScan itself and may prompt you to confirm that update. The Mods-only installer does not update AllScan. After either installer completes, hard-refresh the AllScan page with **Ctrl+F5**.
+
 ## Official AllScan integration (PR #37 in v1.04; PR #38 in v1.05)
 
 On October 14, 2026, David merged the dashboard and TouchGUI enhancements into the official [AllScan pull request #37](https://github.com/davidgsd/AllScan/pull/37). New AllScan installations containing these features **do not need the legacy Mods patch**.
@@ -79,43 +116,6 @@ AllScan’s Description and Location columns remain sourced from the AllStarLink
 - Existing node click/double-click actions remain attached.
 - No additional AllStarLink statistics requests are made.
 - Live values continue updating without automatically moving rows after every update.
-
-## Installation
-
-On the AllStarLink node, choose the command for your situation. The commands below clone the repository for a new checkout. If it is already cloned, run the selected installer from `/home/asl/AllScan-Mods` instead; use the Upgrade section first if you need the latest Mods.
-
-- **Install AllScan and Mods, or update AllScan before applying Mods:**
-
-  ```bash
-  cd /home/asl && git clone https://github.com/ke2hni/AllScan-Mods.git && cd AllScan-Mods && sudo ./install-allscan-n-mods.sh
-  ```
-
-  This runs David's official installer/updater, checks Apache PHP SQLite support, then applies the Mods. Review its prompts; accept the optional OS/package upgrade or DTMF-file replacement only if you want those actions.
-
-- **AllScan is already installed; apply Mods without running David's updater:**
-
-  ```bash
-  cd /home/asl && git clone https://github.com/ke2hni/AllScan-Mods.git && cd AllScan-Mods && sudo ./allscan-mods.sh
-  ```
-
-  For a custom AllScan directory, add `--allscan-dir PATH`; AllScan must already be installed there.
-
-The repository includes both scripts and the TouchGUI and Favorites editor helpers. After installation, open AllScan and press **Ctrl+F5** (or clear the browser cache on a phone) to reload the page, JavaScript, and CSS.
-
-## Upgrade
-
-To update the Mods repository on a node where it is already cloned, run this from its directory. It saves the current commit on a local backup branch, stashes local changes, and updates `main` from GitHub. It does not commit or push changes.
-
-```bash
-cd /home/asl/AllScan-Mods && git fetch origin && backup="pre-update-$(date +%Y%m%d-%H%M%S)-$$" && git branch "$backup" HEAD && git stash push -u -m "Pre-update $backup" && git switch -C main origin/main
-```
-
-Then choose **one** installer:
-
-- Apply or reapply the Mods to the currently installed AllScan version: `sudo ./allscan-mods.sh`
-- Run David's official AllScan installer/updater first, then apply the Mods: `sudo ./install-allscan-n-mods.sh`
-
-The combined installer can update AllScan itself and may prompt you to confirm that update. The Mods-only installer does not update AllScan. After either installer completes, hard-refresh the AllScan page with **Ctrl+F5**.
 
 ## Custom AllScan directory
 
