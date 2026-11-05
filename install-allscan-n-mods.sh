@@ -259,11 +259,14 @@ fi
 
 
 favorite_editor_label_present() {
-    grep -Fq '<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.92. -->' "$VIEW_FILE" &&
+    grep -Fq '<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.93. -->' "$VIEW_FILE" &&
     grep -Fq 'favoriteEditDescription' "$VIEW_FILE" &&
+    grep -Fq 'favoriteEditDescriptionHint' "$VIEW_FILE" &&
+    grep -Fq 'rows="2"' "$VIEW_FILE" &&
     grep -Fq 'Favorites Description editor v1.93.' "$INDEX_FILE" &&
+    grep -Fq 'favoriteEditDescriptionHint' "$CSS_FILE" &&
     grep -Fq 'Call-sign-free Favorites editor value v1.43.' "$FAVS_UTILS_FILE" &&
-    grep -Fq '<div class="favoriteEditHint">The callsign is added automatically.</div>' "$VIEW_FILE" &&
+    grep -Fq '<div class="favoriteEditHint">The callsign is added automatically. 50 characters max.</div>' "$VIEW_FILE" &&
     grep -Fq 'Favorites editor call-sign hint v1.43.' "$CSS_FILE" &&
     grep -Fq '.favEditPanel label {display:block;margin-top:7px;color:#edc;font-size:12px;}' "$CSS_FILE" &&
     grep -Fq 'font-size:10px;font-weight:normal;' "$CSS_FILE" &&
@@ -360,6 +363,11 @@ PY
 
 apply_favorite_description_live() {
     if grep -Fq 'Favorites Description editor v1.93.' "$INDEX_FILE" &&
+       grep -Fq 'favoriteEditDescriptionHint' "$VIEW_FILE" &&
+       grep -Fq '20 characters max.' "$VIEW_FILE" &&
+       grep -Fq 'maxlength="20"' "$VIEW_FILE" &&
+       grep -Fq 'rows="2"' "$VIEW_FILE" &&
+       grep -Fq 'favoriteEditDescriptionHint' "$CSS_FILE" &&
        grep -Fq 'favoriteEditDescription' "$VIEW_FILE" &&
        grep -Fq 'databaseDescription' "$FAVS_UTILS_FILE"; then
         echo "Favorites Description editor is already installed. No changes made."
@@ -1048,15 +1056,15 @@ edit_case = r'''	case "Edit Favorite":
 			$msg[] = error("Original and new node numbers must contain 4 to 8 digits.");
 			break;
 		}
-		if($newLabel === '' || strlen($newLabel) > 120 || !checkAscii($newLabel) ||
+		if($newLabel === '' || strlen($newLabel) > 50 || !checkAscii($newLabel) ||
 			strpos($newLabel, '"') !== false || strpos($newLabel, "\r") !== false ||
 			strpos($newLabel, "\n") !== false) {
-			$msg[] = error("Friendly label must be 1 to 120 plain-text characters and cannot contain double quotes or line breaks.");
+			$msg[] = error("Friendly label must be no more than 50 plain-text characters and cannot contain double quotes or line breaks.");
 			break;
 		}
 		// AllScan Mods: Validate optional per-favorite Description override text.
-		if(!$useDbDescription && (strlen($newDescription) > 120 || !checkAscii($newDescription) || strpos($newDescription, '"') !== false || strpos($newDescription, "\r") !== false || strpos($newDescription, "\n") !== false)) {
-			$msg[] = error("Description must be 120 plain-text characters or fewer and cannot contain quotes or line breaks.");
+		if(!$useDbDescription && (strlen($newDescription) > 20 || !checkAscii($newDescription) || strpos($newDescription, '"') !== false || strpos($newDescription, "\r") !== false || strpos($newDescription, "\n") !== false)) {
+			$msg[] = error("Description must be 20 plain-text characters or fewer and cannot contain quotes or line breaks.");
 			break;
 		}
 		if(!preg_match('/^[1-9][0-9]*$/', $newOrder)) {
@@ -1174,9 +1182,10 @@ if final_view_marker not in view:
 <label for="favoriteEditOrder">Order</label>
 <input type="number" min="1" step="1" id="favoriteEditOrder">
 <label for="favoriteEditLabel">Friendly Name/Label</label>
-<input type="text" id="favoriteEditLabel" maxlength="120">
+<input type="text" id="favoriteEditLabel" maxlength="50">
 <label for="favoriteEditDescription">Description</label>
-<textarea id="favoriteEditDescription" maxlength="120" rows="3"></textarea>
+<textarea id="favoriteEditDescription" maxlength="20" rows="2"></textarea>
+<div class="favoriteEditDescriptionHint">20 characters max.</div>
 <div class="favEditDescriptionSource"><label><input type="checkbox" id="favoriteEditUseDatabase" checked onchange="toggleFavoriteDescriptionSource();"> Use AllStarLink database Description</label></div>
 <div class="favEditActions">
 <button type="submit" name="Submit" value="Edit Favorite" class="small"
@@ -1354,8 +1363,8 @@ function submitFavoriteEdit() {
 		alert('Node number must contain 4 to 8 digits.');
 		return false;
 	}
-	if(!newLabel || newLabel.length > 120 || /["\r\n]/.test(newLabel)) {
-		alert('Friendly label must be 1 to 120 characters and cannot contain double quotes or line breaks.');
+	if(!newLabel || newLabel.length > 50 || /["\r\n]/.test(newLabel)) {
+		alert('Friendly label must be no more than 50 characters and cannot contain double quotes or line breaks.');
 		return false;
 	}
 	if(!/^[1-9][0-9]*$/.test(newOrder)) { alert('Order must be a positive number.'); return false; }

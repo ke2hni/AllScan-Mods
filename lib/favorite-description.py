@@ -73,10 +73,10 @@ def patch_index(source: str) -> str:
             source,
             validation,
             "\t\t// AllScan Mods: Validate optional Description overrides as single-line plain text.\n"
-            "\t\tif(!$useDbDescription && (strlen($newDescription) > 120 || !checkAscii($newDescription) ||\n"
+            "\t\tif(!$useDbDescription && (strlen($newDescription) > 20 || !checkAscii($newDescription) ||\n"
             "\t\t\tstrpos($newDescription, '\"') !== false || strpos($newDescription, \"\\r\") !== false ||\n"
             "\t\t\tstrpos($newDescription, \"\\n\") !== false)) {\n"
-            "\t\t\t$msg[] = error(\"Description must be 120 plain-text characters or fewer and cannot contain quotes or line breaks.\");\n"
+            "\t\t\t$msg[] = error(\"Description must be 20 plain-text characters or fewer and cannot contain quotes or line breaks.\");\n"
             "\t\t\tbreak;\n\t\t}\n" + validation,
             "Favorites Description validation point",
         )
@@ -113,6 +113,10 @@ def patch_index(source: str) -> str:
         if not all(token in source for token in required):
             raise SystemExit("ERROR: Description editor action is partially installed; review the staged index.php.")
         source = replace_once(source, '\tcase "Edit Favorite":', '\t// ' + MARKER + '\n\tcase "Edit Favorite":', "Edit Favorite action")
+
+    # Upgrade the previously shipped 120-character validator without changing its save flow.
+    source = source.replace("strlen($newDescription) > 120", "strlen($newDescription) > 20")
+    source = source.replace("Description must be 120 plain-text characters", "Description must be 20 plain-text characters")
 
     if "Favorite Description override cleanup v1.93." not in source:
         delete_case = '\t\tcase "Delete Favorite":'
@@ -152,6 +156,12 @@ def patch_index(source: str) -> str:
 
 
 def patch_view(source: str) -> str:
+    description_field = (
+        '<label for="favoriteEditDescription">Description</label>\n'
+        '<textarea id="favoriteEditDescription" maxlength="20" rows="2"></textarea>\n'
+        '<div class="favoriteEditDescriptionHint">20 characters max.</div>\n'
+        '<div class="favEditDescriptionSource"><label><input type="checkbox" id="favoriteEditUseDatabase" checked onchange="toggleFavoriteDescriptionSource();"> Use AllStarLink database Description</label></div>'
+    )
     if 'id="favoriteEditDescription"' not in source:
         old_fields = (
             '<input type="text" id="favoriteEditLabel" maxlength="50">',
@@ -161,15 +171,47 @@ def patch_view(source: str) -> str:
         old_field = next((field for field in old_fields if field in source), None)
         if old_field is None:
             raise SystemExit("ERROR: Favorites editor label field was not found; no staged files were written.")
+        hint = re.search(r'<div class="favoriteEditHint">.*?</div>', source)
+        if hint:
+            point = hint.group(0)
+            source = replace_once(source, point, point + '\n' + description_field, "Description field after the Name guidance")
+        else:
+            source = replace_once(source, old_field, old_field + '\n' + description_field, "Favorites editor Description field")
+    else:
+        textarea = re.search(r'<textarea id="favoriteEditDescription"[^>]*></textarea>', source)
+        if textarea:
+            updated_textarea = textarea.group(0).replace('maxlength="120"', 'maxlength="20"').replace('rows="3"', 'rows="2"')
+            if updated_textarea != textarea.group(0):
+                source = source[:textarea.start()] + updated_textarea + source[textarea.end():]
+        if 'class="favoriteEditDescriptionHint"' not in source:
+            source = replace_once(
+                source,
+                '</textarea>',
+                '</textarea>\n<div class="favoriteEditDescriptionHint">20 characters max.</div>',
+                "Description character-limit guidance",
+            )
+        else:
+            source = source.replace('class="favoriteEditDescriptionHint">120 characters max.', 'class="favoriteEditDescriptionHint">20 characters max.')
+    if 'id="favoriteEditUseDatabase"' not in source:
         source = replace_once(
             source,
-            old_field,
-            old_field + '\n'
-            '<label for="favoriteEditDescription">Description</label>\n'
-            '<textarea id="favoriteEditDescription" maxlength="120" rows="3"></textarea>\n'
+            '<div class="favoriteEditDescriptionHint">20 characters max.</div>',
+            '<div class="favoriteEditDescriptionHint">20 characters max.</div>\n'
             '<div class="favEditDescriptionSource"><label><input type="checkbox" id="favoriteEditUseDatabase" checked onchange="toggleFavoriteDescriptionSource();"> Use AllStarLink database Description</label></div>',
-            "Favorites editor Description field",
+            "database Description preference checkbox",
         )
+    # Keep the Name guidance directly beneath its field, even on already-patched dialogs.
+    hint_match = re.search(r'<div class="favoriteEditHint">.*?</div>', source)
+    label_match = re.search(r'<input type="text" id="favoriteEditLabel" maxlength="(?:50|33|120)">', source)
+    if hint_match and label_match:
+        hint_markup = hint_match.group(0)
+        source = source[:hint_match.start()] + source[hint_match.end():]
+        label_match = re.search(r'<input type="text" id="favoriteEditLabel" maxlength="(?:50|33|120)">', source)
+        if label_match is None:
+            raise SystemExit("ERROR: Favorites Name input disappeared while placing its guidance.")
+        label_end = label_match.end()
+        source = source[:label_end] + "\n" + hint_markup + source[label_end:]
+        source = re.sub(r'(</div>)\n{2,}(?=<label for="favoriteEditDescription")', r'\1\n', source, count=1)
     if 'id="editdesc"' not in source:
         source = replace_once(
             source,
@@ -226,14 +268,20 @@ def patch_js(source: str) -> str:
         toggle = """\n// AllScan Mods: Toggle between live database Description and a saved favorite override.\nfunction toggleFavoriteDescriptionSource() {\n\tvar field = document.getElementById('favoriteEditDescription');\n\tvar useDatabase = document.getElementById('favoriteEditUseDatabase').checked;\n\tif(useDatabase) {\n\t\tif(!field.disabled) field.dataset.customValue = field.value;\n\t\tfield.value = field.dataset.databaseValue || '';\n\t\tfield.disabled = true;\n\t} else {\n\t\tfield.disabled = false;\n\t\tfield.value = field.dataset.customValue || field.dataset.effectiveValue || '';\n\t}\n}\n"""
         source = replace_once(source, "function closeFavoriteEditor() {", toggle + "\nfunction closeFavoriteEditor() {", "editor Description source toggle")
         source = replace_once(source, "\tvar newOrder = document.getElementById('favoriteEditOrder').value.trim();", "\tvar newOrder = document.getElementById('favoriteEditOrder').value.trim();\n\tvar newDescription = document.getElementById('favoriteEditDescription').value.trim();\n\tvar useDatabaseDescription = document.getElementById('favoriteEditUseDatabase').checked;", "submitted Description values")
-        source = replace_once(source, "\tif(!/^[1-9][0-9]*$/.test(newOrder)) { alert('Order must be a positive number.'); return false; }", "\tif(!useDatabaseDescription && (newDescription.length > 120 || /[\\\"\\r\\n]/.test(newDescription) || /[^\\x20-\\x7e]/.test(newDescription))) { alert('Description must be 120 plain-text characters or fewer.'); return false; }\n\tif(!/^[1-9][0-9]*$/.test(newOrder)) { alert('Order must be a positive number.'); return false; }", "Description browser validation")
+        source = replace_once(source, "\tif(!/^[1-9][0-9]*$/.test(newOrder)) { alert('Order must be a positive number.'); return false; }", "\tif(!useDatabaseDescription && (newDescription.length > 20 || /[\\\"\\r\\n]/.test(newDescription) || /[^\\x20-\\x7e]/.test(newDescription))) { alert('Description must be 20 plain-text characters or fewer.'); return false; }\n\tif(!/^[1-9][0-9]*$/.test(newOrder)) { alert('Order must be a positive number.'); return false; }", "Description browser validation")
         source = replace_once(source, "\tdocument.getElementById('editlabel').value = newLabel;", "\tdocument.getElementById('editlabel').value = newLabel;\n\tdocument.getElementById('editdesc').value = newDescription;\n\tdocument.getElementById('editdescdb').value = useDatabaseDescription ? '1' : '0';", "Description request values")
+    source = source.replace("newDescription.length > 120", "newDescription.length > 20")
+    source = source.replace("Description must be 120 plain-text characters", "Description must be 20 plain-text characters")
     return source
 
 
 def patch_css(source: str) -> str:
     if "Favorites Description editor styling v1.93." not in source:
-        source = source.rstrip() + """\n\n/* AllScan Mods: Favorites Description editor styling v1.93. */\n.favEditPanel {max-height:95vh;overflow-y:auto;}\n.favEditPanel textarea {box-sizing:border-box;width:100%;min-height:64px;resize:vertical;margin:2px 0 5px;padding:5px 7px;border:2px solid hsl(240,40%,60%);font:14px/1.3 Verdana,Arial,Helvetica,sans-serif;}\n.favEditPanel .favEditDescriptionSource label {display:flex;align-items:center;gap:6px;margin:2px 0 5px;font-size:11px;}\n.favEditPanel .favEditDescriptionSource input {width:auto;margin:0;}\n"""
+        source = source.rstrip() + """\n\n/* AllScan Mods: Favorites Description editor styling v1.93. */\n.favEditPanel {max-height:95vh;overflow-y:auto;}\n.favEditPanel textarea {box-sizing:border-box;width:100%;min-height:38px;resize:vertical;margin:2px 0 1px;padding:5px 7px;border:2px solid hsl(240,40%,60%);font:14px/1.3 Verdana,Arial,Helvetica,sans-serif;}\n.favEditPanel .favoriteEditDescriptionHint {margin:0 0 5px;color:hsl(240,30%,70%);font-size:10px;}\n.favEditPanel .favEditDescriptionSource label {display:flex;align-items:center;gap:6px;margin:2px 0 5px;font-size:11px;}\n.favEditPanel .favEditDescriptionSource input {width:auto;margin:0;}\n"""
+    else:
+        source = source.replace(".favEditPanel textarea {box-sizing:border-box;width:100%;min-height:64px;resize:vertical;margin:2px 0 5px;", ".favEditPanel textarea {box-sizing:border-box;width:100%;min-height:38px;resize:vertical;margin:2px 0 1px;")
+        if ".favEditPanel .favoriteEditDescriptionHint" not in source:
+            source += "\n.favEditPanel .favoriteEditDescriptionHint {margin:0 0 5px;color:hsl(240,30%,70%);font-size:10px;}\n"
     return source
 
 

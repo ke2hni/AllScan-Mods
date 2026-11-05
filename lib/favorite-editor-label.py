@@ -26,7 +26,7 @@ def main() -> None:
     favs = favs_path.read_text(encoding="utf-8")
     css = css_path.read_text(encoding="utf-8")
 
-    view_marker = "<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.92. -->"
+    view_marker = "<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.93. -->"
     view_markers_old = (
         "// AllScan Mods: 33-character call-sign-free Favorites editor label v1.37.",
         "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.38. -->",
@@ -36,6 +36,7 @@ def main() -> None:
         "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.42. -->",
         "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.43. -->",
         "<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.91. -->",
+        "<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.92. -->",
     )
     fav_marker = "// AllScan Mods: Call-sign-free Favorites editor value v1.43."
     fav_markers_old = (
@@ -53,7 +54,8 @@ def main() -> None:
         "/* AllScan Mods: Favorites editor call-sign hint v1.41. */",
         "/* AllScan Mods: Favorites editor call-sign hint v1.42. */",
     )
-    hint_markup = '<div class="favoriteEditHint">The callsign is added automatically.</div>'
+    hint_markup = '<div class="favoriteEditHint">The callsign is added automatically. 50 characters max.</div>'
+    old_hint_markup = '<div class="favoriteEditHint">The callsign is added automatically.</div>'
     hint_style = (
         ".favEditPanel .favoriteEditHint {margin:2px 0 6px;color:hsl(240,30%,70%);"
         "font-size:10px;font-weight:normal;}"
@@ -108,6 +110,8 @@ def main() -> None:
     elif '<small>The callsign is added automatically.</small>' in view:
         view = replace_once(view, '<small>The callsign is added automatically.</small>', hint_markup,
                             "the previous Favorites editor guidance")
+    elif old_hint_markup in view:
+        view = replace_once(view, old_hint_markup, hint_markup, "the v1.92 call-sign guidance")
     elif hint_markup not in view:
         view = replace_once(
             view,

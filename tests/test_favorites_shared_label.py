@@ -36,11 +36,11 @@ def main() -> None:
 
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "shared Friendly Name/Label field" in readme
-    assert "50-character label view" in readme
+    assert "50-character maximum stated below the Name field" in readme
     assert "optional TouchGUI card label overrides" not in readme
 
     helper = (ROOT / "lib/favorite-editor-label.py").read_text(encoding="utf-8")
-    assert '<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.92. -->' in helper
+    assert '<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.93. -->' in helper
     assert "font-size:10px;font-weight:normal" in helper
     assert "color:hsl(240,30%,70%)" in helper
     assert 'maxlength="50"' in helper

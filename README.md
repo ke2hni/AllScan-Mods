@@ -57,7 +57,7 @@ The combined installer can update AllScan itself and may prompt you to confirm t
 
 On October 14, 2026, David merged the dashboard and TouchGUI enhancements into the official [AllScan pull request #37](https://github.com/davidgsd/AllScan/pull/37). New AllScan installations containing these features **do not need the legacy Mods patch**.
 
-AllScan v1.04 includes PR #37. David later merged PR #38 and released AllScan v1.05 with the TouchGUI activity, statistics, and card-layout features integrated. The installers detect these upstream features and skip the TouchGUI patch on v1.05, while still applying the separate Favorites Name display fix. AllScan Mods continues to provide its separate call-sign-free view of the shared Favorites editor label, with a 50-character limit and callsign guidance.
+AllScan v1.04 includes PR #37. David later merged PR #38 and released AllScan v1.05 with the TouchGUI activity, statistics, and card-layout features integrated. The installers detect these upstream features and skip the TouchGUI patch on v1.05, while still applying the separate Favorites Name display fix. AllScan Mods continues to provide its separate call-sign-free view of the shared Favorites editor label, with a 50-character maximum stated below the Name field.
 
 The installers check the full PR #37 feature set on v1.03-v1.05. On v1.05 they also verify the complete PR #38 TouchGUI feature set; if either integrated set is unexpected, the installer stops before changing files. On v1.04, the installer applies the independent TouchGUI activity and statistics patch. On v1.05 those features are upstream, so it skips that patch. The Favorites editor keeps its shared Name field and adds an optional per-favorite Description override. By default, Description continues to follow AllStarLink database data; unchecking the database option saves a custom value for that favorite. TouchGUI uses the same effective Description while its buttons and card controls stay unchanged. The established legacy compatibility patches remain for v1.02 and pre-integration v1.03. AllScan v1.01 remains supported for existing Mods features but has no TouchGUI. Unknown versions are refused pending review.
 
@@ -72,8 +72,8 @@ Never restore an older `.before-allscan-mods-*` backup onto a newer upstream ins
 - Leaves **Local Mon** and **DTMF** available in their established positions.
 - Keeps **Permanent**, **Disconnect before Connect**, and **Disconnect before Monitor** together on one line.
 - Click a favorite's node number, then click **Edit Favorite**.
-- The editor keeps David’s shared Friendly Name/Label field and favorite order field. AllScan adds the callsign for the main table; the editor omits it and allows up to 50 label characters. A Description field can use the AllStarLink database value or a per-favorite override.
-- Existing favorites prefill the shared name without the automatically added callsign and show their effective Description. The database option is checked by default, so changing only the Name does not freeze the current database Description. Uncheck it to save a custom Description; an intentionally blank override is supported. A clear note says the callsign is added automatically.
+- The editor keeps David’s shared Friendly Name/Label field and favorite order field. AllScan adds the callsign for the main table; the editor omits it and allows up to 50 label characters. A compact Description field can use the AllStarLink database value or a per-favorite override; its note states the 20-character limit.
+- Existing favorites prefill the shared name without the automatically added callsign and show their effective Description. The database option is checked by default, so changing only the Name does not freeze the current database Description. Uncheck it to save a custom Description; an intentionally blank override is supported. The Name guidance below its field says the callsign is added automatically and gives the 50-character maximum.
 - Edit the **favorite's order number** from the same dialog; moving a favorite inserts it at that position and shifts the other favorites automatically.
 - Use **Save & Close** to apply the edit or **Cancel** to leave the file unchanged.
 - Click outside the dialog or press Escape to close it.
@@ -419,7 +419,7 @@ The selected entry is not a standard adjacent `label[]` and `cmd[] = "rpt cmd %n
 | AllScan Mods v1.90 | Applies the Favorites Name fix through both installers, including the combined installer’s integrated v1.03-v1.05 path |
 | AllScan Mods v1.91 | Expands the call-sign-free Favorites editor label limit from 33 to 50 characters in both installers |
 | AllScan Mods v1.92 | Keeps custom favorite labels in the Name column when the AllStarLink Description field is empty |
-| AllScan Mods v1.93 | Adds an optional per-favorite Description override to the main Edit Favorites dialog and TouchGUI data path |
+| AllScan Mods v1.93 | Adds per-favorite Description editing and TouchGUI data reuse, with compact fields and character-limit guidance |
 
 The editor, layout, Save & Close workflow, validation, backups, Add/Delete controls, connection controls, Rx%/LCnt sorting, and Disconnect before Monitor behavior were browser-tested before consolidation.
 

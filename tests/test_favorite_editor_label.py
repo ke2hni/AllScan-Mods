@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check the v1.92 shared 50-character Favorites label and prior migrations."""
+"""Check the v1.93 shared 50-character Favorites label and guidance and prior migrations."""
 from pathlib import Path
 import subprocess
 import tempfile
@@ -71,10 +71,10 @@ def main() -> None:
         assert first_bytes == {name: (temp / name).read_bytes() for name in base}, "patch is not idempotent"
 
         view = current["viewUtils.php"]
-        assert 'maxlength="50"' in view and 'class="favoriteEditHint">The callsign is added automatically.' in view
+        assert 'maxlength="50"' in view and 'class="favoriteEditHint">The callsign is added automatically. 50 characters max.' in view
         assert "Up to 33 characters." not in view
         assert "// AllScan Mods: 33-character" not in view
-        assert "<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.92. -->" in view
+        assert "<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.93. -->" in view
         assert ".favEditPanel .favoriteEditHint {margin:2px 0 6px;color:hsl(240,30%,70%);font-size:10px;font-weight:normal;}" in current["main.css"]
         assert ".favEditPanel label {display:block;margin-top:7px;color:#edc;font-size:12px;}" in current["main.css"]
         assert "strlen($newLabel) > 50" in current["index.php"] and "$newLabel === ''" not in current["index.php"]
@@ -85,11 +85,11 @@ def main() -> None:
         # Migrate the previously delivered v1.91 50-character field marker in place.
         v191 = dict(current)
         v191["viewUtils.php"] = v191["viewUtils.php"].replace(
-            "<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.92. -->",
+            "<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.93. -->",
             "<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.91. -->", 1)
         write_files(temp, v191)
         run_patcher(temp)
-        assert "<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.92. -->" in (temp / "viewUtils.php").read_text(encoding="utf-8")
+        assert "<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.93. -->" in (temp / "viewUtils.php").read_text(encoding="utf-8")
 
         # Upgrade previous marker/help combinations without altering label behavior.
         for old_version, old_marker, old_help in (
@@ -98,19 +98,19 @@ def main() -> None:
             ("1.38", "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.38. -->",
              "<small>Up to 33 characters. The callsign is added automatically.</small>"),
             ("1.39", "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.39. -->",
-             '<div class="favoriteEditHint">The callsign is added automatically.</div>'),
+             '<div class="favoriteEditHint">The callsign is added automatically. 50 characters max.</div>'),
             ("1.40", "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.40. -->",
-             '<div class="favoriteEditHint">The callsign is added automatically.</div>'),
+             '<div class="favoriteEditHint">The callsign is added automatically. 50 characters max.</div>'),
             ("1.41", "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.41. -->",
-             '<div class="favoriteEditHint">The callsign is added automatically.</div>'),
+             '<div class="favoriteEditHint">The callsign is added automatically. 50 characters max.</div>'),
             ("1.42", "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.42. -->",
-             '<div class="favoriteEditHint">The callsign is added automatically.</div>'),
+             '<div class="favoriteEditHint">The callsign is added automatically. 50 characters max.</div>'),
         ):
             legacy = dict(current)
             legacy["viewUtils.php"] = view.replace(
-                "<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.92. -->",
+                "<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.93. -->",
                 old_marker, 1).replace(
-                '<div class="favoriteEditHint">The callsign is added automatically.</div>',
+                '<div class="favoriteEditHint">The callsign is added automatically. 50 characters max.</div>',
                 old_help, 1)
             legacy["favsUtils.php"] = current["favsUtils.php"].replace(
                 "Call-sign-free Favorites editor value v1.43.",
@@ -148,8 +148,8 @@ def main() -> None:
             if old_version in ("1.37", "1.38"):
                 assert old_help not in migrated_view
             assert "Up to 33 characters." not in migrated_view
-            assert '<div class="favoriteEditHint">The callsign is added automatically.</div>' in migrated_view
-            assert "<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.92. -->" in migrated_view
+            assert '<div class="favoriteEditHint">The callsign is added automatically. 50 characters max.</div>' in migrated_view
+            assert "<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.93. -->" in migrated_view
             migrated_css = (temp / "main.css").read_text(encoding="utf-8")
             assert ".favEditPanel .favoriteEditHint {margin:2px 0 6px;color:hsl(240,30%,70%);font-size:10px;font-weight:normal;}" in migrated_css
             assert ".favEditPanel label {display:block;margin-top:7px;color:#edc;font-size:12px;}" in migrated_css
