@@ -40,7 +40,7 @@ The repository includes both scripts, the TouchGUI helper, and the Favorites edi
 
 ## Upgrade
 
-To update the Mods repository on a node where it is already cloned, run this from its directory. It saves the current commit on a local backup branch, stashes local changes, and updates `main` from GitHub. It does not commit or push changes.
+To update the Mods repository on a node where it is already cloned, run this from its directory. It saves the current commit on a local backup branch, stashes local changes, and updates `main` from GitHub.
 
 ```bash
 git pull --ff-only
@@ -54,6 +54,7 @@ cd /home/asl/AllScan-Mods && git fetch origin && backup="pre-update-$(date +%Y%m
 Then choose **one** installer:
 
 - Apply or reapply the Mods to the currently installed AllScan version: `sudo ./allscan-mods.sh`
+- 
 - Run David's official AllScan installer/updater first, then apply the Mods: `sudo ./install-allscan-n-mods.sh`
 
 The combined installer can update AllScan itself and may prompt you to confirm that update. The Mods-only installer does not update AllScan. After either installer completes, hard-refresh the AllScan page with **Ctrl+F5**.
