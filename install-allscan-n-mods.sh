@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.93
+# TouchGUI activity colors mod version: v1.94
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -259,10 +259,10 @@ fi
 
 
 favorite_editor_label_present() {
-    grep -Fq '<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.93. -->' "$VIEW_FILE" &&
+    grep -Fq '<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.94. -->' "$VIEW_FILE" &&
     grep -Fq 'favoriteEditDescription' "$VIEW_FILE" &&
     grep -Fq 'favoriteEditDescriptionHint' "$VIEW_FILE" &&
-    grep -Fq 'rows="2"' "$VIEW_FILE" &&
+    grep -Fq 'id="favoriteEditDescription" maxlength="20"' "$VIEW_FILE" &&
     grep -Fq 'Favorites Description editor v1.93.' "$INDEX_FILE" &&
     grep -Fq 'favoriteEditDescriptionHint' "$CSS_FILE" &&
     grep -Fq 'Call-sign-free Favorites editor value v1.43.' "$FAVS_UTILS_FILE" &&
@@ -366,7 +366,8 @@ apply_favorite_description_live() {
        grep -Fq 'favoriteEditDescriptionHint' "$VIEW_FILE" &&
        grep -Fq '20 characters max.' "$VIEW_FILE" &&
        grep -Fq 'maxlength="20"' "$VIEW_FILE" &&
-       grep -Fq 'rows="2"' "$VIEW_FILE" &&
+       grep -Fq 'id="favoriteEditDescription" maxlength="20"' "$VIEW_FILE" &&
+       ! grep -Fq '<textarea id="favoriteEditDescription"' "$VIEW_FILE" &&
        grep -Fq 'favoriteEditDescriptionHint' "$CSS_FILE" &&
        grep -Fq 'favoriteEditDescription' "$VIEW_FILE" &&
        grep -Fq 'databaseDescription' "$FAVS_UTILS_FILE"; then
@@ -1184,7 +1185,7 @@ if final_view_marker not in view:
 <label for="favoriteEditLabel">Friendly Name/Label</label>
 <input type="text" id="favoriteEditLabel" maxlength="50">
 <label for="favoriteEditDescription">Description</label>
-<textarea id="favoriteEditDescription" maxlength="20" rows="2"></textarea>
+<input type="text" id="favoriteEditDescription" maxlength="20">
 <div class="favoriteEditDescriptionHint">20 characters max.</div>
 <div class="favEditDescriptionSource"><label><input type="checkbox" id="favoriteEditUseDatabase" checked onchange="toggleFavoriteDescriptionSource();"> Use AllStarLink database Description</label></div>
 <div class="favEditActions">

@@ -157,8 +157,9 @@ def patch_index(source: str) -> str:
 
 def patch_view(source: str) -> str:
     description_field = (
+        '<!-- AllScan Mods: Single-line 20-character favorite Description editor v1.94. -->\n'
         '<label for="favoriteEditDescription">Description</label>\n'
-        '<textarea id="favoriteEditDescription" maxlength="20" rows="2"></textarea>\n'
+        '<input type="text" id="favoriteEditDescription" maxlength="20">\n'
         '<div class="favoriteEditDescriptionHint">20 characters max.</div>\n'
         '<div class="favEditDescriptionSource"><label><input type="checkbox" id="favoriteEditUseDatabase" checked onchange="toggleFavoriteDescriptionSource();"> Use AllStarLink database Description</label></div>'
     )
@@ -180,16 +181,23 @@ def patch_view(source: str) -> str:
     else:
         textarea = re.search(r'<textarea id="favoriteEditDescription"[^>]*></textarea>', source)
         if textarea:
-            updated_textarea = textarea.group(0).replace('maxlength="120"', 'maxlength="20"').replace('rows="3"', 'rows="2"')
-            if updated_textarea != textarea.group(0):
-                source = source[:textarea.start()] + updated_textarea + source[textarea.end():]
+            input_field = '<input type="text" id="favoriteEditDescription" maxlength="20">'
+            marker = '<!-- AllScan Mods: Single-line 20-character favorite Description editor v1.94. -->\n'
+            prefix = '' if marker.strip() in source else marker
+            source = source[:textarea.start()] + prefix + input_field + source[textarea.end():]
+        else:
+            description_input = re.search(r'<input type="text" id="favoriteEditDescription"[^>]*>', source)
+            if description_input is None:
+                raise SystemExit("ERROR: Existing Description field markup is unexpected.")
+            updated_input = re.sub(r'maxlength="\d+"', 'maxlength="20"', description_input.group(0))
+            if updated_input != description_input.group(0):
+                source = source[:description_input.start()] + updated_input + source[description_input.end():]
+            if "Single-line 20-character favorite Description editor v1.94." not in source:
+                source = source[:description_input.start()] + '<!-- AllScan Mods: Single-line 20-character favorite Description editor v1.94. -->\n' + source[description_input.start():]
         if 'class="favoriteEditDescriptionHint"' not in source:
-            source = replace_once(
-                source,
-                '</textarea>',
-                '</textarea>\n<div class="favoriteEditDescriptionHint">20 characters max.</div>',
-                "Description character-limit guidance",
-            )
+            source = replace_once(source, input_field if textarea else updated_input,
+                (input_field if textarea else updated_input) + '\n<div class="favoriteEditDescriptionHint">20 characters max.</div>',
+                "Description character-limit guidance")
         else:
             source = source.replace('class="favoriteEditDescriptionHint">120 characters max.', 'class="favoriteEditDescriptionHint">20 characters max.')
     if 'id="favoriteEditUseDatabase"' not in source:
@@ -211,7 +219,7 @@ def patch_view(source: str) -> str:
             raise SystemExit("ERROR: Favorites Name input disappeared while placing its guidance.")
         label_end = label_match.end()
         source = source[:label_end] + "\n" + hint_markup + source[label_end:]
-        source = re.sub(r'(</div>)\n{2,}(?=<label for="favoriteEditDescription")', r'\1\n', source, count=1)
+        source = re.sub(r'(</div>)\n{2,}(?=<!-- AllScan Mods: Single-line 20-character favorite Description editor v1\.94\. -->)', r'\1\n', source, count=1)
     if 'id="editdesc"' not in source:
         source = replace_once(
             source,
@@ -277,9 +285,9 @@ def patch_js(source: str) -> str:
 
 def patch_css(source: str) -> str:
     if "Favorites Description editor styling v1.93." not in source:
-        source = source.rstrip() + """\n\n/* AllScan Mods: Favorites Description editor styling v1.93. */\n.favEditPanel {max-height:95vh;overflow-y:auto;}\n.favEditPanel textarea {box-sizing:border-box;width:100%;min-height:38px;resize:vertical;margin:2px 0 1px;padding:5px 7px;border:2px solid hsl(240,40%,60%);font:14px/1.3 Verdana,Arial,Helvetica,sans-serif;}\n.favEditPanel .favoriteEditDescriptionHint {margin:0 0 5px;color:hsl(240,30%,70%);font-size:10px;}\n.favEditPanel .favEditDescriptionSource label {display:flex;align-items:center;gap:6px;margin:2px 0 5px;font-size:11px;}\n.favEditPanel .favEditDescriptionSource input {width:auto;margin:0;}\n"""
+        source = source.rstrip() + """\n\n/* AllScan Mods: Favorites Description editor styling v1.93. */\n.favEditPanel {max-height:95vh;overflow-y:auto;}\n.favEditPanel .favoriteEditDescriptionHint {margin:0 0 5px;color:hsl(240,30%,70%);font-size:10px;}\n.favEditPanel .favEditDescriptionSource label {display:flex;align-items:center;gap:6px;margin:2px 0 5px;font-size:11px;}\n.favEditPanel .favEditDescriptionSource input {width:auto;margin:0;}\n"""
     else:
-        source = source.replace(".favEditPanel textarea {box-sizing:border-box;width:100%;min-height:64px;resize:vertical;margin:2px 0 5px;", ".favEditPanel textarea {box-sizing:border-box;width:100%;min-height:38px;resize:vertical;margin:2px 0 1px;")
+        source = re.sub(r"\.favEditPanel textarea \{[^}]*\}\n?", "", source)
         if ".favEditPanel .favoriteEditDescriptionHint" not in source:
             source += "\n.favEditPanel .favoriteEditDescriptionHint {margin:0 0 5px;color:hsl(240,30%,70%);font-size:10px;}\n"
     return source

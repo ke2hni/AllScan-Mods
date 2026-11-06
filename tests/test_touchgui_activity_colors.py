@@ -15,7 +15,7 @@ def main():
     # Both independent installers carry the current AllScan Mods release marker.
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.93" in text, installer
+        assert "TouchGUI activity colors mod version: v1.94" in text, installer
         assert "TouchGUI connected banner callsign v1.51" in text
         assert "TouchGUI three-row card data v1.52" in text
         assert "TouchGUI three-row card styling v1.52" in text

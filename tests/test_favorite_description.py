@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check v1.93 Description editing, per-favorite storage, and TouchGUI data reuse."""
+"""Check v1.94 Description editing, per-favorite storage, and TouchGUI data reuse."""
 from pathlib import Path
 import shutil
 import subprocess
@@ -41,10 +41,11 @@ def patch_fixture(source_dir: Path, migrate_120_limit: bool = False) -> dict[str
                 content = content.replace("Description must be 20 plain-text characters", "Description must be 120 plain-text characters")
                 path.write_text(content, encoding="utf-8")
             view = paths["viewUtils.php"]
-            content = view.read_text(encoding="utf-8").replace('maxlength="20"', 'maxlength="120"').replace('20 characters max.', '120 characters max.')
+            content = view.read_text(encoding="utf-8").replace('<input type="text" id="favoriteEditDescription" maxlength="20">', '<textarea id="favoriteEditDescription" maxlength="120" rows="3"></textarea>').replace('20 characters max.', '120 characters max.')
             view.write_text(content, encoding="utf-8")
             subprocess.run(args, check=True, capture_output=True, text=True)
-            assert 'maxlength="20"' in view.read_text(encoding="utf-8")
+            assert '<input type="text" id="favoriteEditDescription" maxlength="20">' in view.read_text(encoding="utf-8")
+            assert '<textarea id="favoriteEditDescription"' not in view.read_text(encoding="utf-8")
             assert '20 characters max.' in view.read_text(encoding="utf-8")
         # A second pass must leave supported v1.93 files unchanged.
         before = {name: path.read_text(encoding="utf-8") for name, path in paths.items()}
@@ -60,7 +61,9 @@ def main() -> None:
     modified = patch_fixture(integrated, migrate_120_limit=True)
     legacy_modified = patch_fixture(legacy)
     assert 'id="favoriteEditDescription"' in modified["viewUtils.php"]
-    assert 'rows="2"' in modified["viewUtils.php"]
+    assert '<input type="text" id="favoriteEditDescription" maxlength="20">' in modified["viewUtils.php"]
+    assert '<textarea id="favoriteEditDescription"' not in modified["viewUtils.php"]
+    assert 'Single-line 20-character favorite Description editor v1.94.' in modified["viewUtils.php"]
     assert '20 characters max.' in modified["viewUtils.php"]
     assert 'The callsign is added automatically. 50 characters max.' in modified["viewUtils.php"]
     assert modified["viewUtils.php"].index('id="favoriteEditLabel"') < modified["viewUtils.php"].index('class="favoriteEditHint"') < modified["viewUtils.php"].index('id="favoriteEditDescription"')
@@ -79,17 +82,19 @@ def main() -> None:
     assert legacy_modified["viewUtils.php"].index('id="favoriteEditLabel"') < legacy_modified["viewUtils.php"].index('class="favoriteEditHint"') < legacy_modified["viewUtils.php"].index('id="favoriteEditDescription"')
     assert "Description must be 20 plain-text characters" in legacy_modified["index.php"]
 
+    assert 'Single-line 20-character favorite Description editor v1.94.' in (ROOT / 'lib/favorite-description.py').read_text(encoding='utf-8')
+
     for filename in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         installer = (ROOT / filename).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.93" in installer
+        assert "TouchGUI activity colors mod version: v1.94" in installer
         assert 'The callsign is added automatically. 50 characters max.' in installer
         assert 'favoriteEditDescriptionHint">20 characters max.' in installer
         assert 'id="favoriteEditLabel" maxlength="50"' in installer
-        assert 'favoriteEditDescription" maxlength="20" rows="2"' in installer
+        assert 'id="favoriteEditDescription" maxlength="20"' in installer
         assert 'newLabel.length > 50' in installer
         assert "apply_favorite_description_live" in installer
         assert '"$FAVORITE_DESCRIPTION_PATCH" "$stage_index" "$stage_view" "$stage_js" "$stage_favs_utils" "$stage_css"' in installer
-    print("PASS: Description override editor patches idempotently and leaves TouchGUI button code untouched.")
+    print("PASS: the single-line 20-character Description editor patches idempotently and leaves TouchGUI button code untouched.")
     print("PASS: database Description remains the default; override metadata flows through the shared Favorites row.")
 
 

@@ -26,7 +26,7 @@ def main() -> None:
     favs = favs_path.read_text(encoding="utf-8")
     css = css_path.read_text(encoding="utf-8")
 
-    view_marker = "<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.93. -->"
+    view_marker = "<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.94. -->"
     view_markers_old = (
         "// AllScan Mods: 33-character call-sign-free Favorites editor label v1.37.",
         "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.38. -->",
@@ -37,6 +37,7 @@ def main() -> None:
         "<!-- AllScan Mods: 33-character call-sign-free Favorites editor label v1.43. -->",
         "<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.91. -->",
         "<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.92. -->",
+        "<!-- AllScan Mods: 50-character call-sign-free Favorites editor label v1.93. -->",
     )
     fav_marker = "// AllScan Mods: Call-sign-free Favorites editor value v1.43."
     fav_markers_old = (
