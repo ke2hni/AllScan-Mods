@@ -457,7 +457,8 @@ AllScan is a separate GPL-3.0-licensed project created by David Gleason, NR9V. T
 **KE2HNI · AllScan Mods**
 
 </div>
-<img width="1600" height="900" alt="Screenshot 2026-10-22 222351" src="https://github.com/user-attachments/assets/36e6eb76-3324-4d31-afcf-55b8b132f1ab" />
-<img width="1600" height="900" alt="Screenshot 2026-10-22 222410" src="https://github.com/user-attachments/assets/8e2630b8-829e-4543-b698-730f48817269" />
-<img width="1600" height="900" alt="Screenshot 2026-10-22 222831" src="https://github.com/user-attachments/assets/1c3955cd-5dcf-4b43-aee6-53fac4a8a307" />
-
+<img width="1600" height="900" alt="Screenshot 2026-11-05 205839" src="https://github.com/user-attachments/assets/1c950c31-7a25-4a8a-85b2-ae47d8497736" />
+<img width="1600" height="900" alt="Screenshot 2026-11-05 205922" src="https://github.com/user-attachments/assets/74f4158d-3d5e-4a1c-a82e-10c3014b6e65" />
+<img width="1600" height="900" alt="Screenshot 2026-11-05 205937" src="https://github.com/user-attachments/assets/72dc3be6-8240-45b8-a367-3e61d133b36c" />
+<img width="1600" height="900" alt="Screenshot 2026-11-05 210316" src="https://github.com/user-attachments/assets/d5c21bfd-bd74-4402-8b0e-d5aa9f833df5" />
+<img width="1600" height="900" alt="Screenshot 2026-11-05 210327" src="https://github.com/user-attachments/assets/10a459c8-b916-481e-a3ef-d6c66a9aecba" />
