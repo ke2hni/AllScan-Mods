@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.94
+# TouchGUI activity colors mod version: v1.95
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -197,6 +197,7 @@ apply_favorite_description_live() {
        grep -Fq 'id="favoriteEditDescription" maxlength="20"' "$VIEW_FILE" &&
        ! grep -Fq '<textarea id="favoriteEditDescription"' "$VIEW_FILE" &&
        grep -Fq 'favoriteEditDescriptionHint' "$CSS_FILE" &&
+       grep -Fq 'Favorites Order field outline v1.95.' "$CSS_FILE" &&
        grep -Fq 'favoriteEditDescription' "$VIEW_FILE" &&
        grep -Fq 'databaseDescription' "$FAVS_UTILS_FILE"; then
         echo "Favorites Description editor is already installed. No changes made."

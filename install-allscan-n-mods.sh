@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.94
+# TouchGUI activity colors mod version: v1.95
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}

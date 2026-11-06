@@ -290,6 +290,10 @@ def patch_css(source: str) -> str:
         source = re.sub(r"\.favEditPanel textarea \{[^}]*\}\n?", "", source)
         if ".favEditPanel .favoriteEditDescriptionHint" not in source:
             source += "\n.favEditPanel .favoriteEditDescriptionHint {margin:0 0 5px;color:hsl(240,30%,70%);font-size:10px;}\n"
+    # Match the Order number field outline to the other editor inputs without changing its sizing.
+    order_border = "/* AllScan Mods: Favorites Order field outline v1.95. */\n.favEditPanel #favoriteEditOrder {border:2px solid hsl(240,40%,60%);}\n"
+    if "Favorites Order field outline v1.95." not in source:
+        source = source.rstrip() + "\n\n" + order_border
     return source
 
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check v1.94 Description editing, per-favorite storage, and TouchGUI data reuse."""
+"""Check v1.95 Favorites editor styling and v1.94 Description editing behavior."""
 from pathlib import Path
 import shutil
 import subprocess
@@ -65,6 +65,8 @@ def main() -> None:
     assert '<textarea id="favoriteEditDescription"' not in modified["viewUtils.php"]
     assert 'Single-line 20-character favorite Description editor v1.94.' in modified["viewUtils.php"]
     assert '20 characters max.' in modified["viewUtils.php"]
+    assert "Favorites Order field outline v1.95." in modified["main.css"]
+    assert ".favEditPanel #favoriteEditOrder {border:2px solid hsl(240,40%,60%);}" in modified["main.css"]
     assert 'The callsign is added automatically. 50 characters max.' in modified["viewUtils.php"]
     assert modified["viewUtils.php"].index('id="favoriteEditLabel"') < modified["viewUtils.php"].index('class="favoriteEditHint"') < modified["viewUtils.php"].index('id="favoriteEditDescription"')
     assert 'id="favoriteEditUseDatabase" checked' in modified["viewUtils.php"]
@@ -86,7 +88,7 @@ def main() -> None:
 
     for filename in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         installer = (ROOT / filename).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.94" in installer
+        assert "TouchGUI activity colors mod version: v1.95" in installer
         assert 'The callsign is added automatically. 50 characters max.' in installer
         assert 'favoriteEditDescriptionHint">20 characters max.' in installer
         assert 'id="favoriteEditLabel" maxlength="50"' in installer
