@@ -43,6 +43,11 @@ The repository includes both scripts, the TouchGUI helper, and the Favorites edi
 To update the Mods repository on a node where it is already cloned, run this from its directory. It saves the current commit on a local backup branch, stashes local changes, and updates `main` from GitHub. It does not commit or push changes.
 
 ```bash
+git pull --ff-only
+```
+Or if that fails, use the below command,
+
+```bash
 cd /home/asl/AllScan-Mods && git fetch origin && backup="pre-update-$(date +%Y%m%d-%H%M%S)-$$" && git branch "$backup" HEAD && git stash push -u -m "Pre-update $backup" && git switch -C main origin/main
 ```
 
