@@ -344,90 +344,90 @@ The selected entry is not a standard adjacent `label[]` and `cmd[] = "rpt cmd %n
 | Component | Tested configuration |
 |:--|:--|
 | Platform | AllStarLink 3 |
+| AllScan Mods v1.95 | Adds the same purple outline to the Order field as the other Favorites editor fields, without changing its size or behavior |
+| AllScan Mods v1.94 | Changes the Description editor to a single-line 20-character input and migrates the earlier v1.93 textarea |
+| AllScan Mods v1.93 | Adds per-favorite Description editing and TouchGUI data reuse, with compact fields and character-limit guidance |
+| AllScan Mods v1.92 | Keeps custom favorite labels in the Name column when the AllStarLink Description field is empty |
+| AllScan Mods v1.91 | Expands the call-sign-free Favorites editor label limit from 33 to 50 characters in both installers |
+| AllScan Mods v1.90 | Applies the Favorites Name fix through both installers, including the combined installer’s integrated v1.03-v1.05 path |
+| AllScan Mods v1.89 | Adds full Favorites Name display and auto-width handling to the Mods-only path |
+| AllScan Mods v1.88 | Recognizes AllScan v1.05, verifies PR #37 and PR #38, and skips reapplying upstream TouchGUI features |
+| AllScan Mods v1.87 | Gives wrapped white lines a 16px line box and reduces the separate Location gap to 1px for more even spacing |
+| AllScan Mods v1.86 | Removes Arial/Tahoma overrides and restores the original inherited white-text font |
+| AllScan Mods v1.85 | Tests Tahoma bold font rendering on white TouchGUI card text, with Arial fallback |
+| AllScan Mods v1.84 | Tests Arial bold font rendering on the white TouchGUI card text only |
+| AllScan Mods v1.83 | Adds another 2px between the white text lines and lowers the white text block another 2px |
+| AllScan Mods v1.82 | Balances vertical spacing between card rows: reduces the callsign-to-description gap, moves white text down, and adds a small gap between white lines |
+| AllScan Mods v1.81 | Removes the unsuccessful v1.77-v1.80 white-text rendering experiments and keeps the last accepted card spacing |
+| AllScan Mods v1.76 | Restores responsive aqua and white text sizing and adds a 2px visual gap between the white name and location lines |
+| AllScan Mods v1.75 | Sets white note/location text to a 14.3px base while retaining responsive shrinking |
+| AllScan Mods v1.74 | Caps the aqua description text size at 14.3px for testing |
+| AllScan Mods v1.73 | Lets card text descenders paint beyond the clipping card edge and restores the white note’s original line height |
+| AllScan Mods v1.72 | Always checks for missing incremental TouchGUI patches, even when the main feature set is already installed |
+| AllScan Mods v1.71 | Applies descender clearance to both aqua descriptions and white note/location rows |
+| AllScan Mods v1.70 | Adds aqua description line-height clearance for descenders without increasing card height |
+| AllScan Mods v1.69 | Collapses equivalent `US` and `USA` favorite-name and Location rows to one white row |
+| AllScan Mods v1.68 | Fixes v1.67 card-helper detection so existing TouchGUI installs can upgrade safely |
+| AllScan Mods v1.67 | Recognizes US/USA suffixes despite punctuation or surrounding Location text |
+| AllScan Mods v1.66 | Removes repeated words shared by the aqua description and white location row, including HUB and US/USA |
+| AllScan Mods v1.65 | Avoids duplicated Name/Location text, removes repeated US/USA suffixes, centers the white row, and clears aqua descenders |
+| AllScan Mods v1.64 | Uses a conservative similarity check to catch partial Name/Description overlap while retaining distinct user notes |
+| AllScan Mods v1.63 | Uses Location when Name repeats the ASTDB description and shows Location beneath a one-line Name |
+| AllScan Mods v1.62 | Prevents clipping of descenders in the white note row |
+| AllScan Mods v1.61 | Shifts aqua descriptions left by 0.5ch and raises white notes another 2px |
+| AllScan Mods v1.60 | Prevents scaled aqua descriptions from clipping and raises white card notes |
+| AllScan Mods v1.59 | Fixes the installer migration for v1.57 TouchGUI wrapping code and upgrades v1.58 safely |
+| AllScan Mods v1.58 | Moves white notes toward the bottom of each card and keeps near-fit aqua descriptions on one line |
+| AllScan Mods v1.57 | Removes the extra aqua font shrink, keeps measured-fit descriptions on one line, and preserves the note gap |
+| AllScan Mods v1.56 | Adds a small width buffer to keep near-fit aqua descriptions on one line and adds separation before white notes |
+| AllScan Mods v1.55 | Centers the portrait node/callsign line and sizes aqua descriptions from 13px to 18px based on rendered width |
+| AllScan Mods v1.54 | Reduces the aqua description text from 14px to 13px while preserving responsive fitting |
+| AllScan Mods v1.53 | Moves the aqua row up 2px and fits each text row against the full available width before wrapping |
+| AllScan Mods v1.52 | Adds aqua ASTDB descriptions and white favorite notes/location to TouchGUI cards, and widens the test cards by 5ch |
+| AllScan Mods v1.51 | Adds the callsign after the node number in the TouchGUI connected banner when one is available |
+| AllScan Mods v1.50 | Reduces the landscape shift to 0.75ch while retaining 1.5ch of extra width, moving the bold line right without changing portrait |
+| AllScan Mods v1.49 | Shifts the bold node/callsign line left and gives it more width in landscape only; portrait is unchanged |
+| AllScan Mods v1.48 | Makes only the green node/callsign line bold |
+| AllScan Mods v1.47 | Aligns the green node/callsign line with the top of the # badge and adds spacing before the white description |
+| AllScan Mods v1.46 | Shows the green node/callsign line above the white description on each TouchGUI card |
+| AllScan Mods v1.45 | Sets readable title-size floors of 14px on larger screens and 12px on narrow screens before wrapping long titles |
+| AllScan Mods v1.44 | Removes per-card grid expansion and lets long titles wrap within their normal card width |
+| AllScan Mods v1.43 | Tried giving long TouchGUI titles extra grid width; that made cards uneven and oversized |
+| AllScan Mods v1.42 | Makes the callsign guidance 10px in the Edit Favorite heading color and raises the field labels one size to 12px |
+| AllScan Mods v1.41 | Matches the callsign guidance to the neighboring 11px form labels, with regular weight and higher contrast |
+| AllScan Mods v1.40 | Returns the callsign guidance to the form’s normal 12px font and weight, with higher contrast |
+| AllScan Mods v1.39 | Removes the redundant length phrase and makes the callsign guidance larger, bold, and clearer |
+| AllScan Mods v1.38 | Hides the Favorites editor patch marker from the dialog and safely upgrades the v1.37 marker in place |
+| AllScan Mods v1.37 | Shows the shared label without the automatic callsign in the editor, limits it to 33 characters, and fits TouchGUI titles on one line without an ellipsis |
+| AllScan Mods v1.36 | Restores David’s stock single-field Favorites editor; keeps TouchGUI statistics, color mapping, responsive text sizing, and the confirmed portrait clipping fix |
+| AllScan Mods v1.35 | Allows portrait metadata glyphs to paint past their own text box while keeping the card boundary clipped |
+| AllScan Mods v1.34 | Removes the portrait-only max-width cap so the extra 1.5ch line width can take effect; the final glyph remained clipped |
+| AllScan Mods v1.33 | Adds portrait-only width compensation so shifting the node/callsign line left does not reduce space at its right edge; CSS max-width still capped the expansion |
+| AllScan Mods v1.32 | Makes the portrait node/callsign line measurable so the existing fit routine can prevent clipping |
+| AllScan Mods v1.31 | Shifts the node/callsign line left by 1.5ch in portrait mode only |
+| AllScan Mods v1.30 | Added a portrait-only horizontal fitting margin; landscape fit is unchanged |
+| AllScan Mods v1.29 | Portrait-only node/callsign fitting; moved the 33-character reminder below its field and bolded the editor field titles |
+| AllScan Mods v1.28 | Desktop and landscape layout looked good; phone portrait showed node/callsign clipping, addressed in v1.29 |
+| AllScan Mods v1.27 | User confirmed install succeeded; node/callsign metadata still looked smaller than upstream 14px |
+| AllScan Mods v1.26 | User test found the v1.25 metadata helper did not match the migration pattern; installer stopped safely without changes |
+| AllScan Mods v1.25 | Tighter TouchGUI card column spacing and smaller Favorites editor guidance; user reported node/callsign metadata became too small |
+| AllScan Mods v1.24 | User visual review approved the card text sizing; reported card-column gap and editor-help sizing issues |
+| AllScan Mods v1.23 | Superseded before node testing; not installed |
+| AllScan Mods v1.22 | Previous dual-label experiment; removed in v1.36 to restore the v1.04 single-field editor |
+| AllScan Mods v1.21 | Regression tests and simulated v1.20-to-v1.21 migration/idempotence passed; `pi4test` pending |
+| AllScan Mods v1.20 | Local regression tests and simulated v1.04 install/idempotence passed; `pi4test` testing pending |
+| AllScan Mods v1.19 | Installed on `pi4test`; editor still showed `&hellip;`, prompting the v1.20 fix |
+| TouchGUI v1.18 | Workspace regression tests passed; test-node testing pending |
+| TouchGUI v1.17 | Workspace regression tests passed; test-node testing pending |
+| TouchGUI v1.16 | Workspace regression tests passed; test-node testing pending |
+| TouchGUI v1.15 | Workspace regression tests passed; test-node testing pending |
+| TouchGUI v1.14 | User confirmed the value-only cards worked after AllStar stats requests recovered |
+| TouchGUI v1.13 | Workspace regression tests passed; test-node testing pending |
+| TouchGUI v1.12 | Installed and visually checked on `pi4test`; matched main-screen activity behavior reported by user |
+| TouchGUI v1.11 | Upgrade test: `node446900`; fresh install: `pi4test`; other test-node installs pending |
 | Operating system | Debian 12 (Bookworm) and Debian 13 (Trixie) |
 | AllScan | v1.01-v1.03 legacy patches; v1.04 PR #37 detection and TouchGUI patch; v1.05 PR #37/#38 detection |
 | Default web root | `/var/www/html/allscan` |
-| TouchGUI v1.11 | Upgrade test: `node446900`; fresh install: `pi4test`; other test-node installs pending |
-| TouchGUI v1.12 | Installed and visually checked on `pi4test`; matched main-screen activity behavior reported by user |
-| TouchGUI v1.13 | Workspace regression tests passed; test-node testing pending |
-| TouchGUI v1.14 | User confirmed the value-only cards worked after AllStar stats requests recovered |
-| TouchGUI v1.15 | Workspace regression tests passed; test-node testing pending |
-| TouchGUI v1.16 | Workspace regression tests passed; test-node testing pending |
-| TouchGUI v1.17 | Workspace regression tests passed; test-node testing pending |
-| TouchGUI v1.18 | Workspace regression tests passed; test-node testing pending |
-| AllScan Mods v1.19 | Installed on `pi4test`; editor still showed `&hellip;`, prompting the v1.20 fix |
-| AllScan Mods v1.20 | Local regression tests and simulated v1.04 install/idempotence passed; `pi4test` testing pending |
-| AllScan Mods v1.21 | Regression tests and simulated v1.20-to-v1.21 migration/idempotence passed; `pi4test` pending |
-| AllScan Mods v1.22 | Previous dual-label experiment; removed in v1.36 to restore the v1.04 single-field editor |
-| AllScan Mods v1.23 | Superseded before node testing; not installed |
-| AllScan Mods v1.24 | User visual review approved the card text sizing; reported card-column gap and editor-help sizing issues |
-| AllScan Mods v1.25 | Tighter TouchGUI card column spacing and smaller Favorites editor guidance; user reported node/callsign metadata became too small |
-| AllScan Mods v1.26 | User test found the v1.25 metadata helper did not match the migration pattern; installer stopped safely without changes |
-| AllScan Mods v1.27 | User confirmed install succeeded; node/callsign metadata still looked smaller than upstream 14px |
-| AllScan Mods v1.28 | Desktop and landscape layout looked good; phone portrait showed node/callsign clipping, addressed in v1.29 |
-| AllScan Mods v1.29 | Portrait-only node/callsign fitting; moved the 33-character reminder below its field and bolded the editor field titles |
-| AllScan Mods v1.30 | Added a portrait-only horizontal fitting margin; landscape fit is unchanged |
-| AllScan Mods v1.31 | Shifts the node/callsign line left by 1.5ch in portrait mode only |
-| AllScan Mods v1.32 | Makes the portrait node/callsign line measurable so the existing fit routine can prevent clipping |
-| AllScan Mods v1.33 | Adds portrait-only width compensation so shifting the node/callsign line left does not reduce space at its right edge; CSS max-width still capped the expansion |
-| AllScan Mods v1.34 | Removes the portrait-only max-width cap so the extra 1.5ch line width can take effect; the final glyph remained clipped |
-| AllScan Mods v1.35 | Allows portrait metadata glyphs to paint past their own text box while keeping the card boundary clipped |
-| AllScan Mods v1.36 | Restores David’s stock single-field Favorites editor; keeps TouchGUI statistics, color mapping, responsive text sizing, and the confirmed portrait clipping fix |
-| AllScan Mods v1.37 | Shows the shared label without the automatic callsign in the editor, limits it to 33 characters, and fits TouchGUI titles on one line without an ellipsis |
-| AllScan Mods v1.38 | Hides the Favorites editor patch marker from the dialog and safely upgrades the v1.37 marker in place |
-| AllScan Mods v1.39 | Removes the redundant length phrase and makes the callsign guidance larger, bold, and clearer |
-| AllScan Mods v1.40 | Returns the callsign guidance to the form’s normal 12px font and weight, with higher contrast |
-| AllScan Mods v1.41 | Matches the callsign guidance to the neighboring 11px form labels, with regular weight and higher contrast |
-| AllScan Mods v1.42 | Makes the callsign guidance 10px in the Edit Favorite heading color and raises the field labels one size to 12px |
-| AllScan Mods v1.43 | Tried giving long TouchGUI titles extra grid width; that made cards uneven and oversized |
-| AllScan Mods v1.44 | Removes per-card grid expansion and lets long titles wrap within their normal card width |
-| AllScan Mods v1.45 | Sets readable title-size floors of 14px on larger screens and 12px on narrow screens before wrapping long titles |
-| AllScan Mods v1.46 | Shows the green node/callsign line above the white description on each TouchGUI card |
-| AllScan Mods v1.47 | Aligns the green node/callsign line with the top of the # badge and adds spacing before the white description |
-| AllScan Mods v1.48 | Makes only the green node/callsign line bold |
-| AllScan Mods v1.49 | Shifts the bold node/callsign line left and gives it more width in landscape only; portrait is unchanged |
-| AllScan Mods v1.50 | Reduces the landscape shift to 0.75ch while retaining 1.5ch of extra width, moving the bold line right without changing portrait |
-| AllScan Mods v1.51 | Adds the callsign after the node number in the TouchGUI connected banner when one is available |
-| AllScan Mods v1.52 | Adds aqua ASTDB descriptions and white favorite notes/location to TouchGUI cards, and widens the test cards by 5ch |
-| AllScan Mods v1.53 | Moves the aqua row up 2px and fits each text row against the full available width before wrapping |
-| AllScan Mods v1.54 | Reduces the aqua description text from 14px to 13px while preserving responsive fitting |
-| AllScan Mods v1.55 | Centers the portrait node/callsign line and sizes aqua descriptions from 13px to 18px based on rendered width |
-| AllScan Mods v1.56 | Adds a small width buffer to keep near-fit aqua descriptions on one line and adds separation before white notes |
-| AllScan Mods v1.57 | Removes the extra aqua font shrink, keeps measured-fit descriptions on one line, and preserves the note gap |
-| AllScan Mods v1.58 | Moves white notes toward the bottom of each card and keeps near-fit aqua descriptions on one line |
-| AllScan Mods v1.59 | Fixes the installer migration for v1.57 TouchGUI wrapping code and upgrades v1.58 safely |
-| AllScan Mods v1.60 | Prevents scaled aqua descriptions from clipping and raises white card notes |
-| AllScan Mods v1.61 | Shifts aqua descriptions left by 0.5ch and raises white notes another 2px |
-| AllScan Mods v1.62 | Prevents clipping of descenders in the white note row |
-| AllScan Mods v1.63 | Uses Location when Name repeats the ASTDB description and shows Location beneath a one-line Name |
-| AllScan Mods v1.64 | Uses a conservative similarity check to catch partial Name/Description overlap while retaining distinct user notes |
-| AllScan Mods v1.65 | Avoids duplicated Name/Location text, removes repeated US/USA suffixes, centers the white row, and clears aqua descenders |
-| AllScan Mods v1.66 | Removes repeated words shared by the aqua description and white location row, including HUB and US/USA |
-| AllScan Mods v1.67 | Recognizes US/USA suffixes despite punctuation or surrounding Location text |
-| AllScan Mods v1.68 | Fixes v1.67 card-helper detection so existing TouchGUI installs can upgrade safely |
-| AllScan Mods v1.69 | Collapses equivalent `US` and `USA` favorite-name and Location rows to one white row |
-| AllScan Mods v1.70 | Adds aqua description line-height clearance for descenders without increasing card height |
-| AllScan Mods v1.71 | Applies descender clearance to both aqua descriptions and white note/location rows |
-| AllScan Mods v1.72 | Always checks for missing incremental TouchGUI patches, even when the main feature set is already installed |
-| AllScan Mods v1.73 | Lets card text descenders paint beyond the clipping card edge and restores the white note’s original line height |
-| AllScan Mods v1.74 | Caps the aqua description text size at 14.3px for testing |
-| AllScan Mods v1.75 | Sets white note/location text to a 14.3px base while retaining responsive shrinking |
-| AllScan Mods v1.76 | Restores responsive aqua and white text sizing and adds a 2px visual gap between the white name and location lines |
-| AllScan Mods v1.81 | Removes the unsuccessful v1.77-v1.80 white-text rendering experiments and keeps the last accepted card spacing |
-| AllScan Mods v1.82 | Balances vertical spacing between card rows: reduces the callsign-to-description gap, moves white text down, and adds a small gap between white lines |
-| AllScan Mods v1.83 | Adds another 2px between the white text lines and lowers the white text block another 2px |
-| AllScan Mods v1.84 | Tests Arial bold font rendering on the white TouchGUI card text only |
-| AllScan Mods v1.85 | Tests Tahoma bold font rendering on white TouchGUI card text, with Arial fallback |
-| AllScan Mods v1.86 | Removes Arial/Tahoma overrides and restores the original inherited white-text font |
-| AllScan Mods v1.87 | Gives wrapped white lines a 16px line box and reduces the separate Location gap to 1px for more even spacing |
-| AllScan Mods v1.88 | Recognizes AllScan v1.05, verifies PR #37 and PR #38, and skips reapplying upstream TouchGUI features |
-| AllScan Mods v1.89 | Adds full Favorites Name display and auto-width handling to the Mods-only path |
-| AllScan Mods v1.90 | Applies the Favorites Name fix through both installers, including the combined installer’s integrated v1.03-v1.05 path |
-| AllScan Mods v1.91 | Expands the call-sign-free Favorites editor label limit from 33 to 50 characters in both installers |
-| AllScan Mods v1.92 | Keeps custom favorite labels in the Name column when the AllStarLink Description field is empty |
-| AllScan Mods v1.93 | Adds per-favorite Description editing and TouchGUI data reuse, with compact fields and character-limit guidance |
-| AllScan Mods v1.94 | Changes the Description editor to a single-line 20-character input and migrates the earlier v1.93 textarea |
-| AllScan Mods v1.95 | Adds the same purple outline to the Order field as the other Favorites editor fields, without changing its size or behavior |
 
 The editor, layout, Save & Close workflow, validation, backups, Add/Delete controls, connection controls, Rx%/LCnt sorting, and Disconnect before Monitor behavior were browser-tested before consolidation.
 
