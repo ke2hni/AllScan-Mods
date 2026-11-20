@@ -88,7 +88,7 @@ def main() -> None:
 
     for filename in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         installer = (ROOT / filename).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.95" in installer
+        assert "TouchGUI activity colors mod version: v1.96" in installer
         assert 'The callsign is added automatically. 50 characters max.' in installer
         assert 'favoriteEditDescriptionHint">20 characters max.' in installer
         assert 'id="favoriteEditLabel" maxlength="50"' in installer

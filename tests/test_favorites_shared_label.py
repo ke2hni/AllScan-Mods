@@ -11,10 +11,11 @@ def main() -> None:
         "TOUCHGUI_FAVORITE_LABEL_PATCH",
         "touchtguilabel",
     )
+    # AllScan v1.06 compatibility assertions updated 2026-11-19T16:53:00-05:00 by KE2HNI.
     # Both independent installers carry the current AllScan Mods release marker.
     for filename in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         source = (ROOT / filename).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.95" in source
+        assert "TouchGUI activity colors mod version: v1.96" in source
         assert "favoriteEditHint" in source
         assert "Favorites editor call-sign hint v1.43." in source
         assert "apply_favorite_editor_label_live" in source
@@ -46,7 +47,7 @@ def main() -> None:
     assert 'maxlength="50"' in helper
     assert "substr($name, 0, 50)" in helper
     assert "newLabel.length > 50" in helper
-    print("PASS: v1.04/v1.05 keep one shared, call-sign-free, 50-character Favorites label.")
+    print("PASS: v1.04-v1.06 keep one shared, call-sign-free, 50-character Favorites label.")
     print("PASS: TouchGUI title fitting keeps card widths uniform and applies readable size floors before wrapping.")
     print("PASS: Rx%/LCnt sorting and PR #37 editor detection remain in both installers.")
 

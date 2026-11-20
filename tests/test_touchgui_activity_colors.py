@@ -13,9 +13,10 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 
 def main():
     # Both independent installers carry the current AllScan Mods release marker.
+    # AllScan v1.06 compatibility assertions updated 2026-11-19T16:53:00-05:00 by KE2HNI.
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.95" in text, installer
+        assert "TouchGUI activity colors mod version: v1.96" in text, installer
         assert "TouchGUI connected banner callsign v1.51" in text
         assert "TouchGUI three-row card data v1.52" in text
         assert "TouchGUI three-row card styling v1.52" in text
@@ -80,11 +81,13 @@ def main():
         assert "button.style.backgroundColor = '';" in text, installer
         assert "allscan_version == v1.02 || $allscan_version == v1.03" in text, installer
         assert "AllScan already includes the integrated enhancements (PR #37)" in text, installer
-        assert "v1.02|v1.03|v1.04|v1.05" in text, installer
-        assert "Supports AllScan v1.01-v1.05" in text, installer
-        assert "upstream_v105_features_present()" in text, installer
+        assert "v1.02|v1.03|v1.04|v1.05|v1.06" in text, installer
+        assert "Supports AllScan v1.01-v1.06" in text, installer
+        assert "upstream_v106_features_present()" in text, installer
+        assert "v1.05 || $allscan_version == v1.06" in text, installer
+        assert "AllScan v1.06 compatibility update" in text, installer
         assert "upstream_features_present && touchgui_activity_present" in text, installer
-        assert "AllScan v1.05 did not match the reviewed PR #37 and PR #38 feature layout" in text, installer
+        assert "AllScan v1.06 did not match the reviewed PR #37 and PR #38 feature layout" in text, installer
         assert "already integrated upstream (PR #38). No TouchGUI changes made." in text, installer
 
     with tempfile.TemporaryDirectory(prefix="touchgui-activity-test-") as temp:

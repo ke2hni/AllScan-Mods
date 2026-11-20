@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.95
+# TouchGUI activity colors mod version: v1.96
+# AllScan v1.06 compatibility update: 2026-11-19T16:53:00-05:00; updated by KE2HNI.
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -51,13 +52,13 @@ done
 allscan_version=$(sed -nE 's/^\$AllScanVersion = "(v[0-9.]+)";.*/\1/p' "$COMMON_FILE")
 case "$allscan_version" in
     v1.01) favs_source=$INDEX_FILE ;;
-    v1.02|v1.03|v1.04|v1.05)
+    v1.02|v1.03|v1.04|v1.05|v1.06)
         [[ -f $SIMPLE_INDEX_FILE && -f $SIMPLE_JS_FILE ]] || { echo "ERROR: Required TouchGUI files are missing. No files changed." >&2; exit 1; }
         [[ -f $FAVS_UTILS_FILE ]] || { echo "ERROR: Required AllScan file not found: $FAVS_UTILS_FILE" >&2; exit 1; }
         [[ -f $SIMPLE_CSS_FILE ]] || { echo "ERROR: Required AllScan file not found: $SIMPLE_CSS_FILE" >&2; exit 1; }
         favs_source=$FAVS_UTILS_FILE
         ;;
-    *) echo "ERROR: Supports AllScan v1.01-v1.05; found ${allscan_version:-unknown}. No files changed." >&2; exit 1 ;;
+    *) echo "ERROR: Supports AllScan v1.01-v1.06; found ${allscan_version:-unknown}. No files changed." >&2; exit 1 ;;
 esac
 
 # PR #37 upstream integration guard. Check the complete feature set rather than
@@ -413,7 +414,7 @@ apply_touchgui_activity_live() {
 }
 
 upstream_features_present() {
-    [[ $allscan_version == v1.03 || $allscan_version == v1.04 || $allscan_version == v1.05 ]] || return 1
+    [[ $allscan_version == v1.03 || $allscan_version == v1.04 || $allscan_version == v1.05 || $allscan_version == v1.06 ]] || return 1
     grep -Fq 'case "Edit Favorite":' "$INDEX_FILE" &&
     grep -Fq 'sortFavStats(5)' "$INDEX_FILE" &&
     grep -Fq 'sortFavStats(6)' "$INDEX_FILE" &&
@@ -430,18 +431,27 @@ upstream_features_present() {
       grep -Fq '$favList[] = [$n, $f->node, $name, $desc, $loc, NBSP, NBSP, $editName];' "$FAVS_UTILS_FILE" ||
       grep -Fq '$favList[] = [$n, $f->node, $name, $desc, $loc, NBSP, NBSP, $f->label];' "$FAVS_UTILS_FILE"; }
 }
-# v1.04 includes PR #37; v1.05 includes PR #37 and PR #38. Require the
-# reviewed feature sets before applying any Mods changes to these releases.
-upstream_v105_features_present() {
-    [[ $allscan_version == v1.05 ]] && upstream_features_present && touchgui_activity_present
+# v1.04 includes PR #37; v1.05 and v1.06 include PR #37 and PR #38.
+# Require the reviewed feature sets before applying Mods changes.
+upstream_v106_features_present() {
+    [[ $allscan_version == v1.06 ]] && upstream_features_present && touchgui_activity_present
+}
+
+upstream_integrated_features_present() {
+    { [[ $allscan_version == v1.05 ]] && upstream_features_present && touchgui_activity_present; } ||
+    upstream_v106_features_present
 }
 
 if [[ $allscan_version == v1.04 ]] && ! upstream_features_present; then
     echo "ERROR: AllScan v1.04 did not match the reviewed PR #37 feature layout. No Mods patches or backups made. Review the upstream files before proceeding." >&2
     exit 1
 fi
-if [[ $allscan_version == v1.05 ]] && ! upstream_v105_features_present; then
+if [[ $allscan_version == v1.05 ]] && ! upstream_integrated_features_present; then
     echo "ERROR: AllScan v1.05 did not match the reviewed PR #37 and PR #38 feature layout. No Mods patches or backups made. Review the upstream files before proceeding." >&2
+    exit 1
+fi
+if [[ $allscan_version == v1.06 ]] && ! upstream_v106_features_present; then
+    echo "ERROR: AllScan v1.06 did not match the reviewed PR #37 and PR #38 feature layout. No Mods patches or backups made. Review the upstream files before proceeding." >&2
     exit 1
 fi
 if upstream_features_present; then
@@ -449,7 +459,7 @@ if upstream_features_present; then
     apply_favorite_editor_label_live
     apply_favorites_name_auto_width_live
     apply_favorite_description_live
-    if [[ $allscan_version == v1.05 ]]; then
+    if [[ $allscan_version == v1.05 || $allscan_version == v1.06 ]]; then
         echo "TouchGUI activity, statistics, and card layout are already integrated upstream (PR #38). No TouchGUI changes made."
     else
         echo "Checking the independent TouchGUI activity, statistics, and card-layout features."
@@ -501,7 +511,7 @@ cp -- "$JS_FILE" "$stage_js"
 cp -- "$CSS_FILE" "$stage_css"
 cp -- "$CONNECT_FILE" "$stage_connect"
 has_favs_utils=false
-case "$allscan_version" in v1.02|v1.03|v1.04|v1.05) has_favs_utils=true ;; esac
+case "$allscan_version" in v1.02|v1.03|v1.04|v1.05|v1.06) has_favs_utils=true ;; esac
 if [[ $has_favs_utils == true ]]; then cp -- "$FAVS_UTILS_FILE" "$stage_favs_utils"; fi
 if [[ $allscan_version == v1.02 || $allscan_version == v1.03 ]]; then cp -- "$SIMPLE_CSS_FILE" "$stage_simple_css"; cp -- "$SIMPLE_INDEX_FILE" "$stage_simple_index"; cp -- "$SIMPLE_JS_FILE" "$stage_simple_js"; fi
 
@@ -522,7 +532,7 @@ js = js_path.read_text(encoding="utf-8")
 css = css_path.read_text(encoding="utf-8")
 connect = connect_path.read_text(encoding="utf-8")
 has_v102_layout = allscan_version in ("v1.02", "v1.03")
-has_favs_utils = allscan_version in ("v1.02", "v1.03", "v1.04", "v1.05")
+has_favs_utils = allscan_version in ("v1.02", "v1.03", "v1.04", "v1.05", "v1.06")
 simple_css = simple_css_path.read_text(encoding="utf-8") if has_v102_layout else ""
 simple_index = simple_index_path.read_text(encoding="utf-8") if has_v102_layout else ""
 simple_js = simple_js_path.read_text(encoding="utf-8") if has_v102_layout else ""
