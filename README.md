@@ -26,7 +26,7 @@ On the AllStarLink node, choose the command for your situation. The commands bel
   cd /home/asl && git clone https://github.com/ke2hni/AllScan-Mods.git && cd AllScan-Mods && sudo ./install-allscan-n-mods.sh
   ```
 
-  This runs David's official installer/updater, checks Apache PHP SQLite support, then applies the Mods. Review its prompts; accept the optional OS/package upgrade or DTMF-file replacement only if you want those actions.
+  This runs David's official installer/updater first, then checks Apache PHP SQLite support and applies the Mods. The SQLite check occurs after the updater, so an AllScan update may complete even if the later check stops before Mods are applied. Review its prompts; accept the optional OS/package upgrade or DTMF-file replacement only if you want those actions.
 
 - **AllScan is already installed; apply Mods without running David's updater:**
 
@@ -36,7 +36,7 @@ On the AllStarLink node, choose the command for your situation. The commands bel
 
   For a custom AllScan directory, add `--allscan-dir PATH`; AllScan must already be installed there.
 
-The repository includes both scripts, the TouchGUI helper, and the Favorites editor helpers for the call-sign-free Name and Description field. After installation, open AllScan and press **Ctrl+F5** (or clear the browser cache on a phone) to reload the page, JavaScript, and CSS.
+The repository includes both installers and the helper scripts for TouchGUI and Favorites editor changes. The combined installer also downloads and runs David’s official updater. After installation, open AllScan and press **Ctrl+F5** (or clear the browser cache on a phone) to reload the page, JavaScript, and CSS.
 
 ## Upgrade
 
@@ -45,7 +45,7 @@ To update the Mods repository on a node where it is already cloned, run this fro
 ```bash
 git pull --ff-only
 ```
-Or if that fails, use the below command,
+If `git pull --ff-only` cannot fast-forward because the local branch has diverged, use this recovery command. It creates a local backup branch, stashes tracked and untracked changes, then resets `main` to `origin/main`:
 
 ```bash
 cd /home/asl/AllScan-Mods && git fetch origin && backup="pre-update-$(date +%Y%m%d-%H%M%S)-$$" && git branch "$backup" HEAD && git stash push -u -m "Pre-update $backup" && git switch -C main origin/main
@@ -54,20 +54,23 @@ cd /home/asl/AllScan-Mods && git fetch origin && backup="pre-update-$(date +%Y%m
 Then choose **one** installer:
 
 - Apply or reapply the Mods to the currently installed AllScan version: `sudo ./allscan-mods.sh`
-- 
 - Run David's official AllScan installer/updater first, then apply the Mods: `sudo ./install-allscan-n-mods.sh`
 
 The combined installer can update AllScan itself and may prompt you to confirm that update. The Mods-only installer does not update AllScan. After either installer completes, hard-refresh the AllScan page with **Ctrl+F5**.
 
 ## Official AllScan integration (PR #37 in v1.04; PR #38 in v1.05 and v1.06)
 
-On October 14, 2026, David merged the dashboard and TouchGUI enhancements into the official [AllScan pull request #37](https://github.com/davidgsd/AllScan/pull/37). New AllScan installations containing these features **do not need the legacy Mods patch**.
+David merged the dashboard and TouchGUI enhancements into the official [AllScan pull request #37](https://github.com/davidgsd/AllScan/pull/37). New AllScan installations containing these features **do not need the legacy PR #37 patch**.
 
-AllScan v1.04 includes PR #37. David later merged PR #38 and released AllScan v1.05 with the TouchGUI activity, statistics, and card-layout features integrated; v1.06 retains those integrated features. The installers detect these upstream features and skip the TouchGUI patch on v1.05 and v1.06, while still applying the separate Favorites Name display fix. AllScan Mods continues to provide its separate call-sign-free view of the shared Favorites editor label, with a 50-character maximum stated below the Name field.
+AllScan v1.04 includes PR #37. David later merged PR #38 and released AllScan v1.05 with the TouchGUI activity, statistics, and card-layout features integrated; v1.06 retains those integrated features. The installers detect these upstream features and skip the TouchGUI patch on v1.05 and v1.06. AllScan Mods still applies its separate Favorites enhancements.
 
-The installers check the full PR #37 feature set on v1.03-v1.06. On v1.05 and v1.06 they also verify the complete PR #38 TouchGUI feature set; if either integrated set is unexpected, the installer stops before changing files. On v1.04, the installer applies the independent TouchGUI activity and statistics patch. On v1.05 and v1.06 those features are upstream, so it skips that patch. The Favorites editor keeps its shared Name field and adds an optional per-favorite Description override. By default, Description continues to follow AllStarLink database data; unchecking the database option saves a custom value for that favorite. TouchGUI uses the same effective Description while its buttons and card controls stay unchanged. The established legacy compatibility patches remain for v1.02 and pre-integration v1.03. AllScan v1.01 remains supported for existing Mods features but has no TouchGUI. Unknown versions are refused pending review.
+The installers verify the integrated PR #37 feature set on v1.03-v1.06 and PR #38 on v1.05-v1.06; if required upstream features are missing, they stop before changing files. The independent TouchGUI activity, statistics, and card-layout patch applies on v1.02-v1.04. The Mods add the shared Favorites editor's call-sign-free label view, full Name display, and optional per-favorite Description override. The database Description remains the default; a custom value is saved with its favorite. TouchGUI reads the same effective Description without changing its button behavior. Legacy compatibility patches remain for v1.02 and pre-integration v1.03. v1.01 remains supported for existing Mods features but has no TouchGUI. Unknown versions are refused pending review.
 
-Never restore an older `.before-allscan-mods-*` backup onto a newer upstream installation: those backups may remove David's integrated features or later fixes. Use the official AllScan updater to recover current upstream files. If the earlier Mods-only TouchGUI Favorites-label experiment is still installed, restore/reinstall the matching official AllScan files before installing v1.38; the installer detects that state and stops without changing files.
+### Enable Scheduled Connections (AllScan v1.06)
+
+Scheduled Connections is part of David's AllScan v1.06 release; AllScan Mods does not install it. As an AllScan administrator, open **Cfgs**, select **Scheduled Connects**, and click **Edit Cfg**. In the edit form, set **Value** to **On**, then click the **Edit Cfg** button below the selector to save. The table's **Value** column shows the saved setting; **Default Value** remains **Off**. After saving, the main page should show a **Schedule** button. If saving fails, read the **Process Form Results** message; AllScan may report that it could not update the web-server user's cron entry and provide a manual cron line.
+
+Never restore an older `.before-allscan-mods-*` backup onto a newer upstream installation: those backups may remove David's integrated features or later fixes. Use the official AllScan updater to recover current upstream files. If the earlier Mods-only TouchGUI Favorites-label experiment is still installed, restore or reinstall the matching official AllScan files first; the installer detects that state and stops without changing files.
 
 ## Features
 
@@ -152,9 +155,10 @@ The installer:
 - Runs PHP syntax validation when PHP is installed.
 - Runs JavaScript syntax validation when Node.js is installed.
 - At the default path, the combined installer runs David's current official installer/updater before applying Mods; it prompts before installing or updating AllScan and stops if an old v1.01 installation remains.
-- The combined installer installs `php-sqlite3` when needed, enables `pdo_sqlite` and `sqlite3` for Apache PHP, restarts Apache when required, and verifies both extensions before modifying AllScan.
-- At completion, both installers report whether Apache PHP has `pdo_sqlite` and `sqlite3` enabled. AllScan requires both. The Mods-only installer reports status without changing PHP settings; use the combined installer if they need to be enabled.
+- The combined installer runs David's updater first, then installs `php-sqlite3` if needed, enables `pdo_sqlite` and `sqlite3` for Apache PHP, restarts Apache when required, and verifies both extensions before applying Mods.
+- The Mods-only installer does not change PHP settings. It reports Apache PHP SQLite status on its standard patch path; its integrated PR #37 fast path may exit without checking or reporting SQLite. The combined installer checks SQLite support before applying Mods, including on its integrated path.
 - Before upgrading an installed v1.01, the combined installer creates a full timestamped recovery copy named `allscan.before-update-v1.01-YYYYMMDD-HHMMSS`. If an existing `allscan.bak.v1.01` is present, it also preserves that backup with a timestamped suffix before David's updater can replace it.
+- For other version updates, David's updater may preserve the previous directory and database. During the reported v1.05-to-v1.06 update these were `allscan.bak.1.05` and `/etc/allscan/allscan.db.1.05`; the Mods installer does not create these updater backups.
 - The combined installer preserves the official installer filename so AllScan's self-update check works correctly.
 - Preserves existing file ownership and permissions.
 - Automatically restores the backed-up files if applying the Mods fails after backups are created.
@@ -270,11 +274,11 @@ The main-page statistics polling is unchanged. TouchGUI requests one unique publ
 sudo grep -F 'case "Edit Favorite":' /var/www/html/allscan/index.php && sudo grep -Ec 'function[[:space:]]+sortFavStats[[:space:]]*\(' /var/www/html/allscan/js/main.js && sudo grep -Ec 'function[[:space:]]+openFavoriteEditor[[:space:]]*\(' /var/www/html/allscan/js/main.js && sudo grep -Fc 'id="automondisc"' /var/www/html/allscan/include/viewUtils.php && sudo grep -Fc 'if($automondisc)' /var/www/html/allscan/astapi/connect.php
 ```
 
-All four final counts should be `1`.
+Each of the five command checks should report `1`.
 
 ## Rollback
 
-Restore only files changed by that installation, using backups with its timestamp. For a legacy v1.01-v1.03 install, restore the five core files below. For v1.02 and pre-integration v1.03, also restore the four TouchGUI/Favorites files. Do not restore legacy backups onto a later upstream installation.
+Restore only files changed by that installation, using backups with its timestamp. For a legacy v1.01-v1.03 install, restore the five core files below. For v1.02 and pre-integration v1.03, also restore the four additional TouchGUI/Favorites files. Do not restore legacy backups onto a later upstream installation.
 
 ```bash
 sudo cp -a /var/www/html/allscan/index.php.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/index.php && sudo cp -a /var/www/html/allscan/include/viewUtils.php.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/include/viewUtils.php && sudo cp -a /var/www/html/allscan/js/main.js.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/js/main.js && sudo cp -a /var/www/html/allscan/css/main.css.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/css/main.css && sudo cp -a /var/www/html/allscan/astapi/connect.php.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/astapi/connect.php
@@ -291,7 +295,7 @@ sudo cp -a /var/www/html/allscan/simple/index.php.before-allscan-mods-YYYYMMDD-H
 sudo cp -a /var/www/html/allscan/js/simple.js.before-allscan-mods-YYYYMMDD-HHMMSS /var/www/html/allscan/js/simple.js
 ```
 
-For integrated AllScan v1.03 or v1.04, the TouchGUI enhancement has its own JavaScript and CSS backups. v1.05 already includes PR #38, so the installer does not create or restore TouchGUI backups there. Restore the matching pair printed by the installer:
+For integrated AllScan v1.03 or v1.04, the TouchGUI enhancement has its own JavaScript and CSS backups. v1.05 and v1.06 include PR #38, so the installer does not create or restore TouchGUI backups there. Restore the matching pair printed by the installer:
 
 ```bash
 sudo cp -a /var/www/html/allscan/js/simple.js.before-touchgui-activity-YYYYMMDD-HHMMSS /var/www/html/allscan/js/simple.js && sudo cp -a /var/www/html/allscan/css/simple.css.before-touchgui-activity-YYYYMMDD-HHMMSS /var/www/html/allscan/css/simple.css
@@ -344,80 +348,90 @@ The selected entry is not a standard adjacent `label[]` and `cmd[] = "rpt cmd %n
 | Component | Tested configuration |
 |:--|:--|
 | Platform | AllStarLink 3 |
-| AllScan Mods v1.95 | Adds the same purple outline to the Order field as the other Favorites editor fields, without changing its size or behavior |
-| AllScan Mods v1.96 | Adds AllScan v1.06 support, verifies the merged PR #37 and PR #38 features, and leaves upstream TouchGUI files unchanged |
-| AllScan Mods v1.94 | Changes the Description editor to a single-line 20-character input and migrates the earlier v1.93 textarea |
-| AllScan Mods v1.93 | Adds per-favorite Description editing and TouchGUI data reuse, with compact fields and character-limit guidance |
-| AllScan Mods v1.92 | Keeps custom favorite labels in the Name column when the AllStarLink Description field is empty |
-| AllScan Mods v1.91 | Expands the call-sign-free Favorites editor label limit from 33 to 50 characters in both installers |
-| AllScan Mods v1.90 | Applies the Favorites Name fix through both installers, including the combined installer’s integrated v1.03-v1.06 path |
-| AllScan Mods v1.89 | Adds full Favorites Name display and auto-width handling to the Mods-only path |
-| AllScan Mods v1.88 | Recognizes AllScan v1.05, verifies PR #37 and PR #38, and skips reapplying upstream TouchGUI features |
-| AllScan Mods v1.87 | Gives wrapped white lines a 16px line box and reduces the separate Location gap to 1px for more even spacing |
-| AllScan Mods v1.86 | Removes Arial/Tahoma overrides and restores the original inherited white-text font |
-| AllScan Mods v1.85 | Tests Tahoma bold font rendering on white TouchGUI card text, with Arial fallback |
-| AllScan Mods v1.84 | Tests Arial bold font rendering on the white TouchGUI card text only |
-| AllScan Mods v1.83 | Adds another 2px between the white text lines and lowers the white text block another 2px |
-| AllScan Mods v1.82 | Balances vertical spacing between card rows: reduces the callsign-to-description gap, moves white text down, and adds a small gap between white lines |
-| AllScan Mods v1.81 | Removes the unsuccessful v1.77-v1.80 white-text rendering experiments and keeps the last accepted card spacing |
-| AllScan Mods v1.76 | Restores responsive aqua and white text sizing and adds a 2px visual gap between the white name and location lines |
-| AllScan Mods v1.75 | Sets white note/location text to a 14.3px base while retaining responsive shrinking |
-| AllScan Mods v1.74 | Caps the aqua description text size at 14.3px for testing |
-| AllScan Mods v1.73 | Lets card text descenders paint beyond the clipping card edge and restores the white note’s original line height |
-| AllScan Mods v1.72 | Always checks for missing incremental TouchGUI patches, even when the main feature set is already installed |
-| AllScan Mods v1.71 | Applies descender clearance to both aqua descriptions and white note/location rows |
-| AllScan Mods v1.70 | Adds aqua description line-height clearance for descenders without increasing card height |
-| AllScan Mods v1.69 | Collapses equivalent `US` and `USA` favorite-name and Location rows to one white row |
-| AllScan Mods v1.68 | Fixes v1.67 card-helper detection so existing TouchGUI installs can upgrade safely |
-| AllScan Mods v1.67 | Recognizes US/USA suffixes despite punctuation or surrounding Location text |
-| AllScan Mods v1.66 | Removes repeated words shared by the aqua description and white location row, including HUB and US/USA |
-| AllScan Mods v1.65 | Avoids duplicated Name/Location text, removes repeated US/USA suffixes, centers the white row, and clears aqua descenders |
-| AllScan Mods v1.64 | Uses a conservative similarity check to catch partial Name/Description overlap while retaining distinct user notes |
-| AllScan Mods v1.63 | Uses Location when Name repeats the ASTDB description and shows Location beneath a one-line Name |
-| AllScan Mods v1.62 | Prevents clipping of descenders in the white note row |
-| AllScan Mods v1.61 | Shifts aqua descriptions left by 0.5ch and raises white notes another 2px |
-| AllScan Mods v1.60 | Prevents scaled aqua descriptions from clipping and raises white card notes |
-| AllScan Mods v1.59 | Fixes the installer migration for v1.57 TouchGUI wrapping code and upgrades v1.58 safely |
-| AllScan Mods v1.58 | Moves white notes toward the bottom of each card and keeps near-fit aqua descriptions on one line |
-| AllScan Mods v1.57 | Removes the extra aqua font shrink, keeps measured-fit descriptions on one line, and preserves the note gap |
-| AllScan Mods v1.56 | Adds a small width buffer to keep near-fit aqua descriptions on one line and adds separation before white notes |
-| AllScan Mods v1.55 | Centers the portrait node/callsign line and sizes aqua descriptions from 13px to 18px based on rendered width |
-| AllScan Mods v1.54 | Reduces the aqua description text from 14px to 13px while preserving responsive fitting |
-| AllScan Mods v1.53 | Moves the aqua row up 2px and fits each text row against the full available width before wrapping |
-| AllScan Mods v1.52 | Adds aqua ASTDB descriptions and white favorite notes/location to TouchGUI cards, and widens the test cards by 5ch |
-| AllScan Mods v1.51 | Adds the callsign after the node number in the TouchGUI connected banner when one is available |
-| AllScan Mods v1.50 | Reduces the landscape shift to 0.75ch while retaining 1.5ch of extra width, moving the bold line right without changing portrait |
-| AllScan Mods v1.49 | Shifts the bold node/callsign line left and gives it more width in landscape only; portrait is unchanged |
-| AllScan Mods v1.48 | Makes only the green node/callsign line bold |
-| AllScan Mods v1.47 | Aligns the green node/callsign line with the top of the # badge and adds spacing before the white description |
-| AllScan Mods v1.46 | Shows the green node/callsign line above the white description on each TouchGUI card |
-| AllScan Mods v1.45 | Sets readable title-size floors of 14px on larger screens and 12px on narrow screens before wrapping long titles |
-| AllScan Mods v1.44 | Removes per-card grid expansion and lets long titles wrap within their normal card width |
-| AllScan Mods v1.43 | Tried giving long TouchGUI titles extra grid width; that made cards uneven and oversized |
-| AllScan Mods v1.42 | Makes the callsign guidance 10px in the Edit Favorite heading color and raises the field labels one size to 12px |
-| AllScan Mods v1.41 | Matches the callsign guidance to the neighboring 11px form labels, with regular weight and higher contrast |
-| AllScan Mods v1.40 | Returns the callsign guidance to the form’s normal 12px font and weight, with higher contrast |
-| AllScan Mods v1.39 | Removes the redundant length phrase and makes the callsign guidance larger, bold, and clearer |
-| AllScan Mods v1.38 | Hides the Favorites editor patch marker from the dialog and safely upgrades the v1.37 marker in place |
-| AllScan Mods v1.37 | Shows the shared label without the automatic callsign in the editor, limits it to 33 characters, and fits TouchGUI titles on one line without an ellipsis |
-| AllScan Mods v1.36 | Restores David’s stock single-field Favorites editor; keeps TouchGUI statistics, color mapping, responsive text sizing, and the confirmed portrait clipping fix |
-| AllScan Mods v1.35 | Allows portrait metadata glyphs to paint past their own text box while keeping the card boundary clipped |
-| AllScan Mods v1.34 | Removes the portrait-only max-width cap so the extra 1.5ch line width can take effect; the final glyph remained clipped |
-| AllScan Mods v1.33 | Adds portrait-only width compensation so shifting the node/callsign line left does not reduce space at its right edge; CSS max-width still capped the expansion |
-| AllScan Mods v1.32 | Makes the portrait node/callsign line measurable so the existing fit routine can prevent clipping |
-| AllScan Mods v1.31 | Shifts the node/callsign line left by 1.5ch in portrait mode only |
-| AllScan Mods v1.30 | Added a portrait-only horizontal fitting margin; landscape fit is unchanged |
-| AllScan Mods v1.29 | Portrait-only node/callsign fitting; moved the 33-character reminder below its field and bolded the editor field titles |
-| AllScan Mods v1.28 | Desktop and landscape layout looked good; phone portrait showed node/callsign clipping, addressed in v1.29 |
-| AllScan Mods v1.27 | User confirmed install succeeded; node/callsign metadata still looked smaller than upstream 14px |
-| AllScan Mods v1.26 | User test found the v1.25 metadata helper did not match the migration pattern; installer stopped safely without changes |
-| AllScan Mods v1.25 | Tighter TouchGUI card column spacing and smaller Favorites editor guidance; user reported node/callsign metadata became too small |
-| AllScan Mods v1.24 | User visual review approved the card text sizing; reported card-column gap and editor-help sizing issues |
-| AllScan Mods v1.23 | Superseded before node testing; not installed |
-| AllScan Mods v1.22 | Previous dual-label experiment; removed in v1.36 to restore the v1.04 single-field editor |
-| AllScan Mods v1.21 | Regression tests and simulated v1.20-to-v1.21 migration/idempotence passed; `pi4test` pending |
-| AllScan Mods v1.20 | Local regression tests and simulated v1.04 install/idempotence passed; `pi4test` testing pending |
-| AllScan Mods v1.19 | Installed on `pi4test`; editor still showed `&hellip;`, prompting the v1.20 fix |
+| Operating system | Debian 12 (Bookworm) and Debian 13 (Trixie) |
+| AllScan | v1.01-v1.03 legacy patches; v1.04 PR #37 detection and TouchGUI patch; v1.05/v1.06 PR #37 and PR #38 detection |
+| Default web root | `/var/www/html/allscan` |
+
+The Favorites editor, page layout, Save & Close workflow, validation, backups, Add/Delete controls, connection controls, Rx%/LCnt sorting, and Disconnect before Monitor behavior were browser-tested before consolidation. On `node446900` (2026-11-19), the supplied terminal output shows David’s updater completing the v1.05-to-v1.06 update and the combined installer reporting Favorites enhancements as installed or patch-ready; PR #38 TouchGUI was already integrated upstream. This is an installation report, not a separate visual verification of each feature on v1.06.
+
+## Release history
+
+| Version | Changes |
+|:--|:--|
+| v1.96 | Adds AllScan v1.06 compatibility checks, skips upstream PR #38 TouchGUI changes, and applies the Favorites editor label, Name width, and Description enhancements |
+| v1.95 | Adds the same purple outline to the Order field as the other Favorites editor fields, without changing its size or behavior |
+| v1.94 | Changes the Description editor to a single-line 20-character input and migrates the earlier v1.93 textarea |
+| v1.93 | Adds per-favorite Description editing and TouchGUI data reuse, with compact fields and character-limit guidance |
+| v1.92 | Keeps custom favorite labels in the Name column when the AllStarLink Description field is empty |
+| v1.91 | Expands the call-sign-free Favorites editor label limit from 33 to 50 characters in both installers |
+| v1.90 | Applies the Favorites Name fix through both installers, including the combined installer’s integrated v1.03-v1.06 path |
+| v1.89 | Adds full Favorites Name display and auto-width handling to the Mods-only path |
+| v1.88 | Recognizes AllScan v1.05, verifies PR #37 and PR #38, and skips reapplying upstream TouchGUI features |
+| v1.87 | Gives wrapped white lines a 16px line box and reduces the separate Location gap to 1px for more even spacing |
+| v1.86 | Removes Arial/Tahoma overrides and restores the original inherited white-text font |
+| v1.85 | Tests Tahoma bold font rendering on white TouchGUI card text, with Arial fallback |
+| v1.84 | Tests Arial bold font rendering on the white TouchGUI card text only |
+| v1.83 | Adds another 2px between the white text lines and lowers the white text block another 2px |
+| v1.82 | Balances vertical spacing between card rows: reduces the callsign-to-description gap, moves white text down, and adds a small gap between white lines |
+| v1.81 | Removes the unsuccessful v1.77-v1.80 white-text rendering experiments and keeps the last accepted card spacing |
+| v1.76 | Restores responsive aqua and white text sizing and adds a 2px visual gap between the white name and location lines |
+| v1.75 | Sets white note/location text to a 14.3px base while retaining responsive shrinking |
+| v1.74 | Caps the aqua description text size at 14.3px for testing |
+| v1.73 | Lets card text descenders paint beyond the clipping card edge and restores the white note’s original line height |
+| v1.72 | Always checks for missing incremental TouchGUI patches, even when the main feature set is already installed |
+| v1.71 | Applies descender clearance to both aqua descriptions and white note/location rows |
+| v1.70 | Adds aqua description line-height clearance for descenders without increasing card height |
+| v1.69 | Collapses equivalent `US` and `USA` favorite-name and Location rows to one white row |
+| v1.68 | Fixes v1.67 card-helper detection so existing TouchGUI installs can upgrade safely |
+| v1.67 | Recognizes US/USA suffixes despite punctuation or surrounding Location text |
+| v1.66 | Removes repeated words shared by the aqua description and white location row, including HUB and US/USA |
+| v1.65 | Avoids duplicated Name/Location text, removes repeated US/USA suffixes, centers the white row, and clears aqua descenders |
+| v1.64 | Uses a conservative similarity check to catch partial Name/Description overlap while retaining distinct user notes |
+| v1.63 | Uses Location when Name repeats the ASTDB description and shows Location beneath a one-line Name |
+| v1.62 | Prevents clipping of descenders in the white note row |
+| v1.61 | Shifts aqua descriptions left by 0.5ch and raises white notes another 2px |
+| v1.60 | Prevents scaled aqua descriptions from clipping and raises white card notes |
+| v1.59 | Fixes the installer migration for v1.57 TouchGUI wrapping code and upgrades v1.58 safely |
+| v1.58 | Moves white notes toward the bottom of each card and keeps near-fit aqua descriptions on one line |
+| v1.57 | Removes the extra aqua font shrink, keeps measured-fit descriptions on one line, and preserves the note gap |
+| v1.56 | Adds a small width buffer to keep near-fit aqua descriptions on one line and adds separation before white notes |
+| v1.55 | Centers the portrait node/callsign line and sizes aqua descriptions from 13px to 18px based on rendered width |
+| v1.54 | Reduces the aqua description text from 14px to 13px while preserving responsive fitting |
+| v1.53 | Moves the aqua row up 2px and fits each text row against the full available width before wrapping |
+| v1.52 | Adds aqua ASTDB descriptions and white favorite notes/location to TouchGUI cards, and widens the test cards by 5ch |
+| v1.51 | Adds the callsign after the node number in the TouchGUI connected banner when one is available |
+| v1.50 | Reduces the landscape shift to 0.75ch while retaining 1.5ch of extra width, moving the bold line right without changing portrait |
+| v1.49 | Shifts the bold node/callsign line left and gives it more width in landscape only; portrait is unchanged |
+| v1.48 | Makes only the green node/callsign line bold |
+| v1.47 | Aligns the green node/callsign line with the top of the # badge and adds spacing before the white description |
+| v1.46 | Shows the green node/callsign line above the white description on each TouchGUI card |
+| v1.45 | Sets readable title-size floors of 14px on larger screens and 12px on narrow screens before wrapping long titles |
+| v1.44 | Removes per-card grid expansion and lets long titles wrap within their normal card width |
+| v1.43 | Tried giving long TouchGUI titles extra grid width; that made cards uneven and oversized |
+| v1.42 | Makes the callsign guidance 10px in the Edit Favorite heading color and raises the field labels one size to 12px |
+| v1.41 | Matches the callsign guidance to the neighboring 11px form labels, with regular weight and higher contrast |
+| v1.40 | Returns the callsign guidance to the form’s normal 12px font and weight, with higher contrast |
+| v1.39 | Removes the redundant length phrase and makes the callsign guidance larger, bold, and clearer |
+| v1.38 | Hides the Favorites editor patch marker from the dialog and safely upgrades the v1.37 marker in place |
+| v1.37 | Shows the shared label without the automatic callsign in the editor, limits it to 33 characters, and fits TouchGUI titles on one line without an ellipsis |
+| v1.36 | Restores David’s stock single-field Favorites editor; keeps TouchGUI statistics, color mapping, responsive text sizing, and the confirmed portrait clipping fix |
+| v1.35 | Allows portrait metadata glyphs to paint past their own text box while keeping the card boundary clipped |
+| v1.34 | Removes the portrait-only max-width cap so the extra 1.5ch line width can take effect; the final glyph remained clipped |
+| v1.33 | Adds portrait-only width compensation so shifting the node/callsign line left does not reduce space at its right edge; CSS max-width still capped the expansion |
+| v1.32 | Makes the portrait node/callsign line measurable so the existing fit routine can prevent clipping |
+| v1.31 | Shifts the node/callsign line left by 1.5ch in portrait mode only |
+| v1.30 | Added a portrait-only horizontal fitting margin; landscape fit is unchanged |
+| v1.29 | Portrait-only node/callsign fitting; moved the 33-character reminder below its field and bolded the editor field titles |
+| v1.28 | Desktop and landscape layout looked good; phone portrait showed node/callsign clipping, addressed in v1.29 |
+| v1.27 | User confirmed install succeeded; node/callsign metadata still looked smaller than upstream 14px |
+| v1.26 | User test found the v1.25 metadata helper did not match the migration pattern; installer stopped safely without changes |
+| v1.25 | Tighter TouchGUI card column spacing and smaller Favorites editor guidance; user reported node/callsign metadata became too small |
+| v1.24 | User visual review approved the card text sizing; reported card-column gap and editor-help sizing issues |
+| v1.23 | Superseded before node testing; not installed |
+| v1.22 | Previous dual-label experiment; removed in v1.36 to restore the v1.04 single-field editor |
+| v1.21 | Regression tests and simulated v1.20-to-v1.21 migration/idempotence passed; `pi4test` pending |
+| v1.20 | Local regression tests and simulated v1.04 install/idempotence passed; `pi4test` testing pending |
+| v1.19 | Installed on `pi4test`; editor still showed `&hellip;`, prompting the v1.20 fix |
 | TouchGUI v1.18 | Workspace regression tests passed; test-node testing pending |
 | TouchGUI v1.17 | Workspace regression tests passed; test-node testing pending |
 | TouchGUI v1.16 | Workspace regression tests passed; test-node testing pending |
@@ -426,11 +440,6 @@ The selected entry is not a standard adjacent `label[]` and `cmd[] = "rpt cmd %n
 | TouchGUI v1.13 | Workspace regression tests passed; test-node testing pending |
 | TouchGUI v1.12 | Installed and visually checked on `pi4test`; matched main-screen activity behavior reported by user |
 | TouchGUI v1.11 | Upgrade test: `node446900`; fresh install: `pi4test`; other test-node installs pending |
-| Operating system | Debian 12 (Bookworm) and Debian 13 (Trixie) |
-| AllScan | v1.01-v1.03 legacy patches; v1.04 PR #37 detection and TouchGUI patch; v1.05 PR #37/#38 detection |
-| Default web root | `/var/www/html/allscan` |
-
-The editor, layout, Save & Close workflow, validation, backups, Add/Delete controls, connection controls, Rx%/LCnt sorting, and Disconnect before Monitor behavior were browser-tested before consolidation.
 
 ## Design principles
 
@@ -458,13 +467,9 @@ AllScan is a separate GPL-3.0-licensed project created by David Gleason, NR9V. T
 **KE2HNI · AllScan Mods**
 
 </div>
+
 <img width="1600" height="900" alt="Screenshot 2026-11-05 205839" src="https://github.com/user-attachments/assets/1c950c31-7a25-4a8a-85b2-ae47d8497736" />
 <img width="1600" height="900" alt="Screenshot 2026-11-05 205922" src="https://github.com/user-attachments/assets/74f4158d-3d5e-4a1c-a82e-10c3014b6e65" />
 <img width="1600" height="900" alt="Screenshot 2026-11-05 205937" src="https://github.com/user-attachments/assets/72dc3be6-8240-45b8-a367-3e61d133b36c" />
 <img width="1600" height="900" alt="Screenshot 2026-11-05 210316" src="https://github.com/user-attachments/assets/d5c21bfd-bd74-4402-8b0e-d5aa9f833df5" />
 <img width="1600" height="900" alt="Screenshot 2026-11-05 210327" src="https://github.com/user-attachments/assets/10a459c8-b916-481e-a3ef-d6c66a9aecba" />
-
-
-### AllScan v1.06 compatibility
-
-Reviewed David Gleason’s AllScan v1.06 source dated 2026-11-19. The installer verifies the merged PR #37 Favorites/editor and PR #38 TouchGUI feature sets before modifying the separate Favorites editor enhancements. The upstream TouchGUI activity/statistics/card-layout files remain untouched. The combined installer continues to use David’s official updater and recognizes the v1.06 version string.
