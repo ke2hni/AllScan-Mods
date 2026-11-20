@@ -42,9 +42,17 @@ The repository includes both installers and the helper scripts for TouchGUI and 
 
 To update the Mods repository on a node where it is already cloned, run this from its directory. It saves the current commit on a local backup branch, stashes local changes, and updates `main` from GitHub.
 
+If already in the AllScan-Mods folder, use the below command
+
 ```bash
 git pull --ff-only
 ```
+If in the default folder, use the below command
+
+```bash
+cd /home/asl/AllScan-Mods && git pull --ff-only
+```
+
 If `git pull --ff-only` cannot fast-forward because the local branch has diverged, use this recovery command. It creates a local backup branch, stashes tracked and untracked changes, then resets `main` to `origin/main`:
 
 ```bash
