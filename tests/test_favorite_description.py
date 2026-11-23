@@ -86,9 +86,11 @@ def main() -> None:
 
     assert 'Single-line 20-character favorite Description editor v1.94.' in (ROOT / 'lib/favorite-description.py').read_text(encoding='utf-8')
 
+
+    # Current installer release marker: v1.97, updated 2026-11-22 by KE2HNI.
     for filename in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         installer = (ROOT / filename).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.96" in installer
+        assert "TouchGUI activity colors mod version: v1.97" in installer
         assert 'The callsign is added automatically. 50 characters max.' in installer
         assert 'favoriteEditDescriptionHint">20 characters max.' in installer
         assert 'id="favoriteEditLabel" maxlength="50"' in installer

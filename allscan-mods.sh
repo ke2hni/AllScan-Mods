@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.96
+# TouchGUI activity colors mod version: v1.97
 # AllScan v1.06 compatibility update: 2026-11-19T16:53:00-05:00; updated by KE2HNI.
+# AllScan v1.06 schedule enhancements update: 2026-11-22T18:42:43-05:00; updated by KE2HNI.
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -39,6 +40,7 @@ VIEW_FILE=$ALLSCAN_DIR/include/viewUtils.php
 JS_FILE=$ALLSCAN_DIR/js/main.js
 CSS_FILE=$ALLSCAN_DIR/css/main.css
 CONNECT_FILE=$ALLSCAN_DIR/astapi/connect.php
+SCHEDULE_API_FILE=$ALLSCAN_DIR/astapi/schedule.php
 COMMON_FILE=$ALLSCAN_DIR/include/common.php
 FAVS_UTILS_FILE=$ALLSCAN_DIR/include/favsUtils.php
 SIMPLE_CSS_FILE=$ALLSCAN_DIR/css/simple.css
@@ -69,6 +71,7 @@ MODS_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 TOUCHGUI_ACTIVITY_PATCH=$MODS_DIR/lib/touchgui-activity.py
 FAVORITE_EDITOR_PATCH=$MODS_DIR/lib/favorite-editor-label.py
 FAVORITE_DESCRIPTION_PATCH=$MODS_DIR/lib/favorite-description.py
+SCHEDULE_ACTIONS_PATCH=$MODS_DIR/lib/scheduled-actions.py
 
 previous_favorite_label_mod_present() {
     local file
@@ -277,6 +280,66 @@ apply_favorite_editor_label_live() {
     echo "Favorites editor label installed. Backups: ${backups[*]}"
 }
 
+# AllScan Mods v1.97: patch staged files through the shared schedule-actions mod helper.
+schedule_actions_present() {
+    grep -Fq 'AllScan Mods: Editable grouped schedule actions v1.97.' "$SCHEDULE_API_FILE" &&
+    grep -Fq 'AllScan Mods: Group schedule actions by node v1.97.' "$VIEW_FILE" &&
+    grep -Fq 'AllScan Mods: Edit and group scheduled actions by node v1.97.' "$JS_FILE" &&
+    grep -Fq 'AllScan Mods: Grouped schedule action rows v1.97.' "$CSS_FILE"
+}
+
+schedule_actions_legacy_present() {
+    grep -Fq "case 'edit':" "$SCHEDULE_API_FILE" &&
+    grep -Fq 'var schedEditingId' "$JS_FILE" &&
+    grep -Fq 'id="schedSubmit"' "$VIEW_FILE" &&
+    grep -Fq '.schedRule' "$CSS_FILE"
+}
+
+apply_scheduled_actions_live() {
+    [[ $allscan_version == v1.06 ]] || return 0
+    [[ -f $SCHEDULE_API_FILE ]] || { echo "ERROR: Required AllScan schedule API not found: $SCHEDULE_API_FILE" >&2; return 1; }
+    [[ -f $SCHEDULE_ACTIONS_PATCH ]] || { echo "ERROR: Schedule-actions mod helper is missing: $SCHEDULE_ACTIONS_PATCH" >&2; return 1; }
+    if schedule_actions_present; then
+        echo "Grouped, editable schedule actions are already installed. No changes made."
+        return 0
+    fi
+    if schedule_actions_legacy_present; then
+        echo "A compatible earlier grouped schedule editor is already installed. No changes made."
+        return 0
+    fi
+    local work_dir timestamp i
+    local -a originals staged backups
+    work_dir=$(mktemp -d /tmp/allscan-scheduled-actions.XXXXXX)
+    originals=("$SCHEDULE_API_FILE" "$VIEW_FILE" "$JS_FILE" "$CSS_FILE")
+    staged=("$work_dir/schedule.php" "$work_dir/viewUtils.php" "$work_dir/main.js" "$work_dir/main.css")
+    for i in "${!originals[@]}"; do cp -- "${originals[$i]}" "${staged[$i]}"; done
+    python3 "$SCHEDULE_ACTIONS_PATCH" "${staged[@]}"
+    if command -v node >/dev/null 2>&1; then node --check "${staged[2]}"; fi
+    if command -v php >/dev/null 2>&1; then php -l "${staged[0]}" >/dev/null && php -l "${staged[1]}" >/dev/null; fi
+    timestamp=$(date +%Y%m%d-%H%M%S)
+    for i in "${!originals[@]}"; do
+        backups[$i]=${originals[$i]}.before-scheduled-actions-v1.97-$timestamp
+        [[ ! -e ${backups[$i]} ]] || { rm -rf -- "$work_dir"; echo "ERROR: Schedule backup already exists; no schedule files changed." >&2; return 1; }
+    done
+    for i in "${!originals[@]}"; do
+        if ! cp -a -- "${originals[$i]}" "${backups[$i]}"; then
+            rm -rf -- "$work_dir"
+            echo "ERROR: Could not create schedule recovery copies; no schedule files changed." >&2
+            return 1
+        fi
+    done
+    for i in "${!originals[@]}"; do
+        if ! cp -- "${staged[$i]}" "${originals[$i]}"; then
+            for i in "${!originals[@]}"; do cp -a -- "${backups[$i]}" "${originals[$i]}"; done
+            rm -rf -- "$work_dir"
+            echo "ERROR: Schedule update failed; original schedule files were restored." >&2
+            return 1
+        fi
+    done
+    rm -rf -- "$work_dir"
+    echo "Grouped, editable schedule actions installed. Backups: ${backups[*]}"
+}
+
 touchgui_activity_present() {
     grep -Fq 'AllScan Mods: TouchGUI activity colors, Rx%/LCnt, main-table color mapping and rounded value badges v1.18.' "$SIMPLE_JS_FILE" &&
     grep -Fq 'TouchGUI matching callsign removal v1.18' "$SIMPLE_JS_FILE" &&
@@ -456,6 +519,7 @@ if [[ $allscan_version == v1.06 ]] && ! upstream_v106_features_present; then
 fi
 if upstream_features_present; then
     echo "AllScan already includes the integrated enhancements (PR #37). Applying/checking the shared Favorites editor label."
+    apply_scheduled_actions_live
     apply_favorite_editor_label_live
     apply_favorites_name_auto_width_live
     apply_favorite_description_live

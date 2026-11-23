@@ -13,9 +13,10 @@ def main() -> None:
     )
     # AllScan v1.06 compatibility assertions updated 2026-11-19T16:53:00-05:00 by KE2HNI.
     # Both independent installers carry the current AllScan Mods release marker.
+    # Current installer release marker: v1.97, updated 2026-11-22 by KE2HNI.
     for filename in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         source = (ROOT / filename).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.96" in source
+        assert "TouchGUI activity colors mod version: v1.97" in source
         assert "favoriteEditHint" in source
         assert "Favorites editor call-sign hint v1.43." in source
         assert "apply_favorite_editor_label_live" in source
@@ -37,7 +38,7 @@ def main() -> None:
 
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "shared Friendly Name/Label field" in readme
-    assert "50-character maximum stated below the Name field" in readme
+    assert "The Name guidance below its field says the callsign is added automatically and gives the 50-character maximum" in readme
     assert "optional TouchGUI card label overrides" not in readme
 
     helper = (ROOT / "lib/favorite-editor-label.py").read_text(encoding="utf-8")

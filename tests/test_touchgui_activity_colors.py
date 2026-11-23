@@ -14,9 +14,10 @@ PATCHER = ROOT / "lib" / "touchgui-activity.py"
 def main():
     # Both independent installers carry the current AllScan Mods release marker.
     # AllScan v1.06 compatibility assertions updated 2026-11-19T16:53:00-05:00 by KE2HNI.
+    # Current installer release marker: v1.97, updated 2026-11-22 by KE2HNI.
     for installer in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         text = (ROOT / installer).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.96" in text, installer
+        assert "TouchGUI activity colors mod version: v1.97" in text, installer
         assert "TouchGUI connected banner callsign v1.51" in text
         assert "TouchGUI three-row card data v1.52" in text
         assert "TouchGUI three-row card styling v1.52" in text
