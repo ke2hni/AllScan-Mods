@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# TouchGUI activity colors mod version: v1.97
+# TouchGUI activity colors mod version: v1.98
 # AllScan v1.06 compatibility update: 2026-11-19T16:53:00-05:00; updated by KE2HNI.
 # AllScan v1.06 schedule enhancements update: 2026-11-22T18:42:43-05:00; updated by KE2HNI.
+# AllScan v1.06 schedule layout update: 2026-11-22T20:35:36-05:00; updated by KE2HNI.
 set -Eeuo pipefail
 
 SCRIPT_NAME=${0##*/}
@@ -451,8 +452,15 @@ apply_favorite_editor_label_live() {
     echo "Favorites editor label installed. Backups: ${backups[*]}"
 }
 
-# AllScan Mods v1.97: patch staged files through the shared schedule-actions mod helper.
+# AllScan Mods v1.98: add the side-by-side schedule layout through the shared helper.
 schedule_actions_present() {
+    grep -Fq 'AllScan Mods: Editable grouped schedule actions v1.97.' "$SCHEDULE_API_FILE" &&
+    grep -Fq 'AllScan Mods: Group schedule actions by node v1.98.' "$VIEW_FILE" &&
+    grep -Fq 'AllScan Mods: Edit and group scheduled actions by node v1.97.' "$JS_FILE" &&
+    grep -Fq 'AllScan Mods: Schedule form/list side-by-side layout v1.98.' "$CSS_FILE"
+}
+
+schedule_actions_v197_present() {
     grep -Fq 'AllScan Mods: Editable grouped schedule actions v1.97.' "$SCHEDULE_API_FILE" &&
     grep -Fq 'AllScan Mods: Group schedule actions by node v1.97.' "$VIEW_FILE" &&
     grep -Fq 'AllScan Mods: Edit and group scheduled actions by node v1.97.' "$JS_FILE" &&
@@ -474,7 +482,7 @@ apply_scheduled_actions_live() {
         echo "Grouped, editable schedule actions are already installed. No changes made."
         return 0
     fi
-    if schedule_actions_legacy_present; then
+    if schedule_actions_legacy_present && ! schedule_actions_v197_present; then
         echo "A compatible earlier grouped schedule editor is already installed. No changes made."
         return 0
     fi
@@ -489,7 +497,7 @@ apply_scheduled_actions_live() {
     if command -v php >/dev/null 2>&1; then php -l "${staged[0]}" >/dev/null && php -l "${staged[1]}" >/dev/null; fi
     timestamp=$(date +%Y%m%d-%H%M%S)
     for i in "${!originals[@]}"; do
-        backups[$i]=${originals[$i]}.before-scheduled-actions-v1.97-$timestamp
+        backups[$i]=${originals[$i]}.before-scheduled-actions-v1.98-$timestamp
         [[ ! -e ${backups[$i]} ]] || { rm -rf -- "$work_dir"; echo "ERROR: Schedule backup already exists; no schedule files changed." >&2; return 1; }
     done
     for i in "${!originals[@]}"; do

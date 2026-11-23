@@ -13,10 +13,10 @@ def main() -> None:
     )
     # AllScan v1.06 compatibility assertions updated 2026-11-19T16:53:00-05:00 by KE2HNI.
     # Both independent installers carry the current AllScan Mods release marker.
-    # Current installer release marker: v1.97, updated 2026-11-22 by KE2HNI.
+    # Current installer release marker: v1.98, updated 2026-11-22T20:35:36-05:00 by KE2HNI.
     for filename in ("allscan-mods.sh", "install-allscan-n-mods.sh"):
         source = (ROOT / filename).read_text(encoding="utf-8")
-        assert "TouchGUI activity colors mod version: v1.97" in source
+        assert "TouchGUI activity colors mod version: v1.98" in source
         assert "favoriteEditHint" in source
         assert "Favorites editor call-sign hint v1.43." in source
         assert "apply_favorite_editor_label_live" in source
